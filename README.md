@@ -64,6 +64,35 @@ uv run matcher run --template-file tc.yaml \
 
 「研習分組」模板含 `preferences_schema`，但本階段 M0 機制下，若名單帶有非空 preferences → 拒絕並提示等待階段 4。
 
+### 從 CSV / Excel 匯入名單
+
+支援 CSV（UTF-8 / UTF-8-BOM / CP950 三種編碼自動偵測）與 Excel（.xlsx）：
+
+```bash
+# CSV 匯入（中文表頭、自動對齊到模板的 aliases）
+uv run matcher run --template teacher-class \
+                   --roster-csv examples/teacher-class/roster.csv \
+                   --seed 123456 --output audit.json
+
+# Excel 匯入（單一工作表自動使用）
+uv run matcher run --template study-group \
+                   --roster-xlsx examples/study-group/roster.xlsx \
+                   --seed 2026 --output audit.json
+
+# Excel 多工作表 → 須指定 --sheet
+uv run matcher run --template study-group \
+                   --roster-xlsx examples/study-group/roster-multi.xlsx \
+                   --sheet "報名表" \
+                   --seed 2026 --output audit.json
+```
+
+格式要求：
+
+- 第一列為表頭；模板宣告的 `aliases` 自動對齊中文表頭（例「姓名」→ `name`）。
+- 可選 `id`／`編號` 欄位指定角色 id；否則自動生成 `R001`、`R002`...
+- list 型別欄位以分號 `;` 分隔（例：`G1;G2;G3`）。
+- targets 由旁檔 `<basename>.targets.yaml` 提供。
+
 ### 只跑過濾階段
 
 ```bash

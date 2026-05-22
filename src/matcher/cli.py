@@ -10,6 +10,7 @@ from typing import Optional
 import typer
 
 from matcher.audit import dump_audit_json
+from matcher.data_import import load_roster_csv, load_roster_xlsx
 from matcher.errors import MatcherError, SeedMissing, TemplateNotFound
 from matcher.io_yaml import load_preferences, load_roster, load_ruleset, load_template
 from matcher.pipeline import MatcherInput, run_filter_only, run_match
@@ -75,7 +76,16 @@ def _die(err: MatcherError) -> None:
 @app.command("run")
 def run_cmd(
     rules: Optional[Path] = typer.Option(None, "--rules", exists=True, dir_okay=False, readable=True),
-    roster: Path = typer.Option(..., "--roster", exists=True, dir_okay=False, readable=True),
+    roster: Optional[Path] = typer.Option(None, "--roster", exists=True, dir_okay=False, readable=True),
+    roster_csv: Optional[Path] = typer.Option(
+        None, "--roster-csv", exists=True, dir_okay=False, readable=True,
+        help="從 CSV 匯入名單；需附旁檔 <stem>.targets.yaml",
+    ),
+    roster_xlsx: Optional[Path] = typer.Option(
+        None, "--roster-xlsx", exists=True, dir_okay=False, readable=True,
+        help="從 Excel .xlsx 匯入名單；需附旁檔 <stem>.targets.yaml",
+    ),
+    sheet: Optional[str] = typer.Option(None, "--sheet", help="Excel 工作表名稱（多表時必填）"),
     seed: Optional[int] = typer.Option(None, "--seed", help="整數隨機種子（必填）"),
     preferences: Optional[Path] = typer.Option(
         None, "--preferences", exists=True, dir_okay=False, readable=True
@@ -89,9 +99,9 @@ def run_cmd(
     ),
 ) -> None:
     """執行一次完整媒合（過濾 → 分配 → 寫稽核）。"""
-    # 三組參數互斥檢查
-    n_source = sum([template is not None, template_file is not None, rules is not None])
-    if n_source == 0:
+    # 規則來源三組互斥檢查
+    n_rules_source = sum([template is not None, template_file is not None, rules is not None])
+    if n_rules_source == 0:
         typer.echo(
             "錯誤：請提供下列三組之一的規則來源——\n"
             "  (A) --template <id>\n"
@@ -100,9 +110,27 @@ def run_cmd(
             err=True,
         )
         raise typer.Exit(code=2)
-    if n_source > 1:
+    if n_rules_source > 1:
         typer.echo(
             "錯誤：--template / --template-file / --rules 三組參數互斥，請擇一。",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+
+    # 名單來源三組互斥檢查
+    n_roster_source = sum([roster is not None, roster_csv is not None, roster_xlsx is not None])
+    if n_roster_source == 0:
+        typer.echo(
+            "錯誤：請提供下列三組之一的名單來源——\n"
+            "  (A) --roster <yaml>\n"
+            "  (B) --roster-csv <path>\n"
+            "  (C) --roster-xlsx <path> [--sheet <name>]",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    if n_roster_source > 1:
+        typer.echo(
+            "錯誤：--roster / --roster-csv / --roster-xlsx 三組參數互斥，請擇一。",
             err=True,
         )
         raise typer.Exit(code=2)
@@ -122,7 +150,31 @@ def run_cmd(
         else:
             rs = load_ruleset(rules)
 
-        ro = load_roster(roster)
+        # 名單載入
+        import_metadata: Optional[dict] = None
+        if roster_csv is not None:
+            if tpl_obj is None:
+                typer.echo(
+                    "錯誤：--roster-csv 必須搭配 --template 或 --template-file 使用。\n"
+                    "細節：CSV 匯入依賴模板的 attributes schema 對齊欄位。\n"
+                    "建議：加上 --template <id> 或改用 --roster <yaml>。",
+                    err=True,
+                )
+                raise typer.Exit(code=2)
+            ro, import_metadata = load_roster_csv(roster_csv, tpl_obj)
+        elif roster_xlsx is not None:
+            if tpl_obj is None:
+                typer.echo(
+                    "錯誤：--roster-xlsx 必須搭配 --template 或 --template-file 使用。\n"
+                    "細節：Excel 匯入依賴模板的 attributes schema 對齊欄位。\n"
+                    "建議：加上 --template <id> 或改用 --roster <yaml>。",
+                    err=True,
+                )
+                raise typer.Exit(code=2)
+            ro, import_metadata = load_roster_xlsx(roster_xlsx, tpl_obj, sheet=sheet)
+        else:
+            ro = load_roster(roster)
+
         prefs = load_preferences(preferences)
 
         result = run_match(MatcherInput(
@@ -132,12 +184,24 @@ def run_cmd(
             preferences=prefs if prefs else None,
             mechanism=mechanism,
             template=tpl_obj,
+            import_metadata=import_metadata,
         ))
     except MatcherError as e:
         _die(e)
 
     dump_audit_json(result.audit, output)
     _print_summary(result.audit)
+    if result.audit.get("import_metadata"):
+        meta = result.audit["import_metadata"]
+        typer.echo("")
+        typer.echo("=== 資料來源 ===")
+        typer.echo(f"類型：{meta['source_type']}")
+        if meta.get("encoding"):
+            typer.echo(f"編碼：{meta['encoding']}")
+        if meta.get("sheet_name"):
+            typer.echo(f"工作表：{meta['sheet_name']}")
+        typer.echo(f"資料列數：{meta['row_count']}")
+        typer.echo(f"檔案：{meta['file_basename']}")
     typer.echo("")
     typer.echo("=== 完成 ===")
     typer.echo(f"稽核紀錄已寫入：{output}")

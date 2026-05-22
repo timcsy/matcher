@@ -123,9 +123,10 @@ def build_audit_record(
     assignment: dict,
     mechanism: str = "M0",
     template=None,
+    import_metadata: dict | None = None,
 ) -> dict:
     return {
-        "schema_version": "1.1",
+        "schema_version": "1.2",
         "mechanism": mechanism,
         "seed": seed,
         "rules_snapshot": _ruleset_to_dict(ruleset),
@@ -135,6 +136,7 @@ def build_audit_record(
         "allocation_trace": allocation_trace,
         "assignment": assignment,
         "template_snapshot": None if template is None else _template_to_dict(template),
+        "import_metadata": import_metadata,
         "generated_at": None,
     }
 

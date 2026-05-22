@@ -38,6 +38,7 @@ class MatcherInput:
     preferences: Optional[dict] = None
     mechanism: str = "M0"
     template: object = None  # Template | None；不引入 import 循環
+    import_metadata: Optional[dict] = None
 
 
 @dataclass
@@ -152,6 +153,7 @@ def run_match(inp: MatcherInput) -> MatcherResult:
         assignment=assignment,
         mechanism=inp.mechanism,
         template=inp.template,
+        import_metadata=inp.import_metadata,
     )
 
     return MatcherResult(

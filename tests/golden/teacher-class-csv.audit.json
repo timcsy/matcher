@@ -686,7 +686,13 @@
     }
   ],
   "generated_at": null,
-  "import_metadata": null,
+  "import_metadata": {
+    "encoding": "utf-8",
+    "file_basename": "roster.csv",
+    "row_count": 10,
+    "sheet_name": null,
+    "source_type": "csv"
+  },
   "mechanism": "M0",
   "qualified_set": {
     "T01": [
@@ -936,5 +942,136 @@
   },
   "schema_version": "1.2",
   "seed": 123456,
-  "template_snapshot": null
+  "template_snapshot": {
+    "attributes": {
+      "roles": [
+        {
+          "description": "老師姓名",
+          "key": "name",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "description": "老師專業科目",
+          "key": "speciality",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "description": "年資（年）",
+          "key": "seniority",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "targets": [
+        {
+          "description": "班級名稱",
+          "key": "name",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "description": "班級需要的科目清單",
+          "key": "required_subjects",
+          "required": true,
+          "type": "list_str"
+        },
+        {
+          "description": "班級特色",
+          "key": "feature",
+          "required": true,
+          "type": "str"
+        }
+      ]
+    },
+    "description": "依專業與班級需要科目配對任課教師",
+    "id": "teacher-class",
+    "name": "教師-班級配對",
+    "preferences_schema": null,
+    "report_fields": [
+      {
+        "key": "teacher_name",
+        "label": "教師姓名",
+        "source": "roster_snapshot.roles[].attributes.name"
+      },
+      {
+        "key": "assigned_class",
+        "label": "分配到的班級",
+        "source": "assignment.{role_id}"
+      }
+    ],
+    "rules": [
+      {
+        "description": "老師的專業必須出現在班級的需要科目清單中",
+        "expr": {
+          "role_in_target_field": {
+            "role_field": "speciality",
+            "target_field": "required_subjects"
+          }
+        },
+        "id": "R001"
+      },
+      {
+        "description": "老師年資至少 3 年（含）以上",
+        "expr": {
+          "ge": {
+            "field": "role.seniority",
+            "value": 3
+          }
+        },
+        "id": "R002"
+      },
+      {
+        "description": "班級特色屬於核心三類之一（雙語、stem、藝術）",
+        "expr": {
+          "in": {
+            "field": "target.feature",
+            "set": [
+              "bilingual",
+              "stem",
+              "arts"
+            ]
+          }
+        },
+        "id": "R003"
+      }
+    ],
+    "schema_version": "1.0",
+    "ui_fields": [
+      {
+        "help": null,
+        "key": "name",
+        "label": "姓名",
+        "options": null,
+        "placeholder": "請輸入老師姓名",
+        "required": true,
+        "type": "text"
+      },
+      {
+        "help": null,
+        "key": "speciality",
+        "label": "專業科目",
+        "options": [
+          "國文",
+          "英文",
+          "數學",
+          "自然",
+          "社會"
+        ],
+        "placeholder": null,
+        "required": true,
+        "type": "select"
+      },
+      {
+        "help": null,
+        "key": "seniority",
+        "label": "年資（年）",
+        "options": null,
+        "placeholder": null,
+        "required": true,
+        "type": "number"
+      }
+    ]
+  }
 }

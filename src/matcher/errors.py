@@ -55,3 +55,19 @@ class TemplateMissingField(MatcherError):
 
 class TemplateConflict(MatcherError):
     exit_code = 23
+
+
+class RosterDecodeError(MatcherError):
+    exit_code = 30
+
+
+class RosterColumnMismatch(MatcherError):
+    exit_code = 31
+
+
+class RosterTypeError(MatcherError):
+    exit_code = 32
+
+
+class RosterSheetAmbiguous(MatcherError):
+    exit_code = 33

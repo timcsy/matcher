@@ -9,27 +9,33 @@ attributes:
       type: str
       required: true
       description: "老師姓名"
+      aliases: ["姓名", "教師姓名"]
     - key: speciality
       type: str
       required: true
       description: "老師專業科目"
+      aliases: ["專業科目", "專業"]
     - key: seniority
       type: int
       required: true
       description: "年資（年）"
+      aliases: ["年資"]
   targets:
     - key: name
       type: str
       required: true
       description: "班級名稱"
+      aliases: ["班級名稱", "班級"]
     - key: required_subjects
       type: list_str
       required: true
       description: "班級需要的科目清單"
+      aliases: ["需要科目", "科目"]
     - key: feature
       type: str
       required: true
       description: "班級特色"
+      aliases: ["特色"]
 
 rules:
   - id: R001

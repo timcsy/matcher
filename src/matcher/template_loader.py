@@ -43,11 +43,17 @@ def _parse_attribute_decl(d: dict, side: str) -> AttributeDecl:
             f"attributes.{side}[].{key} 的 type `{type_}` 不支援；"
             f"支援：{sorted(_ALLOWED_ATTR_TYPES)}"
         )
+    aliases_raw = d.get("aliases") or []
+    if not isinstance(aliases_raw, list):
+        raise TemplateMissingField(
+            f"attributes.{side}[].{key} 的 aliases 必須為 list[str]"
+        )
     return AttributeDecl(
         key=key,
         type=type_,
         required=bool(d.get("required", True)),
         description=str(d.get("description", "")),
+        aliases=tuple(str(a) for a in aliases_raw),
     )
 
 

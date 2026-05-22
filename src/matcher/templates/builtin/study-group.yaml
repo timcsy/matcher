@@ -9,23 +9,28 @@ attributes:
       type: str
       required: true
       description: "學生姓名"
+      aliases: ["姓名", "學生姓名"]
     - key: grade
       type: int
       required: true
       description: "年級"
+      aliases: ["年級"]
   targets:
     - key: name
       type: str
       required: true
       description: "分組名稱"
+      aliases: ["分組名稱", "組別"]
     - key: topic
       type: str
       required: true
       description: "研習主題"
+      aliases: ["主題"]
     - key: min_grade
       type: int
       required: true
       description: "可參加的最低年級"
+      aliases: ["最低年級"]
 
 rules:
   - id: R001
@@ -52,7 +57,7 @@ ui_fields:
     required: true
     help: "以阿拉伯數字填寫"
   - key: preferences
-    label: "志願組別（可填 1~3 個）"
+    label: "志願組別"
     type: multiselect
     required: false
     options: ["G1", "G2", "G3"]

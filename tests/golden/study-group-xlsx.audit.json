@@ -396,7 +396,13 @@
     }
   ],
   "generated_at": null,
-  "import_metadata": null,
+  "import_metadata": {
+    "encoding": null,
+    "file_basename": "roster.xlsx",
+    "row_count": 9,
+    "sheet_name": "Sheet1",
+    "source_type": "xlsx"
+  },
   "mechanism": "M0",
   "qualified_set": {
     "S01": [

@@ -17,6 +17,7 @@ class AttributeDecl:
     type: Literal["str", "int", "list_str"]
     required: bool = True
     description: str = ""
+    aliases: tuple = ()
 
 
 @dataclass(frozen=True)
