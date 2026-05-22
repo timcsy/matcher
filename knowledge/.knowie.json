@@ -1,0 +1,10 @@
+{
+  "version": "0.4.0",
+  "language": "zh-TW",
+  "createdAt": "2026-05-22T05:31:39.873Z",
+  "tools": [
+    "agents-md",
+    "speckit"
+  ],
+  "updatedAt": "2026-05-22T05:31:39.885Z"
+}
