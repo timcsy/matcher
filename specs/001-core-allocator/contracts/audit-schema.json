@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AuditRecord",
+  "description": "稽核紀錄 schema（JSON）。所有可閱讀說明文字為繁中。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "mechanism",
+    "seed",
+    "rules_snapshot",
+    "roster_snapshot",
+    "qualified_set",
+    "filter_trace",
+    "allocation_trace",
+    "assignment",
+    "generated_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "mechanism": { "const": "M0" },
+    "seed": { "type": "integer" },
+    "rules_snapshot": {
+      "type": "object",
+      "description": "規則檔載入後的完整內容（含每條規則的 id、description、expr）"
+    },
+    "roster_snapshot": {
+      "type": "object",
+      "description": "名單檔載入後的完整內容"
+    },
+    "qualified_set": {
+      "type": "object",
+      "description": "role_id → 該角色有資格被分配到的對象 id 清單",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "filter_trace": {
+      "type": "array",
+      "description": "對每個 role × target 組合的過濾結果與通過的規則 id",
+      "items": {
+        "type": "object",
+        "required": ["role_id", "target_id", "qualified", "matched_rules"],
+        "properties": {
+          "role_id": { "type": "string" },
+          "target_id": { "type": "string" },
+          "qualified": { "type": "boolean" },
+          "matched_rules": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "failed_rule": {
+            "type": "string",
+            "description": "若 qualified=false，首條未通過的規則 id"
+          }
+        }
+      }
+    },
+    "allocation_trace": {
+      "type": "array",
+      "description": "M0 分配的每一步隨機決策",
+      "items": {
+        "type": "object",
+        "required": ["step", "role_id", "candidates", "random_index", "chosen", "remaining_capacity_after"],
+        "properties": {
+          "step": { "type": "integer", "minimum": 1 },
+          "role_id": { "type": "string" },
+          "candidates": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "random_index": { "type": "integer", "minimum": 0 },
+          "chosen": { "type": "string" },
+          "remaining_capacity_after": {
+            "type": "object",
+            "additionalProperties": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "assignment": {
+      "type": "object",
+      "description": "role_id → target_id（None 表未分配）",
+      "additionalProperties": {
+        "type": ["string", "null"]
+      }
+    },
+    "generated_at": {
+      "type": "null",
+      "description": "永遠為 null；避免時間戳破壞跨機器重現性"
+    }
+  }
+}

@@ -1,0 +1,40 @@
+# 名單檔 schema（YAML 範例）
+# 名單檔含兩部分：roles（角色，例如老師）與 targets（對象，例如班級）。
+
+roles:
+  - id: T01
+    attributes:
+      name: "王老師"
+      speciality: "國文"
+      seniority: 8
+
+  - id: T02
+    attributes:
+      name: "林老師"
+      speciality: "數學"
+      seniority: 3
+
+  # ...
+
+targets:
+  - id: C01
+    capacity: 2
+    attributes:
+      name: "三年甲班"
+      required_subjects: ["國文", "數學"]
+      feature: "bilingual"
+
+  - id: C02
+    capacity: 2
+    attributes:
+      name: "三年乙班"
+      required_subjects: ["國文", "英文"]
+      feature: "stem"
+
+  # ...
+
+# 規則：
+# - id 必須在 roles / targets 各自唯一（重複 → DuplicateIdentity）
+# - capacity 必須為整數且 ≥ 1
+# - attributes 的每個值必須是 str / int / list[str]
+# - 規則檔引用的所有屬性 key 必須在 attributes 中出現（否則 UnknownAttribute）

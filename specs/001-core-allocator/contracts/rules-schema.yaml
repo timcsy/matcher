@@ -1,0 +1,52 @@
+# 規則檔 schema（YAML 範例，附說明）
+# 規則檔本身採 YAML；以下為一個合法的最小範例與所有支援的表達式節點。
+
+version: "1.0"           # 自由填寫字串，將寫入稽核快照
+
+rules:
+  # 範例 1：等值匹配 + 跨側集合包含
+  - id: R001
+    description: "老師的專業必須出現在班級的需要科目清單中"
+    expr:
+      role_in_target_field:
+        role_field: speciality          # role.speciality
+        target_field: required_subjects # target.required_subjects（list[str]）
+
+  # 範例 2：邏輯運算 + 範圍比較
+  - id: R002
+    description: "年資 5 年（含）以上、且不是新進老師"
+    expr:
+      and:
+        - ge: { field: role.seniority, value: 5 }
+        - not:
+            eq: { field: role.is_newcomer, value: true }
+        # 註：本階段不支援 bool 屬性（見 data-model.md AttrValue），
+        #     此範例僅展示 not + eq 形狀，實際請改用 ge / le / in。
+
+  # 範例 3：集合運算（IN）
+  - id: R003
+    description: "班級特色屬於核心三類之一"
+    expr:
+      in:
+        field: target.feature
+        set: ["bilingual", "stem", "arts"]
+
+  # 範例 4：OR 組合
+  - id: R004
+    description: "符合 R002 或本身就是資深導師"
+    expr:
+      or:
+        - ge: { field: role.seniority, value: 5 }
+        - eq: { field: role.is_mentor_certified, value: "yes" }
+
+# 所有支援的節點：
+#   eq:                     { field: <role.X | target.X>, value: <str|int|list[str]> }
+#   in:                     { field: <role.X | target.X>, set:   [<AttrValue>, ...] }
+#   ge:                     { field: <role.X | target.X>, value: <int> }
+#   le:                     { field: <role.X | target.X>, value: <int> }
+#   role_in_target_field:   { role_field: <str>, target_field: <str> }  # 跨側包含
+#   and:                    [<expr>, ...]
+#   or:                     [<expr>, ...]
+#   not:                    <expr>
+#
+# 規則集（rules）整體解讀為 AND：所有規則都通過才算有資格。
