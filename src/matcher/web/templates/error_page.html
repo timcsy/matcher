@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}錯誤{% endblock %}
+{% block content %}
+<div class="error-box">
+  <h2>發生錯誤</h2>
+  <p><strong>{{ error_type }}</strong></p>
+  <pre>{{ error_message }}</pre>
+  <p><a href="/">回首頁</a></p>
+</div>
+{% endblock %}

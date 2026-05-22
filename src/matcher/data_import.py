@@ -248,37 +248,40 @@ def _build_roles(
     return tuple(roles_list)
 
 
-def _load_targets_sidecar(path: Path) -> tuple:
-    """從旁檔 `<stem>.targets.yaml` 載入 targets（僅取 targets 段）。"""
+def _load_targets(path: Path, template: Template) -> tuple:
+    """取得 targets：優先讀旁檔 `<stem>.targets.yaml`；若不存在則使用 template.default_targets。"""
     sidecar = path.parent / f"{path.stem}.targets.yaml"
-    if not sidecar.exists():
-        raise RosterColumnMismatch(
-            f"找不到對象（targets）旁檔：{sidecar}。\n"
-            f"細節：CSV/Excel 路徑下，targets 須由旁檔 `<basename>.targets.yaml` 提供（內含 `targets:` 段）。\n"
-            f"建議：建立 {sidecar.name}，或改用 --roster <yaml> 整合載入。"
-        )
-    import yaml
-    from matcher.roster import Target
-    with sidecar.open("r", encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    raw_targets = data.get("targets") or []
-    if not raw_targets:
-        raise RosterColumnMismatch(
-            f"旁檔 {sidecar.name} 缺少 `targets` 段或為空。"
-        )
-    target_ids: list[str] = []
-    targets = []
-    for t in raw_targets:
-        tid = t["id"]
-        if tid in target_ids:
-            from matcher.errors import DuplicateIdentity
-            raise DuplicateIdentity(f"旁檔中對象 id `{tid}` 出現多次")
-        target_ids.append(tid)
-        cap = int(t.get("capacity", 1))
-        if cap < 1:
-            raise ValueError(f"對象 `{tid}` 的容量 {cap} 無效；容量必須 ≥ 1")
-        targets.append(Target(id=tid, capacity=cap, attributes=dict(t.get("attributes", {}))))
-    return tuple(targets)
+    if sidecar.exists():
+        import yaml
+        from matcher.roster import Target
+        with sidecar.open("r", encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        raw_targets = data.get("targets") or []
+        if not raw_targets:
+            raise RosterColumnMismatch(f"旁檔 {sidecar.name} 缺少 `targets` 段或為空。")
+        target_ids: list[str] = []
+        targets = []
+        for t in raw_targets:
+            tid = t["id"]
+            if tid in target_ids:
+                from matcher.errors import DuplicateIdentity
+                raise DuplicateIdentity(f"旁檔中對象 id `{tid}` 出現多次")
+            target_ids.append(tid)
+            cap = int(t.get("capacity", 1))
+            if cap < 1:
+                raise ValueError(f"對象 `{tid}` 的容量 {cap} 無效；容量必須 ≥ 1")
+            targets.append(Target(id=tid, capacity=cap, attributes=dict(t.get("attributes", {}))))
+        return tuple(targets)
+
+    # Fallback：使用模板的 default_targets
+    if template.default_targets:
+        return template.default_targets
+
+    raise RosterColumnMismatch(
+        f"找不到對象（targets）來源：旁檔 {sidecar.name} 不存在、模板 `{template.id}` 也未宣告 default_targets。\n"
+        f"細節：CSV/Excel 路徑下，targets 須由旁檔提供，或由模板 default_targets 自含。\n"
+        f"建議：建立 {sidecar.name}、或讓模板宣告 default_targets、或改用 --roster <yaml>。"
+    )
 
 
 # ── CSV 匯入 ─────────────────────────────────────────────────────────
@@ -300,7 +303,7 @@ def load_roster_csv(path: str | Path, template: Template) -> tuple[Roster, dict]
 
     rows = list(reader)
     roles = _build_roles(rows, header_resolved, pref_headers, id_header=id_header)
-    targets = _load_targets_sidecar(p)
+    targets = _load_targets(p, template)
 
     metadata = {
         "source_type": "csv",
@@ -374,7 +377,7 @@ def load_roster_xlsx(
     wb.close()
 
     roles = _build_roles(row_dicts, header_resolved, pref_headers, id_header=id_header)
-    targets = _load_targets_sidecar(p)
+    targets = _load_targets(p, template)
 
     metadata = {
         "source_type": "xlsx",

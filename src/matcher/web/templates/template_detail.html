@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ tpl.name }}{% endblock %}
+{% block content %}
+<h2>{{ tpl.name }}</h2>
+<p><code>{{ tpl.id }}</code> · 版本 {{ tpl.schema_version }}</p>
+<p>{{ tpl.description }}</p>
+
+<h3>屬性 schema</h3>
+<h4>角色屬性</h4>
+<table>
+  <thead><tr><th>欄位</th><th>型別</th><th>說明</th><th>別名</th></tr></thead>
+  <tbody>
+    {% for a in tpl.attributes.roles %}
+    <tr><td><code>{{ a.key }}</code></td><td>{{ a.type }}</td><td>{{ a.description }}</td>
+        <td>{% for al in a.aliases %}{{ al }}{% if not loop.last %}、{% endif %}{% endfor %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h4>對象屬性</h4>
+<table>
+  <thead><tr><th>欄位</th><th>型別</th><th>說明</th><th>別名</th></tr></thead>
+  <tbody>
+    {% for a in tpl.attributes.targets %}
+    <tr><td><code>{{ a.key }}</code></td><td>{{ a.type }}</td><td>{{ a.description }}</td>
+        <td>{% for al in a.aliases %}{{ al }}{% if not loop.last %}、{% endif %}{% endfor %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3>規則</h3>
+<table>
+  <thead><tr><th>ID</th><th>說明（繁中）</th></tr></thead>
+  <tbody>
+    {% for r in tpl.ruleset.rules %}
+    <tr><td><code>{{ r.id }}</code></td><td>{{ r.description }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if tpl.default_targets %}
+<h3>預設對象（default_targets）</h3>
+<table>
+  <thead><tr><th>ID</th><th>名稱</th><th>容量</th></tr></thead>
+  <tbody>
+    {% for t in tpl.default_targets %}
+    <tr><td><code>{{ t.id }}</code></td><td>{{ t.attributes.get('name', '') }}</td><td>{{ t.capacity }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if tpl.preferences_schema %}
+<h3>preferences schema（志願表）</h3>
+<p>最多可填：{{ tpl.preferences_schema.max_choices }} 個志願</p>
+<p>{{ tpl.preferences_schema.description }}</p>
+<p><em>本階段（M0 純抽籤）不啟用；將於階段 4 的志願序機制啟用。</em></p>
+{% endif %}
+
+<p style="margin-top:2rem">
+  <a class="btn btn-success" href="/match/new?template_id={{ tpl.id }}">立即使用此模板</a>
+  <a class="btn btn-secondary" href="/templates">回模板列表</a>
+</p>
+{% endblock %}

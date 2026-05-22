@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}matcher{% endblock %} — matcher</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+  <header>
+    <h1><a href="/">matcher</a></h1>
+    <nav>
+      <a href="/templates">模板</a>
+      <a href="/match/new">新建媒合</a>
+      <a href="/matches">過去媒合</a>
+    </nav>
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+  <footer><small>matcher — 依規則過濾、公平程序分配</small></footer>
+</body>
+</html>

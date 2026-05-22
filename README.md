@@ -64,6 +64,25 @@ uv run matcher run --template-file tc.yaml \
 
 「研習分組」模板含 `preferences_schema`，但本階段 M0 機制下，若名單帶有非空 preferences → 拒絕並提示等待階段 4。
 
+### Web UI
+
+啟動本地 server：
+
+```bash
+uv run matcher serve
+# 預設綁定 127.0.0.1:8000（不對外）
+# 開發模式：uv run matcher serve --reload
+# 對外（LAN）：uv run matcher serve --host 0.0.0.0
+```
+
+開啟瀏覽器訪問 <http://127.0.0.1:8000/>，可：
+
+- **新建媒合**：4 步驟向導（選模板 → 上傳 CSV/Excel → 設定種子 → 執行）
+- **模板瀏覽**：查看內建模板的完整規則與屬性 schema
+- **過去媒合**：查看歷次媒合紀錄、重新下載 audit
+
+媒合紀錄持久化於 `data/matches/<id>.json`（已加入 `.gitignore`）。
+
 ### 從 CSV / Excel 匯入名單
 
 支援 CSV（UTF-8 / UTF-8-BOM / CP950 三種編碼自動偵測）與 Excel（.xlsx）：

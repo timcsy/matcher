@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}模板列表{% endblock %}
+{% block content %}
+<h2>內建模板</h2>
+<div class="card-grid">
+  {% for tpl in templates %}
+  <div class="card">
+    <h3>{{ tpl.name }}</h3>
+    <p><code>{{ tpl.id }}</code></p>
+    <p>{{ tpl.description }}</p>
+    <p>
+      <a class="btn btn-secondary" href="/templates/{{ tpl.id }}">瀏覽</a>
+      <a class="btn btn-success" href="/match/new?template_id={{ tpl.id }}">立即使用</a>
+    </p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

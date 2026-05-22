@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}過去媒合{% endblock %}
+{% block content %}
+<h2>過去媒合</h2>
+
+{% if records %}
+<table>
+  <thead>
+    <tr><th>時間</th><th>模板</th><th>種子</th><th>狀態</th><th>操作</th></tr>
+  </thead>
+  <tbody>
+    {% for r in records %}
+    <tr>
+      <td>{{ r.created_at }}</td>
+      <td>{{ template_names.get(r.template_id, r.template_id) }}</td>
+      <td><code>{{ r.seed }}</code></td>
+      <td>
+        {% if r.status == "success" %}
+          <span class="status-success">✅ 成功</span>
+        {% else %}
+          <span class="status-failed">❌ {{ r.error.type }}</span>
+        {% endif %}
+      </td>
+      <td>
+        <a href="/match/{{ r.id }}">查看</a>
+        {% if r.status == "success" %}
+          · <a href="/match/{{ r.id }}/audit">下載 audit</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>尚未執行任何媒合。<a class="btn btn-success" href="/match/new">新建第一次媒合</a></p>
+{% endif %}
+
+{% endblock %}

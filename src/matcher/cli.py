@@ -322,5 +322,16 @@ def template_export_cmd(
     typer.echo(f"已匯出 `{template_id}` 至：{output}")
 
 
+@app.command("serve")
+def serve_cmd(
+    host: str = typer.Option("127.0.0.1", "--host", help="綁定主機，預設 127.0.0.1（不對外）"),
+    port: int = typer.Option(8000, "--port", help="綁定埠號"),
+    reload: bool = typer.Option(False, "--reload", help="開發模式：檔案變動時自動重載"),
+) -> None:
+    """啟動 Web UI 本地 server（FastAPI + uvicorn）。"""
+    import uvicorn
+    uvicorn.run("matcher.web.app:app", host=host, port=port, reload=reload)
+
+
 if __name__ == "__main__":
     app()

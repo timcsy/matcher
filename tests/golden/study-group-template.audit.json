@@ -618,6 +618,35 @@
         }
       ]
     },
+    "default_targets": [
+      {
+        "attributes": {
+          "min_grade": 4,
+          "name": "程式組",
+          "topic": "program"
+        },
+        "capacity": 3,
+        "id": "G1"
+      },
+      {
+        "attributes": {
+          "min_grade": 4,
+          "name": "自然組",
+          "topic": "science"
+        },
+        "capacity": 3,
+        "id": "G2"
+      },
+      {
+        "attributes": {
+          "min_grade": 4,
+          "name": "人文組",
+          "topic": "humanities"
+        },
+        "capacity": 3,
+        "id": "G3"
+      }
+    ],
     "description": "依年級與容量限制分配學生到研習組別",
     "id": "study-group",
     "name": "研習分組",

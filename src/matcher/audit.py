@@ -108,6 +108,10 @@ def _template_to_dict(tpl) -> dict:
             "required": tpl.preferences_schema.required,
             "description": tpl.preferences_schema.description,
         },
+        "default_targets": [
+            {"id": t.id, "capacity": t.capacity, "attributes": t.attributes}
+            for t in tpl.default_targets
+        ],
     }
     return out
 

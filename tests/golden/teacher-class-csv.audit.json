@@ -985,6 +985,70 @@
         }
       ]
     },
+    "default_targets": [
+      {
+        "attributes": {
+          "feature": "bilingual",
+          "name": "三年甲班",
+          "required_subjects": [
+            "國文",
+            "數學"
+          ]
+        },
+        "capacity": 2,
+        "id": "C01"
+      },
+      {
+        "attributes": {
+          "feature": "stem",
+          "name": "三年乙班",
+          "required_subjects": [
+            "國文",
+            "英文",
+            "自然"
+          ]
+        },
+        "capacity": 2,
+        "id": "C02"
+      },
+      {
+        "attributes": {
+          "feature": "stem",
+          "name": "三年丙班",
+          "required_subjects": [
+            "數學",
+            "自然"
+          ]
+        },
+        "capacity": 2,
+        "id": "C03"
+      },
+      {
+        "attributes": {
+          "feature": "arts",
+          "name": "三年丁班",
+          "required_subjects": [
+            "國文",
+            "英文"
+          ]
+        },
+        "capacity": 2,
+        "id": "C04"
+      },
+      {
+        "attributes": {
+          "feature": "arts",
+          "name": "三年戊班",
+          "required_subjects": [
+            "國文",
+            "社會",
+            "自然"
+          ]
+        },
+        "capacity": 2,
+        "id": "C05"
+      }
+    ],
     "description": "依專業與班級需要科目配對任課教師",
     "id": "teacher-class",
     "name": "教師-班級配對",

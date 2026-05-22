@@ -1,0 +1,153 @@
+/* matcher Web UI — 極簡樣式 */
+
+:root {
+  --color-primary: #2c5282;
+  --color-accent: #38a169;
+  --color-error: #c53030;
+  --color-text: #1a202c;
+  --color-muted: #718096;
+  --color-bg: #f7fafc;
+  --color-card: #ffffff;
+  --color-border: #e2e8f0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", system-ui, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+  margin: 0;
+  line-height: 1.6;
+}
+
+header {
+  background: var(--color-primary);
+  color: white;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+header h1 { margin: 0; font-size: 1.5rem; }
+header h1 a { color: white; text-decoration: none; }
+
+nav { display: flex; gap: 1.5rem; }
+nav a { color: white; text-decoration: none; opacity: 0.85; }
+nav a:hover { opacity: 1; text-decoration: underline; }
+
+main {
+  max-width: 1024px;
+  margin: 2rem auto;
+  padding: 0 2rem;
+}
+
+footer {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 2rem;
+}
+
+h2 { color: var(--color-primary); border-bottom: 2px solid var(--color-border); padding-bottom: 0.5rem; }
+
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.btn {
+  display: inline-block;
+  background: var(--color-primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn:hover { opacity: 0.9; }
+
+.btn-success { background: var(--color-accent); }
+
+.btn-secondary {
+  background: white;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+label { display: block; margin: 1rem 0; }
+label small { display: block; color: var(--color-muted); margin-top: 0.25rem; }
+
+input[type="text"], input[type="number"], select {
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 1rem;
+  min-width: 240px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+th, td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+th { background: var(--color-bg); }
+
+.error-box {
+  background: #fed7d7;
+  border: 1px solid var(--color-error);
+  border-radius: 4px;
+  padding: 1rem;
+  color: var(--color-error);
+}
+
+.error-box pre {
+  background: transparent;
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0.5rem 0;
+}
+
+.wizard-progress {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.wizard-progress .step {
+  flex: 1;
+  padding: 0.5rem;
+  text-align: center;
+  border-radius: 4px;
+  background: var(--color-border);
+  color: var(--color-muted);
+}
+
+.wizard-progress .step.active {
+  background: var(--color-primary);
+  color: white;
+}
+
+.wizard-progress .step.done { background: var(--color-accent); color: white; }
+
+.status-success { color: var(--color-accent); font-weight: bold; }
+.status-failed { color: var(--color-error); font-weight: bold; }

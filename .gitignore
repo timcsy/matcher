@@ -25,3 +25,6 @@ build/
 
 # 工作產出
 /tmp_audit.json
+
+# Web 媒合紀錄（persistent runtime data）
+/data/

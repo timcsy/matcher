@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}新建媒合{% endblock %}
+{% block content %}
+<h2>新建媒合</h2>
+
+<form method="post" action="/match/run" enctype="multipart/form-data">
+  <div class="card">
+    <h3>1. 選擇模板</h3>
+    <select name="template_id" required>
+      {% for tpl in templates %}
+      <option value="{{ tpl.id }}" {% if tpl.id == selected_id %}selected{% endif %}>
+        {{ tpl.name }}（{{ tpl.id }}）
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="card">
+    <h3>2. 上傳名單檔</h3>
+    <label>
+      名單檔（CSV 或 .xlsx，≤ 5 MB）：
+      <input type="file" name="roster" accept=".csv,.xlsx" required>
+    </label>
+    <small>檔案需含模板宣告的屬性欄位；表頭可用中文或英文（依模板宣告的別名）。</small>
+    <p><small>範例檔：
+      <a href="https://github.com/timcsy/matcher/raw/main/examples/teacher-class/roster.csv">teacher-class CSV</a> ·
+      <a href="https://github.com/timcsy/matcher/raw/main/examples/study-group/roster.xlsx">study-group Excel</a>
+    </small></p>
+  </div>
+
+  <div class="card">
+    <h3>3. 設定隨機種子</h3>
+    <label>
+      隨機種子（整數）：
+      <input type="number" name="seed" required value="123456" step="1">
+    </label>
+    <small>相同種子配同樣輸入會產出完全相同的結果；可用於重現與稽核。</small>
+  </div>
+
+  <div class="card">
+    <h3>4. 機制</h3>
+    <p><strong>M0 純抽籤</strong>（無偏好、從資格集合隨機分配）</p>
+    <p><small>志願序機制（M1 隨機輪流挑、M2 層級填滿）將於階段 4 啟用。</small></p>
+    <button class="btn btn-success" type="submit">執行媒合</button>
+  </div>
+</form>
+{% endblock %}
