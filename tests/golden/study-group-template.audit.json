@@ -1,0 +1,701 @@
+{
+  "allocation_trace": [
+    {
+      "candidates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "chosen": "G1",
+      "random_index": 0,
+      "remaining_capacity_after": {
+        "G1": 2,
+        "G2": 3,
+        "G3": 3
+      },
+      "role_id": "S01",
+      "step": 1
+    },
+    {
+      "candidates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "chosen": "G2",
+      "random_index": 1,
+      "remaining_capacity_after": {
+        "G1": 2,
+        "G2": 2,
+        "G3": 3
+      },
+      "role_id": "S02",
+      "step": 2
+    },
+    {
+      "candidates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "chosen": "G3",
+      "random_index": 2,
+      "remaining_capacity_after": {
+        "G1": 2,
+        "G2": 2,
+        "G3": 2
+      },
+      "role_id": "S03",
+      "step": 3
+    },
+    {
+      "candidates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "chosen": "G3",
+      "random_index": 2,
+      "remaining_capacity_after": {
+        "G1": 2,
+        "G2": 2,
+        "G3": 1
+      },
+      "role_id": "S04",
+      "step": 4
+    },
+    {
+      "candidates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "chosen": "G3",
+      "random_index": 2,
+      "remaining_capacity_after": {
+        "G1": 2,
+        "G2": 2,
+        "G3": 0
+      },
+      "role_id": "S05",
+      "step": 5
+    },
+    {
+      "candidates": [
+        "G1",
+        "G2"
+      ],
+      "chosen": "G1",
+      "random_index": 0,
+      "remaining_capacity_after": {
+        "G1": 1,
+        "G2": 2,
+        "G3": 0
+      },
+      "role_id": "S06",
+      "step": 6
+    },
+    {
+      "candidates": [
+        "G1",
+        "G2"
+      ],
+      "chosen": "G1",
+      "random_index": 0,
+      "remaining_capacity_after": {
+        "G1": 0,
+        "G2": 2,
+        "G3": 0
+      },
+      "role_id": "S07",
+      "step": 7
+    },
+    {
+      "candidates": [
+        "G2"
+      ],
+      "chosen": "G2",
+      "random_index": 0,
+      "remaining_capacity_after": {
+        "G1": 0,
+        "G2": 1,
+        "G3": 0
+      },
+      "role_id": "S08",
+      "step": 8
+    },
+    {
+      "candidates": [
+        "G2"
+      ],
+      "chosen": "G2",
+      "random_index": 0,
+      "remaining_capacity_after": {
+        "G1": 0,
+        "G2": 0,
+        "G3": 0
+      },
+      "role_id": "S09",
+      "step": 9
+    }
+  ],
+  "assignment": {
+    "S01": "G1",
+    "S02": "G2",
+    "S03": "G3",
+    "S04": "G3",
+    "S05": "G3",
+    "S06": "G1",
+    "S07": "G1",
+    "S08": "G2",
+    "S09": "G2"
+  },
+  "filter_trace": [
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S01",
+      "target_id": "G1"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S01",
+      "target_id": "G2"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S01",
+      "target_id": "G3"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S02",
+      "target_id": "G1"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S02",
+      "target_id": "G2"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S02",
+      "target_id": "G3"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S03",
+      "target_id": "G1"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S03",
+      "target_id": "G2"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S03",
+      "target_id": "G3"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S04",
+      "target_id": "G1"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S04",
+      "target_id": "G2"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S04",
+      "target_id": "G3"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S05",
+      "target_id": "G1"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S05",
+      "target_id": "G2"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S05",
+      "target_id": "G3"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S06",
+      "target_id": "G1"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S06",
+      "target_id": "G2"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S06",
+      "target_id": "G3"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S07",
+      "target_id": "G1"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S07",
+      "target_id": "G2"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S07",
+      "target_id": "G3"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S08",
+      "target_id": "G1"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S08",
+      "target_id": "G2"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S08",
+      "target_id": "G3"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S09",
+      "target_id": "G1"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S09",
+      "target_id": "G2"
+    },
+    {
+      "matched_rules": [
+        "R001",
+        "R002"
+      ],
+      "qualified": true,
+      "role_id": "S09",
+      "target_id": "G3"
+    }
+  ],
+  "generated_at": null,
+  "mechanism": "M0",
+  "qualified_set": {
+    "S01": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "S02": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "S03": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "S04": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "S05": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "S06": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "S07": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "S08": [
+      "G1",
+      "G2",
+      "G3"
+    ],
+    "S09": [
+      "G1",
+      "G2",
+      "G3"
+    ]
+  },
+  "roster_snapshot": {
+    "roles": [
+      {
+        "attributes": {
+          "grade": 5,
+          "name": "小明"
+        },
+        "id": "S01",
+        "preferences": []
+      },
+      {
+        "attributes": {
+          "grade": 4,
+          "name": "小華"
+        },
+        "id": "S02",
+        "preferences": []
+      },
+      {
+        "attributes": {
+          "grade": 6,
+          "name": "小美"
+        },
+        "id": "S03",
+        "preferences": []
+      },
+      {
+        "attributes": {
+          "grade": 5,
+          "name": "小強"
+        },
+        "id": "S04",
+        "preferences": []
+      },
+      {
+        "attributes": {
+          "grade": 4,
+          "name": "小芳"
+        },
+        "id": "S05",
+        "preferences": []
+      },
+      {
+        "attributes": {
+          "grade": 6,
+          "name": "小傑"
+        },
+        "id": "S06",
+        "preferences": []
+      },
+      {
+        "attributes": {
+          "grade": 5,
+          "name": "小婷"
+        },
+        "id": "S07",
+        "preferences": []
+      },
+      {
+        "attributes": {
+          "grade": 4,
+          "name": "小宇"
+        },
+        "id": "S08",
+        "preferences": []
+      },
+      {
+        "attributes": {
+          "grade": 6,
+          "name": "小薇"
+        },
+        "id": "S09",
+        "preferences": []
+      }
+    ],
+    "targets": [
+      {
+        "attributes": {
+          "min_grade": 4,
+          "name": "程式組",
+          "topic": "program"
+        },
+        "capacity": 3,
+        "id": "G1"
+      },
+      {
+        "attributes": {
+          "min_grade": 4,
+          "name": "自然組",
+          "topic": "science"
+        },
+        "capacity": 3,
+        "id": "G2"
+      },
+      {
+        "attributes": {
+          "min_grade": 4,
+          "name": "人文組",
+          "topic": "humanities"
+        },
+        "capacity": 3,
+        "id": "G3"
+      }
+    ]
+  },
+  "rules_snapshot": {
+    "rules": [
+      {
+        "description": "學生年級必須 ≥ 分組的最低年級限制",
+        "expr": {
+          "ge": {
+            "field": "role.grade",
+            "value": 1
+          }
+        },
+        "id": "R001"
+      },
+      {
+        "description": "分組主題屬於三類之一（程式、自然、人文）",
+        "expr": {
+          "in": {
+            "field": "target.topic",
+            "set": [
+              "program",
+              "science",
+              "humanities"
+            ]
+          }
+        },
+        "id": "R002"
+      }
+    ],
+    "version": "1.0"
+  },
+  "schema_version": "1.1",
+  "seed": 2026,
+  "template_snapshot": {
+    "attributes": {
+      "roles": [
+        {
+          "description": "學生姓名",
+          "key": "name",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "description": "年級",
+          "key": "grade",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "targets": [
+        {
+          "description": "分組名稱",
+          "key": "name",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "description": "研習主題",
+          "key": "topic",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "description": "可參加的最低年級",
+          "key": "min_grade",
+          "required": true,
+          "type": "int"
+        }
+      ]
+    },
+    "description": "依年級與容量限制分配學生到研習組別",
+    "id": "study-group",
+    "name": "研習分組",
+    "preferences_schema": {
+      "description": "每位學生可填 1~3 個志願組別；未來機制（M1/M2）使用，本階段不啟用",
+      "max_choices": 3,
+      "required": false
+    },
+    "report_fields": [
+      {
+        "key": "student_name",
+        "label": "學生姓名",
+        "source": "roster_snapshot.roles[].attributes.name"
+      },
+      {
+        "key": "assigned_group",
+        "label": "分配到的組別",
+        "source": "assignment.{role_id}"
+      }
+    ],
+    "rules": [
+      {
+        "description": "學生年級必須 ≥ 分組的最低年級限制",
+        "expr": {
+          "ge": {
+            "field": "role.grade",
+            "value": 1
+          }
+        },
+        "id": "R001"
+      },
+      {
+        "description": "分組主題屬於三類之一（程式、自然、人文）",
+        "expr": {
+          "in": {
+            "field": "target.topic",
+            "set": [
+              "program",
+              "science",
+              "humanities"
+            ]
+          }
+        },
+        "id": "R002"
+      }
+    ],
+    "schema_version": "1.0",
+    "ui_fields": [
+      {
+        "help": null,
+        "key": "name",
+        "label": "姓名",
+        "options": null,
+        "placeholder": null,
+        "required": true,
+        "type": "text"
+      },
+      {
+        "help": "以阿拉伯數字填寫",
+        "key": "grade",
+        "label": "年級",
+        "options": null,
+        "placeholder": null,
+        "required": true,
+        "type": "number"
+      },
+      {
+        "help": "未來機制（M1/M2）使用，本階段不啟用",
+        "key": "preferences",
+        "label": "志願組別（可填 1~3 個）",
+        "options": [
+          "G1",
+          "G2",
+          "G3"
+        ],
+        "placeholder": null,
+        "required": false,
+        "type": "multiselect"
+      }
+    ]
+  }
+}

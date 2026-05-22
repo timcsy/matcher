@@ -40,9 +40,10 @@ def test_audit_record_required_fields():
     for f in [
         "schema_version", "mechanism", "seed", "rules_snapshot", "roster_snapshot",
         "qualified_set", "filter_trace", "allocation_trace", "assignment", "generated_at",
+        "template_snapshot",
     ]:
         assert f in record, f"稽核紀錄缺欄位 {f}"
-    assert record["schema_version"] == "1.0"
+    assert record["schema_version"] == "1.1"
     assert record["mechanism"] == "M0"
     assert record["generated_at"] is None
 

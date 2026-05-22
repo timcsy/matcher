@@ -1,0 +1,72 @@
+schema_version: "1.0"
+id: study-group
+name: "研習分組"
+description: "依年級與容量限制分配學生到研習組別"
+
+attributes:
+  roles:
+    - key: name
+      type: str
+      required: true
+      description: "學生姓名"
+    - key: grade
+      type: int
+      required: true
+      description: "年級"
+  targets:
+    - key: name
+      type: str
+      required: true
+      description: "分組名稱"
+    - key: topic
+      type: str
+      required: true
+      description: "研習主題"
+    - key: min_grade
+      type: int
+      required: true
+      description: "可參加的最低年級"
+
+rules:
+  - id: R001
+    description: "學生年級必須 ≥ 分組的最低年級限制"
+    expr:
+      ge:
+        field: role.grade
+        value: 1
+  - id: R002
+    description: "分組主題屬於三類之一（程式、自然、人文）"
+    expr:
+      in:
+        field: target.topic
+        set: ["program", "science", "humanities"]
+
+ui_fields:
+  - key: name
+    label: "姓名"
+    type: text
+    required: true
+  - key: grade
+    label: "年級"
+    type: number
+    required: true
+    help: "以阿拉伯數字填寫"
+  - key: preferences
+    label: "志願組別（可填 1~3 個）"
+    type: multiselect
+    required: false
+    options: ["G1", "G2", "G3"]
+    help: "未來機制（M1/M2）使用，本階段不啟用"
+
+report_fields:
+  - key: student_name
+    label: "學生姓名"
+    source: roster_snapshot.roles[].attributes.name
+  - key: assigned_group
+    label: "分配到的組別"
+    source: assignment.{role_id}
+
+preferences_schema:
+  max_choices: 3
+  required: false
+  description: "每位學生可填 1~3 個志願組別；未來機制（M1/M2）使用，本階段不啟用"

@@ -27,12 +27,13 @@ def test_baseline_runs_successfully(tmp_path: Path):
     assert "稽核紀錄已寫入" in result.output
     assert audit.exists()
     data = json.loads(audit.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.0"
+    assert data["schema_version"] == "1.1"
     assert data["mechanism"] == "M0"
     assert data["seed"] == 123456
     assert "assignment" in data
     assert "filter_trace" in data
     assert "allocation_trace" in data
+    assert data["template_snapshot"] is None  # --rules 路徑不應有 template snapshot
 
 
 def test_assignment_within_qualified_set(tmp_path: Path):

@@ -39,3 +39,19 @@ class UnknownAttribute(MatcherError):
 
 class PreferencesNotSupported(MatcherError):
     exit_code = 17
+
+
+class TemplateNotFound(MatcherError):
+    exit_code = 20
+
+
+class UnknownSchemaVersion(MatcherError):
+    exit_code = 21
+
+
+class TemplateMissingField(MatcherError):
+    exit_code = 22
+
+
+class TemplateConflict(MatcherError):
+    exit_code = 23

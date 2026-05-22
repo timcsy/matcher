@@ -1,0 +1,39 @@
+roles:
+  - id: S01
+    attributes: {name: "小明", grade: 5}
+    preferences: []
+  - id: S02
+    attributes: {name: "小華", grade: 4}
+    preferences: []
+  - id: S03
+    attributes: {name: "小美", grade: 6}
+    preferences: []
+  - id: S04
+    attributes: {name: "小強", grade: 5}
+    preferences: []
+  - id: S05
+    attributes: {name: "小芳", grade: 4}
+    preferences: []
+  - id: S06
+    attributes: {name: "小傑", grade: 6}
+    preferences: []
+  - id: S07
+    attributes: {name: "小婷", grade: 5}
+    preferences: []
+  - id: S08
+    attributes: {name: "小宇", grade: 4}
+    preferences: []
+  - id: S09
+    attributes: {name: "小薇", grade: 6}
+    preferences: []
+
+targets:
+  - id: G1
+    capacity: 3
+    attributes: {name: "程式組", topic: "program", min_grade: 4}
+  - id: G2
+    capacity: 3
+    attributes: {name: "自然組", topic: "science", min_grade: 4}
+  - id: G3
+    capacity: 3
+    attributes: {name: "人文組", topic: "humanities", min_grade: 4}

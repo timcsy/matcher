@@ -1,4 +1,4 @@
-"""CLI（Typer）：matcher run / matcher filter。"""
+"""CLI（Typer）：matcher run / filter / template list|show|export。"""
 
 from __future__ import annotations
 
@@ -10,17 +10,32 @@ from typing import Optional
 import typer
 
 from matcher.audit import dump_audit_json
-from matcher.errors import MatcherError, SeedMissing
-from matcher.io_yaml import load_preferences, load_roster, load_ruleset
+from matcher.errors import MatcherError, SeedMissing, TemplateNotFound
+from matcher.io_yaml import load_preferences, load_roster, load_ruleset, load_template
 from matcher.pipeline import MatcherInput, run_filter_only, run_match
+from matcher.template_loader import TemplateRegistry, dump_template_yaml
 
 app = typer.Typer(
     add_completion=False,
     help="matcher：核心媒合引擎。依規則過濾出資格集合，於 M0 純抽籤分支下完成分配。",
 )
 
+template_app = typer.Typer(
+    add_completion=False,
+    help="模板系統：list / show / export。",
+)
+app.add_typer(template_app, name="template")
+
 
 def _print_summary(audit: dict) -> None:
+    if audit.get("template_snapshot"):
+        tpl = audit["template_snapshot"]
+        typer.echo("=== 模板 ===")
+        typer.echo(f"ID：{tpl['id']}")
+        typer.echo(f"名稱：{tpl['name']}")
+        typer.echo(f"版本：{tpl['schema_version']}")
+        typer.echo("")
+
     rules = audit["rules_snapshot"]["rules"]
     typer.echo("=== 規則檔 ===")
     for r in rules:
@@ -59,7 +74,7 @@ def _die(err: MatcherError) -> None:
 
 @app.command("run")
 def run_cmd(
-    rules: Path = typer.Option(..., "--rules", exists=True, dir_okay=False, readable=True),
+    rules: Optional[Path] = typer.Option(None, "--rules", exists=True, dir_okay=False, readable=True),
     roster: Path = typer.Option(..., "--roster", exists=True, dir_okay=False, readable=True),
     seed: Optional[int] = typer.Option(None, "--seed", help="整數隨機種子（必填）"),
     preferences: Optional[Path] = typer.Option(
@@ -67,13 +82,46 @@ def run_cmd(
     ),
     mechanism: str = typer.Option("M0", "--mechanism"),
     output: Path = typer.Option(Path("audit.json"), "--output"),
+    template: Optional[str] = typer.Option(None, "--template", help="使用內建模板的 id"),
+    template_file: Optional[Path] = typer.Option(
+        None, "--template-file", exists=True, dir_okay=False, readable=True,
+        help="使用外部模板檔",
+    ),
 ) -> None:
     """執行一次完整媒合（過濾 → 分配 → 寫稽核）。"""
+    # 三組參數互斥檢查
+    n_source = sum([template is not None, template_file is not None, rules is not None])
+    if n_source == 0:
+        typer.echo(
+            "錯誤：請提供下列三組之一的規則來源——\n"
+            "  (A) --template <id>\n"
+            "  (B) --template-file <path>\n"
+            "  (C) --rules <path>",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+    if n_source > 1:
+        typer.echo(
+            "錯誤：--template / --template-file / --rules 三組參數互斥，請擇一。",
+            err=True,
+        )
+        raise typer.Exit(code=2)
+
     if seed is None:
         _die(SeedMissing("seed 未提供。\n建議：以 --seed <整數> 提供隨機種子。"))
 
     try:
-        rs = load_ruleset(rules)
+        tpl_obj = None
+        if template is not None:
+            reg = TemplateRegistry()
+            tpl_obj = reg.get(template)
+            rs = tpl_obj.ruleset
+        elif template_file is not None:
+            tpl_obj = load_template(template_file)
+            rs = tpl_obj.ruleset
+        else:
+            rs = load_ruleset(rules)
+
         ro = load_roster(roster)
         prefs = load_preferences(preferences)
 
@@ -83,6 +131,7 @@ def run_cmd(
             seed=seed,
             preferences=prefs if prefs else None,
             mechanism=mechanism,
+            template=tpl_obj,
         ))
     except MatcherError as e:
         _die(e)
@@ -118,6 +167,95 @@ def filter_cmd(
     n_pairs = sum(len(v) for v in qs.values())
     typer.echo(f"資格集合大小：{n_pairs} 個合法配對。")
     typer.echo(f"已寫入：{output}")
+
+
+# ── matcher template ────────────────────────────────────────────────
+
+
+@template_app.command("list")
+def template_list_cmd() -> None:
+    """列出所有內建模板。"""
+    reg = TemplateRegistry()
+    typer.echo(f"{'ID':<16}{'名稱':<20}{'一句話描述'}")
+    typer.echo(f"{'-' * 14:<16}{'-' * 18:<20}{'-' * 40}")
+    for tid in reg.list_ids():
+        tpl = reg.get(tid)
+        typer.echo(f"{tpl.id:<16}{tpl.name:<20}{tpl.description}")
+
+
+@template_app.command("show")
+def template_show_cmd(
+    template_id: str = typer.Argument(..., help="模板 id"),
+    format: str = typer.Option("text", "--format", help="text | yaml | json"),
+) -> None:
+    """顯示指定模板的完整內容。"""
+    reg = TemplateRegistry()
+    try:
+        tpl = reg.get(template_id)
+    except MatcherError as e:
+        _die(e)
+
+    if format == "yaml":
+        import tempfile
+        tmp = Path(tempfile.mkstemp(suffix=".yaml")[1])
+        dump_template_yaml(tpl, tmp)
+        typer.echo(tmp.read_text(encoding="utf-8"))
+        tmp.unlink(missing_ok=True)
+        return
+    if format == "json":
+        from matcher.audit import _template_to_dict
+        s = json.dumps(_template_to_dict(tpl), ensure_ascii=False, sort_keys=True, indent=2)
+        typer.echo(s)
+        return
+
+    # text（預設）
+    typer.echo(f"ID：{tpl.id}")
+    typer.echo(f"名稱：{tpl.name}")
+    typer.echo(f"描述：{tpl.description}")
+    typer.echo(f"版本：{tpl.schema_version}")
+    typer.echo("")
+    typer.echo("=== 屬性 schema ===")
+    typer.echo("角色：")
+    for a in tpl.attributes.roles:
+        typer.echo(f"  - {a.key}（{a.type}）：{a.description}")
+    typer.echo("對象：")
+    for a in tpl.attributes.targets:
+        typer.echo(f"  - {a.key}（{a.type}）：{a.description}")
+    typer.echo("")
+    typer.echo("=== 規則 ===")
+    for r in tpl.ruleset.rules:
+        typer.echo(f"  {r.id}：{r.description}")
+    if tpl.ui_fields:
+        typer.echo("")
+        typer.echo("=== UI 欄位宣告 ===")
+        for u in tpl.ui_fields:
+            typer.echo(f"  {u.key}（{u.type}）：{u.label}")
+    if tpl.report_fields:
+        typer.echo("")
+        typer.echo("=== 稽核報告欄位宣告 ===")
+        for rf in tpl.report_fields:
+            typer.echo(f"  {rf.key}：{rf.label} ← {rf.source}")
+    if tpl.preferences_schema is not None:
+        ps = tpl.preferences_schema
+        typer.echo("")
+        typer.echo("=== preferences schema ===")
+        typer.echo(f"  最多可填 {ps.max_choices} 個志願；強制：{ps.required}")
+        typer.echo(f"  說明：{ps.description}")
+
+
+@template_app.command("export")
+def template_export_cmd(
+    template_id: str = typer.Argument(..., help="模板 id"),
+    output: Path = typer.Option(..., "--output", help="匯出檔路徑"),
+) -> None:
+    """匯出指定模板為單一 YAML 檔。"""
+    reg = TemplateRegistry()
+    try:
+        tpl = reg.get(template_id)
+    except MatcherError as e:
+        _die(e)
+    dump_template_yaml(tpl, output)
+    typer.echo(f"已匯出 `{template_id}` 至：{output}")
 
 
 if __name__ == "__main__":

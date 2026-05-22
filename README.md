@@ -39,6 +39,31 @@ uv run matcher run --rules examples/teacher-class/rules.yaml \
 diff /tmp/a.json /tmp/b.json && echo "✅ 完全相同"
 ```
 
+### 使用內建模板
+
+```bash
+# 列出所有內建模板
+uv run matcher template list
+
+# 檢視單一模板
+uv run matcher template show teacher-class
+
+# 用內建模板執行媒合
+uv run matcher run --template teacher-class \
+                   --roster examples/teacher-class/roster.yaml \
+                   --seed 123456 --output audit.json
+
+# 匯出模板為檔案以分享
+uv run matcher template export teacher-class --output tc.yaml
+
+# 用匯出的檔案執行（取代內建 id）
+uv run matcher run --template-file tc.yaml \
+                   --roster examples/teacher-class/roster.yaml \
+                   --seed 123456 --output audit.json
+```
+
+「研習分組」模板含 `preferences_schema`，但本階段 M0 機制下，若名單帶有非空 preferences → 拒絕並提示等待階段 4。
+
 ### 只跑過濾階段
 
 ```bash

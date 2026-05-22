@@ -1,0 +1,76 @@
+schema_version: "1.0"
+id: teacher-class
+name: "教師-班級配對"
+description: "依專業與班級需要科目配對任課教師"
+
+attributes:
+  roles:
+    - key: name
+      type: str
+      required: true
+      description: "老師姓名"
+    - key: speciality
+      type: str
+      required: true
+      description: "老師專業科目"
+    - key: seniority
+      type: int
+      required: true
+      description: "年資（年）"
+  targets:
+    - key: name
+      type: str
+      required: true
+      description: "班級名稱"
+    - key: required_subjects
+      type: list_str
+      required: true
+      description: "班級需要的科目清單"
+    - key: feature
+      type: str
+      required: true
+      description: "班級特色"
+
+rules:
+  - id: R001
+    description: "老師的專業必須出現在班級的需要科目清單中"
+    expr:
+      role_in_target_field:
+        role_field: speciality
+        target_field: required_subjects
+  - id: R002
+    description: "老師年資至少 3 年（含）以上"
+    expr:
+      ge:
+        field: role.seniority
+        value: 3
+  - id: R003
+    description: "班級特色屬於核心三類之一（雙語、stem、藝術）"
+    expr:
+      in:
+        field: target.feature
+        set: ["bilingual", "stem", "arts"]
+
+ui_fields:
+  - key: name
+    label: "姓名"
+    type: text
+    required: true
+    placeholder: "請輸入老師姓名"
+  - key: speciality
+    label: "專業科目"
+    type: select
+    required: true
+    options: ["國文", "英文", "數學", "自然", "社會"]
+  - key: seniority
+    label: "年資（年）"
+    type: number
+    required: true
+
+report_fields:
+  - key: teacher_name
+    label: "教師姓名"
+    source: roster_snapshot.roles[].attributes.name
+  - key: assigned_class
+    label: "分配到的班級"
+    source: assignment.{role_id}

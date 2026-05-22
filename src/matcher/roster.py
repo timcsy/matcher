@@ -12,6 +12,7 @@ from matcher.errors import DuplicateIdentity, EmptyRoster
 class Role:
     id: str
     attributes: dict
+    preferences: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -51,7 +52,17 @@ def parse_roster(data: dict) -> Roster:
             raise DuplicateIdentity(f"名單有重複身分：對象 id `{tid}` 出現多次")
         target_ids.append(tid)
 
-    roles = tuple(Role(id=r["id"], attributes=dict(r.get("attributes", {}))) for r in raw_roles)
+    roles_list = []
+    for r in raw_roles:
+        prefs = r.get("preferences", [])
+        if not isinstance(prefs, list):
+            raise ValueError(f"角色 `{r['id']}` 的 preferences 必須為 list[str]，得到 {type(prefs).__name__}")
+        roles_list.append(Role(
+            id=r["id"],
+            attributes=dict(r.get("attributes", {})),
+            preferences=tuple(str(p) for p in prefs),
+        ))
+    roles = tuple(roles_list)
 
     targets = []
     for t in raw_targets:

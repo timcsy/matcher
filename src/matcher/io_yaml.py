@@ -12,6 +12,8 @@ import yaml
 
 from matcher.roster import Roster, parse_roster
 from matcher.rules import Ruleset, parse_ruleset
+from matcher.template import Template
+from matcher.template_loader import load_template_file as _load_template_file
 
 
 def _load_yaml(path: Path) -> Any:
@@ -31,6 +33,11 @@ def load_roster(path: str | Path) -> Roster:
     if not isinstance(data, dict):
         raise ValueError(f"名單檔 `{path}` 根層級必須為 mapping")
     return parse_roster(data)
+
+
+def load_template(path: str | Path) -> Template:
+    """載入外部模板檔。"""
+    return _load_template_file(path)
 
 
 def load_preferences(path: str | Path | None) -> dict:

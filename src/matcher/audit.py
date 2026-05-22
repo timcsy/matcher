@@ -59,12 +59,57 @@ def _ruleset_to_dict(rs: Ruleset) -> dict:
 
 def _roster_to_dict(roster: Roster) -> dict:
     return {
-        "roles": [{"id": r.id, "attributes": r.attributes} for r in roster.roles],
+        "roles": [
+            {"id": r.id, "attributes": r.attributes, "preferences": list(r.preferences)}
+            for r in roster.roles
+        ],
         "targets": [
             {"id": t.id, "capacity": t.capacity, "attributes": t.attributes}
             for t in roster.targets
         ],
     }
+
+
+def _template_to_dict(tpl) -> dict:
+    """將 Template 序列化為可寫入稽核紀錄的 dict。"""
+    out = {
+        "id": tpl.id,
+        "schema_version": tpl.schema_version,
+        "name": tpl.name,
+        "description": tpl.description,
+        "attributes": {
+            "roles": [
+                {"key": a.key, "type": a.type, "required": a.required, "description": a.description}
+                for a in tpl.attributes.roles
+            ],
+            "targets": [
+                {"key": a.key, "type": a.type, "required": a.required, "description": a.description}
+                for a in tpl.attributes.targets
+            ],
+        },
+        "rules": [
+            {"id": r.id, "description": r.description, "expr": _expr_to_dict(r.expr)}
+            for r in tpl.ruleset.rules
+        ],
+        "ui_fields": [
+            {
+                "key": u.key, "label": u.label, "type": u.type, "required": u.required,
+                "options": list(u.options) if u.options is not None else None,
+                "placeholder": u.placeholder, "help": u.help,
+            }
+            for u in tpl.ui_fields
+        ],
+        "report_fields": [
+            {"key": r.key, "label": r.label, "source": r.source}
+            for r in tpl.report_fields
+        ],
+        "preferences_schema": None if tpl.preferences_schema is None else {
+            "max_choices": tpl.preferences_schema.max_choices,
+            "required": tpl.preferences_schema.required,
+            "description": tpl.preferences_schema.description,
+        },
+    }
+    return out
 
 
 def build_audit_record(
@@ -77,9 +122,10 @@ def build_audit_record(
     allocation_trace: list[dict],
     assignment: dict,
     mechanism: str = "M0",
+    template=None,
 ) -> dict:
     return {
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "mechanism": mechanism,
         "seed": seed,
         "rules_snapshot": _ruleset_to_dict(ruleset),
@@ -88,6 +134,7 @@ def build_audit_record(
         "filter_trace": filter_trace,
         "allocation_trace": allocation_trace,
         "assignment": assignment,
+        "template_snapshot": None if template is None else _template_to_dict(template),
         "generated_at": None,
     }
 

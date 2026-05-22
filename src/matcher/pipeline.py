@@ -37,6 +37,7 @@ class MatcherInput:
     seed: Optional[int]
     preferences: Optional[dict] = None
     mechanism: str = "M0"
+    template: object = None  # Template | None；不引入 import 循環
 
 
 @dataclass
@@ -110,6 +111,14 @@ def run_match(inp: MatcherInput) -> MatcherResult:
             "建議：移除 --preferences 參數，或等待後續版本。"
         )
 
+    # 2b. 名單中內嵌的 preferences（每位角色的志願）在 M0 也不接受
+    if inp.mechanism == "M0" and any(role.preferences for role in inp.roster.roles):
+        raise PreferencesNotSupported(
+            "此機制（M0 純抽籤）不接受志願輸入。\n"
+            "原因：名單中有角色帶有非空 preferences；本階段僅支援 M0。\n"
+            "建議：將名單中所有 preferences 改為空陣列，或等待階段 4 的志願序機制。"
+        )
+
     # 3. 規則層靜態檢查
     detect_contradictions(inp.ruleset)
     _validate_attribute_references(inp.ruleset, inp.roster)
@@ -142,6 +151,7 @@ def run_match(inp: MatcherInput) -> MatcherResult:
         allocation_trace=allocation_trace,
         assignment=assignment,
         mechanism=inp.mechanism,
+        template=inp.template,
     )
 
     return MatcherResult(
