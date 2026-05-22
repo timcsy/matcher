@@ -37,13 +37,12 @@
 
 ## 現狀
 
-**階段 1、階段 2a 已完成**。
+**階段 1、階段 2a、階段 2b 已完成**。
 
 階段 1（commit `d1331dc`）：
 
 - 核心媒合引擎（library + CLI）：`src/matcher/` 10 個模組
 - 技術棧：Python 3.11 + Typer + PyYAML + pytest（uv 管理環境）
-- 基準場景「教師-班級配對」可由 `matcher run` 跑通
 - 過濾／分配兩階段嚴格分離；M0 純抽籤分支實作完成
 - 完整稽核紀錄 + 8 種明確錯誤類別 + preferences 介面預留但於 M0 拒絕
 
@@ -53,10 +52,20 @@
 - 2 個內建模板：`teacher-class`、`study-group`（後者宣告 `preferences_schema`）
 - CLI 子應用：`matcher template list/show/export`
 - `matcher run` 新增 `--template` / `--template-file`，與 `--rules + --roster` 三組互斥
-- audit schema 升級為 v1.1，新增 `template_snapshot` 欄位（可為 null，向後相容）
-- 自動化測試：82 個（階段 1 既有 48 + 階段 2a 新增 34），全綠
+- audit schema 升級為 v1.1，新增 `template_snapshot` 欄位
 
-尚未開始：CSV/Excel 匯入（階段 2b）、Web UI、M1/M2 機制、K8s 部署、實際學校場景試行。
+階段 2b CSV / Excel 資料匯入（commit `586fd93`，新增 openpyxl 依賴）：
+
+- `src/matcher/data_import.py`：CSV / Excel 載入器
+- 編碼啟發式 3 輪偵測（UTF-8 → UTF-8-SIG → CP950）+ BOM 優先檢測
+- 模板 `AttributeDecl` 新增 `aliases`；兩個內建模板補上中文別名
+- CLI 新增 `--roster-csv` / `--roster-xlsx` / `--sheet`，與 `--roster` 三組互斥
+- audit schema 升級為 v1.2，新增 `import_metadata` 欄位
+- 4 個新錯誤類別：RosterDecodeError(30) / ColumnMismatch(31) / TypeError(32) / SheetAmbiguous(33)
+- targets 旁檔模式：`<stem>.targets.yaml`
+- 自動化測試：116 個（階段 1 既有 48 + 階段 2a 既有 34 + 階段 2b 新增 34），全綠
+
+尚未開始：Web UI（階段 3）、M1/M2 機制（階段 4）、K8s 部署（階段 5）、實際學校場景試行。
 
 ## 架構
 
@@ -138,18 +147,19 @@
 
 ### 階段 2b：CSV / Excel 資料匯入
 
-- [ ] 完成
+- [x] 完成（commit `586fd93`，2026-05-22）
 
 <!--
-  交付：CSV / Excel 匯入名單能對齊到模板的屬性 schema；自動處理編碼、空值、欄位對齊。
+  交付：CSV / Excel 匯入名單能對齊到模板的屬性 schema（含中文別名）；
+  自動處理編碼、空值、欄位對齊；audit schema 演進為 v1.2 加 import_metadata。
   前置條件：階段 2a
 -->
 
 **成功標準：**
 
-- [ ] CSV 匯入名單能對齊到模板的屬性 schema
-- [ ] Excel（.xlsx）匯入名單能對齊到模板的屬性 schema
-- [ ] 匯入過程中的欄位對齊錯誤、編碼錯誤、空值處理皆有明確繁中錯誤訊息
+- [x] CSV 匯入名單能對齊到模板的屬性 schema（含 UTF-8 / UTF-8-BOM / CP950 三編碼）
+- [x] Excel（.xlsx）匯入名單能對齊到模板的屬性 schema（含多工作表處理）
+- [x] 匯入過程中的欄位對齊錯誤、編碼錯誤、型別錯誤、工作表歧義皆有明確繁中錯誤訊息（4 種獨立 exit code）
 
 ### 階段 3：Web UI（內建 M0 機制）
 

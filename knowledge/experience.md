@@ -58,3 +58,22 @@
 - **來源**：specs/002-template-system/research.md R-009、R-010；
   src/matcher/audit.py `build_audit_record`；
   contracts/audit-schema-v1.1.json。
+  階段 2b 再次驗證：audit schema 從 v1.1 升 v1.2 新增 `import_metadata` 欄位
+  （YAML 路徑為 null），完全沿用此模式。
+
+### 「資料來源無關性」隱藏的 ID 等價門檻
+
+- **理論說**：階段 2b 要做到 SC-001「CSV / Excel / YAML 三路徑稽核紀錄五段相同」，
+  本以為只要結構化資料相同（屬性、規則、容量、seed 全等）就成立。
+- **實際發生**：CSV 載入器原本依列序自動生成 role id（R001、R002…），
+  而既有 YAML 名單用的是 T01、T02…。即使所有屬性都對齊，`assignment` 與 `qualified_set`
+  的 key 仍不同——bytewise 比對永遠失敗。發現「資料結構等價」不蘊含「id 等價」。
+- **解決方式**：CSV/Excel 載入器加可選 `id` 欄位（亦接受別名「編號」）；
+  若提供則使用、否則才自動生成。spec/contracts 的「CSV 不能含 id 欄位」條款於 implement
+  階段被推翻——這個偏離已誠實揭露於本 feature 的完成摘要中。
+- **教訓**：對「資料來源無關性」要求嚴格的系統，**外部 id 必須可由匯入來源攜帶**——
+  自動生成的 id 適合 quick demo，但會阻擋「跨來源等價」目標。設計匯入介面時，
+  「可選 id 欄位」是低成本的必要保留位。
+- **來源**：specs/003-data-import/spec.md SC-001、contracts/csv-format.md（已陳舊，
+  待 minor commit 同步）；src/matcher/data_import.py `_find_id_header`、`_build_roles`；
+  tests/integration/test_csv_import.py `test_csv_yaml_equivalence_core_fields`。
