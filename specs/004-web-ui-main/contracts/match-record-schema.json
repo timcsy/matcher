@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MatchRecord (match-record/1.0)",
+  "description": "Web UI 的媒合紀錄；與 audit schema 分離。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "id",
+    "created_at",
+    "template_id",
+    "seed",
+    "input_file",
+    "mechanism",
+    "status",
+    "audit",
+    "error"
+  ],
+  "properties": {
+    "schema_version": { "const": "match-record/1.0" },
+    "id": { "type": "string", "pattern": "^[0-9-T:]+-[a-f0-9]{8}$" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "template_id": { "type": "string" },
+    "seed": { "type": "integer" },
+    "input_file": {
+      "anyOf": [{ "type": "string" }, { "type": "null" }]
+    },
+    "mechanism": { "const": "M0" },
+    "status": { "enum": ["success", "failed"] },
+    "audit": {
+      "anyOf": [{ "type": "null" }, { "type": "object" }],
+      "description": "status=success 時為完整 AuditRecord (v1.2)；失敗時 null"
+    },
+    "error": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["type", "exit_code", "message"],
+          "properties": {
+            "type": { "type": "string" },
+            "exit_code": { "type": "integer" },
+            "message": { "type": "string" }
+          }
+        }
+      ],
+      "description": "status=failed 時為錯誤詳情；成功時 null"
+    }
+  }
+}
