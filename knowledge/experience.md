@@ -95,3 +95,26 @@
   「核心 library 不需要動」。若需要動 → 表示分層不夠純。
 - **來源**：specs/004-web-ui-main 整個 feature；142 測試結果；
   `src/matcher/web/` 完全新增、`src/matcher/{filter,allocator,pipeline,...}` 完全未動。
+  階段 3b 再次驗證：個別查詢視圖（commit `f8ac328`）加 169 行新測試，
+  仍然 0 動核心模組——「入口無關性」越來越穩固。
+
+### 技術詞零容忍可以作為可自動化的 UX 測試
+
+- **理論說**：階段 3b 的個別查詢頁要「面向一般教師、避免技術名詞」（原則 5）。
+  傳統作法是仰賴人工 UX 審查——找一位非工程師讀過頁面、回報哪裡看不懂。
+  問題是這不可重複、無法在 CI 跑、且任何文案修改都需要重審。
+- **實際發生**：實作中發現「面向一般教師」這個抽象目標**可以化約為硬規則**：
+  「HTML response 不含 `filter_trace` / `allocation_trace` / `qualified_set` / `random_index` /
+  `exit_code` 等技術 token，且不匹配 `role\.\w+` / `target\.\w+` 等正則 pattern」。
+  這條規則可用 `assert token not in r.text` + `re.search` 自動檢驗，
+  任何不小心讓技術詞洩漏到 UI 的修改都會立刻被測試擋下。
+- **解決方式**：在 spec 寫明 `FORBIDDEN_TECHNICAL_TOKENS` 與 `FORBIDDEN_PATTERNS` 清單；
+  在多個整合測試中（個別查詢頁、3 種錯誤頁）皆斷言「response 不含任一禁用 token / 不匹配任一禁用 pattern」。
+- **教訓**：當「使用者體驗」目標可以化約為「特定字串/模式不應出現」時，
+  **自動化 lint 比 UX 評審更可靠且零成本**。這是教訓 1「黃金檔比對」的進一步延伸：
+  把「人類判斷」轉化為「字串/模式禁止表」是個強而簡單的工具。
+  適用範圍不限介面文案——也可用於：「audit 不應含密碼/個資」「commit 訊息不應含 TODO」
+  「規格文件不應含 NEEDS CLARIFICATION 殘留」「PR 描述應含 'Test plan' 字眼」等。
+- **來源**：specs/005-individual-view/spec.md FR-003、SC-002；
+  tests/integration/test_web_individual_view.py 的 `FORBIDDEN_TECHNICAL_TOKENS`、`FORBIDDEN_PATTERNS`、
+  `test_no_technical_tokens_in_individual_view`、`test_error_pages_have_no_technical_tokens`。
