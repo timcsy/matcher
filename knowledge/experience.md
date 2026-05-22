@@ -77,3 +77,21 @@
 - **來源**：specs/003-data-import/spec.md SC-001、contracts/csv-format.md（已陳舊，
   待 minor commit 同步）；src/matcher/data_import.py `_find_id_header`、`_build_roles`；
   tests/integration/test_csv_import.py `test_csv_yaml_equivalence_core_fields`。
+
+### library + CLI + Web 三入口共用核心的價值
+
+- **理論說**：階段 3a 要做完整 Web UI，原本可能擔心要重寫匯入、媒合、稽核等
+  「Web 友善版本」（例如 async 化、加 ORM、改錯誤類別格式以對接 HTTP），
+  動到既有核心模組。
+- **實際發生**：實際實作中，**完全沒動 `src/matcher/{rules,filter,allocator,pipeline,audit,data_import,template_loader,...}`**——
+  Web 層僅在其上加 FastAPI HTTP wrap + Jinja2 樣板渲染 + MatchStore 持久化。
+  142 個測試含 116 個既有測試 100% 通過；CLI 介面行為完全不變。
+- **解決方式**：嚴格遵守「library = pure Python；CLI = library 之上的命令列 wrap；
+  Web = library 之上的 HTTP wrap」分層。所有與「輸入來自哪裡」「輸出怎麼呈現」
+  相關的邏輯集中在外層；核心只做「規則化資料 → 媒合 → 稽核」。
+- **教訓**：核心 library 設計得夠純（無 IO、無 framework 假設），上面可以無痛加入
+  任意數量的入口（CLI、Web、未來的 gRPC / 桌面 app）。**「入口無關性」是「資料來源無關性」
+  （教訓 4）在更高層的延伸**——未來加任何新入口時，第一個檢查點是
+  「核心 library 不需要動」。若需要動 → 表示分層不夠純。
+- **來源**：specs/004-web-ui-main 整個 feature；142 測試結果；
+  `src/matcher/web/` 完全新增、`src/matcher/{filter,allocator,pipeline,...}` 完全未動。
