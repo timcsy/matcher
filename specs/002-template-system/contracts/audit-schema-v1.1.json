@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AuditRecord (v1.1)",
+  "description": "稽核紀錄 schema 升級至 1.1。相對於 1.0，新增 template_snapshot 欄位（可為 null）。其他欄位不變。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "mechanism",
+    "seed",
+    "rules_snapshot",
+    "roster_snapshot",
+    "qualified_set",
+    "filter_trace",
+    "allocation_trace",
+    "assignment",
+    "generated_at",
+    "template_snapshot"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.1" },
+    "mechanism": { "const": "M0" },
+    "seed": { "type": "integer" },
+    "rules_snapshot": { "type": "object" },
+    "roster_snapshot": { "type": "object" },
+    "qualified_set": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "filter_trace": { "type": "array" },
+    "allocation_trace": { "type": "array" },
+    "assignment": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "null"] }
+    },
+    "generated_at": { "type": "null" },
+    "template_snapshot": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["id", "schema_version", "name", "description", "attributes", "rules"],
+          "properties": {
+            "id": { "type": "string" },
+            "schema_version": { "type": "string" },
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "attributes": { "type": "object" },
+            "rules": { "type": "array" },
+            "ui_fields": { "type": "array" },
+            "report_fields": { "type": "array" },
+            "preferences_schema": {
+              "anyOf": [
+                { "type": "null" },
+                {
+                  "type": "object",
+                  "required": ["max_choices", "required", "description"]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

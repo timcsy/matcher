@@ -1,0 +1,88 @@
+# 模板檔 schema（YAML 範例）
+#
+# 本檔為「教師-班級配對」模板的完整範例，展示所有欄位與限制。
+# 內建模板 teacher-class 與 study-group 將遵循同一格式。
+
+schema_version: "1.0"        # 必填；本階段唯一支援版本
+
+id: teacher-class            # 必填；英文 kebab-case
+name: "教師-班級配對"        # 必填；繁中
+description: "依專業與班級需要科目配對任課教師"  # 必填；繁中
+
+# ── 屬性 schema（必填）───────────────────────────────────────────────
+attributes:
+  roles:
+    - key: name
+      type: str
+      required: true
+      description: "老師姓名"
+    - key: speciality
+      type: str
+      required: true
+      description: "老師專業科目（如：國文、數學）"
+    - key: seniority
+      type: int
+      required: true
+      description: "年資（年）"
+  targets:
+    - key: name
+      type: str
+      required: true
+      description: "班級名稱"
+    - key: required_subjects
+      type: list_str
+      required: true
+      description: "班級需要的科目清單"
+    - key: feature
+      type: str
+      required: true
+      description: "班級特色（bilingual / stem / arts）"
+
+# ── 規則集（必填，沿用階段 1 的 rules.yaml 格式）────────────────────
+rules:
+  - id: R001
+    description: "老師的專業必須出現在班級的需要科目清單中"
+    expr:
+      role_in_target_field:
+        role_field: speciality
+        target_field: required_subjects
+  - id: R002
+    description: "老師年資至少 3 年（含）以上"
+    expr:
+      ge:
+        field: role.seniority
+        value: 3
+
+# ── UI 欄位宣告（選填；階段 3 才渲染）────────────────────────────────
+ui_fields:
+  - key: name
+    label: "姓名"
+    type: text
+    required: true
+    placeholder: "請輸入老師姓名"
+  - key: speciality
+    label: "專業科目"
+    type: select
+    required: true
+    options: ["國文", "英文", "數學", "自然", "社會"]
+  - key: seniority
+    label: "年資"
+    type: number
+    required: true
+    help: "以整數年數填寫"
+
+# ── 報告欄位宣告（選填；階段 3 才渲染）──────────────────────────────
+report_fields:
+  - key: teacher_name
+    label: "教師姓名"
+    source: roster_snapshot.roles[].attributes.name
+  - key: assigned_class
+    label: "分配到的班級"
+    source: assignment.{role_id}
+
+# ── preferences schema（選填；階段 4 才啟用）─────────────────────────
+# 本範例（教師-班級配對）不宣告 preferences；「研習分組」模板會宣告：
+# preferences_schema:
+#   max_choices: 3
+#   required: false
+#   description: "學生可填 1~3 個志願組別"
