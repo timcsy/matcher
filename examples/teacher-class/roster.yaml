@@ -1,0 +1,83 @@
+roles:
+  - id: T01
+    attributes:
+      name: "王老師"
+      speciality: "國文"
+      seniority: 8
+  - id: T02
+    attributes:
+      name: "林老師"
+      speciality: "數學"
+      seniority: 6
+  - id: T03
+    attributes:
+      name: "陳老師"
+      speciality: "英文"
+      seniority: 4
+  - id: T04
+    attributes:
+      name: "李老師"
+      speciality: "國文"
+      seniority: 3
+  - id: T05
+    attributes:
+      name: "張老師"
+      speciality: "數學"
+      seniority: 10
+  - id: T06
+    attributes:
+      name: "黃老師"
+      speciality: "自然"
+      seniority: 5
+  - id: T07
+    attributes:
+      name: "周老師"
+      speciality: "英文"
+      seniority: 7
+  - id: T08
+    attributes:
+      name: "吳老師"
+      speciality: "社會"
+      seniority: 4
+  - id: T09
+    attributes:
+      name: "鄭老師"
+      speciality: "國文"
+      seniority: 12
+  - id: T10
+    attributes:
+      name: "蔡老師"
+      speciality: "自然"
+      seniority: 3
+
+targets:
+  - id: C01
+    capacity: 2
+    attributes:
+      name: "三年甲班"
+      required_subjects: ["國文", "數學"]
+      feature: "bilingual"
+  - id: C02
+    capacity: 2
+    attributes:
+      name: "三年乙班"
+      required_subjects: ["國文", "英文", "自然"]
+      feature: "stem"
+  - id: C03
+    capacity: 2
+    attributes:
+      name: "三年丙班"
+      required_subjects: ["數學", "自然"]
+      feature: "stem"
+  - id: C04
+    capacity: 2
+    attributes:
+      name: "三年丁班"
+      required_subjects: ["國文", "英文"]
+      feature: "arts"
+  - id: C05
+    capacity: 2
+    attributes:
+      name: "三年戊班"
+      required_subjects: ["國文", "社會", "自然"]
+      feature: "arts"

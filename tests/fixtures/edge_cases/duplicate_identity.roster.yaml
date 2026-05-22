@@ -1,0 +1,9 @@
+roles:
+  - id: T01
+    attributes: {name: "甲", x: "a"}
+  - id: T01
+    attributes: {name: "乙", x: "b"}
+targets:
+  - id: C01
+    capacity: 1
+    attributes: {name: "班一"}

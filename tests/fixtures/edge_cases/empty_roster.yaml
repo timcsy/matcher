@@ -1,0 +1,5 @@
+roles: []
+targets:
+  - id: C01
+    capacity: 1
+    attributes: {name: "班一"}

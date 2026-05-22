@@ -1,0 +1,63 @@
+"""名單資料模型：Role / Target / Roster。"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
+
+from matcher.errors import DuplicateIdentity, EmptyRoster
+
+
+@dataclass(frozen=True)
+class Role:
+    id: str
+    attributes: dict
+
+
+@dataclass(frozen=True)
+class Target:
+    id: str
+    capacity: int
+    attributes: dict
+
+
+@dataclass(frozen=True)
+class Roster:
+    roles: tuple
+    targets: tuple
+
+
+def parse_roster(data: dict) -> Roster:
+    raw_roles = data.get("roles") or []
+    raw_targets = data.get("targets") or []
+
+    if not raw_roles:
+        raise EmptyRoster("名單為空：無待媒合角色")
+    if not raw_targets:
+        raise EmptyRoster("名單為空：無待分配對象")
+
+    # 重複身分檢查
+    role_ids: list[str] = []
+    for r in raw_roles:
+        rid = r["id"]
+        if rid in role_ids:
+            raise DuplicateIdentity(f"名單有重複身分：角色 id `{rid}` 出現多次")
+        role_ids.append(rid)
+
+    target_ids: list[str] = []
+    for t in raw_targets:
+        tid = t["id"]
+        if tid in target_ids:
+            raise DuplicateIdentity(f"名單有重複身分：對象 id `{tid}` 出現多次")
+        target_ids.append(tid)
+
+    roles = tuple(Role(id=r["id"], attributes=dict(r.get("attributes", {}))) for r in raw_roles)
+
+    targets = []
+    for t in raw_targets:
+        cap = int(t.get("capacity", 1))
+        if cap < 1:
+            raise ValueError(f"對象 `{t['id']}` 的容量 {cap} 無效；容量必須 ≥ 1")
+        targets.append(Target(id=t["id"], capacity=cap, attributes=dict(t.get("attributes", {}))))
+
+    return Roster(roles=roles, targets=tuple(targets))

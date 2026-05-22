@@ -1,0 +1,14 @@
+roles:
+  - id: T01
+    attributes:
+      name: "甲"
+      speciality: "國文"
+  - id: T02
+    attributes:
+      name: "乙"
+      speciality: "數學"
+targets:
+  - id: C01
+    capacity: 1
+    attributes:
+      name: "班一"

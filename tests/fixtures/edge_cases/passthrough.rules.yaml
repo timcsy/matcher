@@ -1,0 +1,6 @@
+version: "1.0"
+rules:
+  - id: R001
+    description: "永遠通過（x=a 對應 minimal roster）"
+    expr:
+      eq: {field: role.x, value: "a"}

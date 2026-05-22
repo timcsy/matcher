@@ -1,0 +1,16 @@
+roles:
+  - id: R1
+    attributes: {name: "甲", x: "a"}
+  - id: R2
+    attributes: {name: "乙", x: "b"}
+  - id: R3
+    attributes: {name: "丙", x: "c"}
+  - id: R4
+    attributes: {name: "丁", x: "a"}
+targets:
+  - id: C1
+    capacity: 1
+    attributes: {name: "班一"}
+  - id: C2
+    capacity: 1
+    attributes: {name: "班二"}

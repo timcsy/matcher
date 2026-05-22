@@ -1,0 +1,8 @@
+version: "1.0"
+rules:
+  - id: R001
+    description: "內部矛盾：x=1 且 x!=1"
+    expr:
+      and:
+        - eq: {field: role.x, value: 1}
+        - not: {eq: {field: role.x, value: 1}}

@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "matcher"
+version = "0.1.0"
+description = "核心媒合引擎：依規則過濾出資格集合，於 M0 純抽籤分支下完成分配，輸出可重現的稽核紀錄。"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.12",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+matcher = "matcher.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/matcher"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

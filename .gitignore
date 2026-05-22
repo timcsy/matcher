@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+
+# 編輯器與系統
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.tmp
+
+# 環境
+.env
+.env.*
+
+# 工作產出
+/tmp_audit.json

@@ -1,0 +1,8 @@
+version: "1.0"
+rules:
+  - id: R001
+    description: "永遠通過：使用 IN 配對 role.x（roster 中存在）"
+    expr:
+      in:
+        field: role.x
+        set: ["a", "b", "c"]
