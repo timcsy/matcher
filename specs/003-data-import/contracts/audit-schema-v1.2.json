@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AuditRecord (v1.2)",
+  "description": "稽核紀錄 schema 升級至 1.2。相對於 1.1，新增 import_metadata 欄位（可為 null）。其他欄位不變。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "mechanism",
+    "seed",
+    "rules_snapshot",
+    "roster_snapshot",
+    "qualified_set",
+    "filter_trace",
+    "allocation_trace",
+    "assignment",
+    "generated_at",
+    "template_snapshot",
+    "import_metadata"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.2" },
+    "mechanism": { "const": "M0" },
+    "seed": { "type": "integer" },
+    "rules_snapshot": { "type": "object" },
+    "roster_snapshot": { "type": "object" },
+    "qualified_set": { "type": "object" },
+    "filter_trace": { "type": "array" },
+    "allocation_trace": { "type": "array" },
+    "assignment": { "type": "object" },
+    "generated_at": { "type": "null" },
+    "template_snapshot": {
+      "anyOf": [{ "type": "null" }, { "type": "object" }]
+    },
+    "import_metadata": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["source_type", "row_count", "file_basename"],
+          "properties": {
+            "source_type": { "enum": ["csv", "xlsx", "yaml"] },
+            "encoding": {
+              "anyOf": [
+                { "type": "null" },
+                { "enum": ["utf-8", "utf-8-sig", "cp950"] }
+              ]
+            },
+            "sheet_name": {
+              "anyOf": [{ "type": "null" }, { "type": "string" }]
+            },
+            "row_count": { "type": "integer", "minimum": 0 },
+            "file_basename": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}
