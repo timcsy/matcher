@@ -41,6 +41,23 @@
   <a class="btn btn-secondary" href="/matches">回到媒合列表</a>
 </p>
 
+<details style="margin-top:2rem">
+  <summary>個別查詢連結（共 {{ roles_for_links | length }} 位）</summary>
+  <p><small>將以下連結個別發送給對應的被媒合者，他們可獨立查看自己的媒合結果與判定依據。</small></p>
+  <table>
+    <thead><tr><th>姓名</th><th>角色編號</th><th>個別查詢連結</th></tr></thead>
+    <tbody>
+      {% for r in roles_for_links %}
+      <tr>
+        <td>{{ r.name }}</td>
+        <td><code>{{ r.id }}</code></td>
+        <td><a href="/match/{{ record.id }}/role/{{ r.id }}">/match/{{ record.id }}/role/{{ r.id }}</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
+
 {% else %}
 <h2>❌ 媒合失敗</h2>
 <div class="card">

@@ -16,7 +16,8 @@ from matcher.data_import import load_roster_csv, load_roster_xlsx
 from matcher.errors import MatcherError, SeedMissing, TemplateNotFound
 from matcher.pipeline import MatcherInput, run_match
 from matcher.template_loader import TemplateRegistry
-from matcher.web.errors import UploadInvalidMime, UploadTooLarge
+from matcher.web.errors import MatchRecordNotFound, UploadInvalidMime, UploadTooLarge
+from matcher.web.individual import build_individual_audit_subset
 from matcher.web.store import MatchRecord, MatchStore, SCHEMA_VERSION
 
 router = APIRouter()
@@ -134,8 +135,102 @@ async def run(
 async def match_detail(request: Request, record_id: str):
     store = MatchStore()
     record = store.get(record_id)
+
+    roles_for_links: list = []
+    if record.status == "success" and record.audit:
+        roles_for_links = [
+            {"id": r["id"], "name": r.get("attributes", {}).get("name", r["id"])}
+            for r in record.audit.get("roster_snapshot", {}).get("roles", [])
+        ]
     return _templates(request).TemplateResponse(
-        request, "match_result.html", {"record": record},
+        request, "match_result.html",
+        {"record": record, "roles_for_links": roles_for_links},
+    )
+
+
+def _individual_error(request: Request, message: str) -> Response:
+    return _templates(request).TemplateResponse(
+        request, "individual_error.html",
+        {"message": message},
+        status_code=404,
+    )
+
+
+@router.get("/match/{record_id}/role/{role_id}")
+async def individual_view(request: Request, record_id: str, role_id: str):
+    store = MatchStore()
+    try:
+        record = store.get(record_id)
+    except MatchRecordNotFound:
+        return _individual_error(request, "找不到該次媒合的紀錄")
+
+    if record.status == "failed" or record.audit is None:
+        return _individual_error(request, "該次媒合執行失敗，無個別查詢資料")
+
+    role = next(
+        (r for r in record.audit.get("roster_snapshot", {}).get("roles", []) if r["id"] == role_id),
+        None,
+    )
+    if role is None:
+        return _individual_error(request, "您不在這次媒合的名單中")
+
+    # 載入模板（用於 humanize 規則描述）
+    reg = TemplateRegistry()
+    try:
+        template = reg.get(record.template_id)
+    except TemplateNotFound:
+        template = None
+
+    subset = build_individual_audit_subset(record.audit, role_id)
+
+    rules_lookup = {
+        r["id"]: r["description"]
+        for r in record.audit.get("rules_snapshot", {}).get("rules", [])
+    }
+    target_lookup = {
+        t["id"]: t.get("attributes", {})
+        for t in record.audit.get("roster_snapshot", {}).get("targets", [])
+    }
+
+    return _templates(request).TemplateResponse(
+        request, "individual_view.html",
+        {
+            "record": record,
+            "role": role,
+            "subset": subset,
+            "template": template,
+            "rules_lookup": rules_lookup,
+            "target_lookup": target_lookup,
+        },
+    )
+
+
+@router.get("/match/{record_id}/role/{role_id}/audit.json")
+async def individual_audit_download(request: Request, record_id: str, role_id: str):
+    store = MatchStore()
+    try:
+        record = store.get(record_id)
+    except MatchRecordNotFound:
+        raise HTTPException(status_code=404, detail="找不到該次媒合的紀錄")
+
+    if record.status != "success" or record.audit is None:
+        raise HTTPException(status_code=404, detail="該次媒合執行失敗，無個別查詢資料")
+
+    role_exists = any(
+        r["id"] == role_id
+        for r in record.audit.get("roster_snapshot", {}).get("roles", [])
+    )
+    if not role_exists:
+        raise HTTPException(status_code=404, detail="您不在這次媒合的名單中")
+
+    subset = build_individual_audit_subset(record.audit, role_id)
+    body = json.dumps(subset, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    return Response(
+        content=body,
+        media_type="application/json; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{record_id}-{role_id}.individual.json"'
+        },
     )
 
 

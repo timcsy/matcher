@@ -83,6 +83,17 @@ uv run matcher serve
 
 媒合紀錄持久化於 `data/matches/<id>.json`（已加入 `.gitignore`）。
 
+#### 個別查詢視圖
+
+媒合完成後，admin 結果頁底部「個別查詢連結」區段列出每位被媒合者的專屬 URL（`/match/<record_id>/role/<role_id>`）。行政可將這些連結個別發送給對應的當事人；當事人開啟後可獨立查看：
+
+- 自己的基本資訊
+- 是否被分配（被分到哪個對象 / 或為什麼未分配）
+- 依模板規則的判定說明（用語面向一般教師，避免技術名詞）
+- 下載個人稽核紀錄 JSON（`/match/<record_id>/role/<role_id>/audit.json`）
+
+頁面為純讀取——同一 URL 多次訪問結果完全一致。
+
 ### 從 CSV / Excel 匯入名單
 
 支援 CSV（UTF-8 / UTF-8-BOM / CP950 三種編碼自動偵測）與 Excel（.xlsx）：

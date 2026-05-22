@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}個別查詢{% endblock %}
+{% block content %}
+
+<h2>您的媒合結果</h2>
+
+<div class="card">
+  <h3>您的基本資訊</h3>
+  <table>
+    <tbody>
+      {% for key, value in role.attributes.items() %}
+      <tr>
+        <th>
+          {% set display_name = key %}
+          {% if template %}
+            {% for decl in template.attributes.roles %}
+              {% if decl.key == key and decl.description %}
+                {% set display_name = decl.description %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+          {{ display_name }}
+        </th>
+        <td>{{ value }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h3>您的分配結果</h3>
+  {% if subset.assignment.target_id %}
+    <p class="status-success">您被分到：
+      <strong>{{ subset.assignment.target_attributes.get('name', subset.assignment.target_id) }}</strong>
+    </p>
+  {% else %}
+    <p class="status-failed">您未被分配。</p>
+    {% set qualified_count = subset.filter_trace_subset | selectattr('qualified') | list | length %}
+    {% if qualified_count == 0 %}
+      <p>依規則判定，您不符合任何對象的條件。</p>
+    {% else %}
+      <p>您原本有資格分到 {{ qualified_count }} 個對象，但容量已被分配給其他人。</p>
+    {% endif %}
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>媒合過程說明</h3>
+  <p>系統依以下規則判定您是否能分到各對象：</p>
+
+  {% for entry in subset.filter_trace_subset %}
+    {% set target_attrs = target_lookup.get(entry.target_id, {}) %}
+    {% set target_name = target_attrs.get('name', entry.target_id) %}
+    <h4>{{ target_name }}</h4>
+    {% if entry.qualified %}
+      <p class="status-success">✅ 您符合此對象的所有條件。</p>
+      {% if entry.matched_rules %}
+        <p>通過的規則：</p>
+        <ul>
+          {% for rule_id in entry.matched_rules %}
+            {% set desc = rules_lookup.get(rule_id, rule_id) %}
+            <li>{{ rule_id }}：{{ desc | humanize_rule(template) if template else desc }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% else %}
+      <p class="status-failed">❌ 您不符合此對象的條件。</p>
+      {% if entry.failed_rule %}
+        {% set desc = rules_lookup.get(entry.failed_rule, entry.failed_rule) %}
+        <p>未通過的規則：<strong>{{ entry.failed_rule }}</strong>——
+          {{ desc | humanize_rule(template) if template else desc }}</p>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+
+  {% if subset.allocation_step %}
+    <h4>抽籤過程</h4>
+    <p>在符合條件的對象中，系統以公平的隨機抽籤決定您的分配：</p>
+    <ul>
+      <li>當時可選的對象（已扣除容量耗盡者）：
+        {% for cid in subset.allocation_step.candidates %}
+          {{ target_lookup.get(cid, {}).get('name', cid) }}{% if not loop.last %}、{% endif %}
+        {% endfor %}
+      </li>
+      <li>抽中：<strong>{{ target_lookup.get(subset.allocation_step.chosen, {}).get('name', subset.allocation_step.chosen) }}</strong></li>
+    </ul>
+  {% endif %}
+</div>
+
+<p style="margin-top:2rem">
+  <a class="btn btn-success" href="/match/{{ record.id }}/role/{{ role.id }}/audit.json">下載我的稽核紀錄</a>
+  <a class="btn btn-secondary" href="/">回首頁</a>
+</p>
+
+{% endblock %}

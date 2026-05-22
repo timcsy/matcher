@@ -26,6 +26,11 @@ def create_app() -> FastAPI:
 
     templates_dir = _resources_dir("templates")
     templates = Jinja2Templates(directory=str(templates_dir))
+
+    # Jinja2 filter：規則描述代名詞替換
+    from matcher.web.humanize import humanize_rule_description
+    templates.env.filters["humanize_rule"] = humanize_rule_description
+
     app.state.templates = templates
 
     # Routes — 延遲匯入以避免循環
