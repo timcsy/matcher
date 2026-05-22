@@ -37,20 +37,26 @@
 
 ## 現狀
 
-**階段 1 已完成**（commit `d1331dc`，合併至 main）。
+**階段 1、階段 2a 已完成**。
 
-已交付：
+階段 1（commit `d1331dc`）：
 
-- 核心媒合引擎（library + CLI）：`src/matcher/` 10 個模組、48 個自動化測試全通過
+- 核心媒合引擎（library + CLI）：`src/matcher/` 10 個模組
 - 技術棧：Python 3.11 + Typer + PyYAML + pytest（uv 管理環境）
-- 基準場景「教師-班級配對」可由 `matcher run` 跑通，0.11s 完成（SC-002 < 5s 大幅達標）
+- 基準場景「教師-班級配對」可由 `matcher run` 跑通
 - 過濾／分配兩階段嚴格分離；M0 純抽籤分支實作完成
-- 完整稽核紀錄（rules_snapshot / roster_snapshot / filter_trace / allocation_trace）
-- 8 種明確錯誤類別對應 8 個退出碼，全繁中三段式訊息
-- preferences 介面預留但於 M0 拒絕（為階段 4 鋪路）
-- 黃金檔比對驗證 SC-001 100% 可重現性
+- 完整稽核紀錄 + 8 種明確錯誤類別 + preferences 介面預留但於 M0 拒絕
 
-尚未開始：模板系統、CSV/Excel 匯入、Web UI、M1/M2 機制、K8s 部署、實際學校場景試行。
+階段 2a 模板系統（commit `d4c373c`）：
+
+- `Template` / `TemplateRegistry` 資料模型與載入器
+- 2 個內建模板：`teacher-class`、`study-group`（後者宣告 `preferences_schema`）
+- CLI 子應用：`matcher template list/show/export`
+- `matcher run` 新增 `--template` / `--template-file`，與 `--rules + --roster` 三組互斥
+- audit schema 升級為 v1.1，新增 `template_snapshot` 欄位（可為 null，向後相容）
+- 自動化測試：82 個（階段 1 既有 48 + 階段 2a 新增 34），全綠
+
+尚未開始：CSV/Excel 匯入（階段 2b）、Web UI、M1/M2 機制、K8s 部署、實際學校場景試行。
 
 ## 架構
 
@@ -114,21 +120,36 @@
 - [x] 「教師-班級配對」這個基準場景能用 CLI 跑通並輸出稽核紀錄
 - [x] 測試覆蓋核心：規則篩選、邊界（無人符合資格、人數不足）、分配可重現性（純抽籤分支）
 
-### 階段 2：模板系統 + 資料匯入
+### 階段 2a：模板系統
 
-- [ ] 完成
+- [x] 完成（commit `d4c373c`，2026-05-22）
 
 <!--
-  交付：模板格式（schema + 規則 + UI 欄位 + 報告格式）能被定義、儲存、
-  載入；CSV/Excel 匯入名單。
+  交付：模板格式（schema + 規則 + UI 欄位 + 報告格式）能被定義、儲存、載入；
+  CLI 三子命令 list/show/export；--template / --template-file 與 --rules+--roster 三組互斥。
   前置條件：階段 1
 -->
 
 **成功標準：**
 
-- [ ] 至少 2 個內建模板：「教師-班級配對」「研習分組」
-- [ ] CSV / Excel 匯入名單能對齊到模板的屬性 schema
-- [ ] 自訂模板能匯出/匯入為單一檔案
+- [x] 至少 2 個內建模板：「教師-班級配對」「研習分組」
+- [x] 自訂模板能匯出/匯入為單一檔案
+- [x] 模板快照（template_snapshot）進入稽核紀錄，確保「相同模板 + 名單 + seed」逐位元組可重現
+
+### 階段 2b：CSV / Excel 資料匯入
+
+- [ ] 完成
+
+<!--
+  交付：CSV / Excel 匯入名單能對齊到模板的屬性 schema；自動處理編碼、空值、欄位對齊。
+  前置條件：階段 2a
+-->
+
+**成功標準：**
+
+- [ ] CSV 匯入名單能對齊到模板的屬性 schema
+- [ ] Excel（.xlsx）匯入名單能對齊到模板的屬性 schema
+- [ ] 匯入過程中的欄位對齊錯誤、編碼錯誤、空值處理皆有明確繁中錯誤訊息
 
 ### 階段 3：Web UI（內建 M0 機制）
 

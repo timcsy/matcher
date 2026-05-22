@@ -38,3 +38,23 @@
   在介面相容性上便宜得多——只要拒絕訊息夠明確指引未來路徑，使用者不會誤判。
 - **來源**：specs/001-core-allocator/spec.md User Story 3；
   src/matcher/pipeline.py `run_match` 中的 PreferencesNotSupported 判斷。
+  階段 2a 再次驗證：study-group 模板宣告 `preferences_schema`，
+  Role.preferences 內嵌欄位於 M0 機制下被拒絕，無須改動 schema 即支援階段 4 的志願序機制。
+
+### audit schema 演進採「新增可選欄位 + null 表示不適用」最乾淨
+
+- **理論說**：階段 2a 需要把模板資訊寫入稽核紀錄；本來考慮兩條路徑——
+  (A) 引入新的 audit schema 版本（如 2.0），與舊版分流；
+  (B) 維持舊 schema、只在使用模板時才出現 `template_snapshot` 欄位。
+- **實際發生**：兩條都不夠好。(A) 過度重型，影響所有既有測試；
+  (B) 違反「相同 schema 下同一結構」的嚴格性，會讓稽核紀錄消費端難以判斷格式。
+  最後採第三條路——schema 由 v1.0 升 v1.1（小版號），**新增可選欄位**
+  `template_snapshot`（使用模板時為完整序列化、不使用時固定為 `null`）。
+- **解決方式**：在 build_audit_record 加 `template` 參數預設 `None`；
+  audit_schema_version 從 "1.0" 直接升到 "1.1"；既有黃金檔重生成一次（值不變、僅多一欄）。
+- **教訓**：稽核 schema 的演進，**「新增可選欄位 + null 表示不適用」優於版本分流**——
+  消費端永遠看到同一份 schema，「不適用」用 null 而非「欄位缺失」表達。
+  未來新增 M1/M2 機制時，`mechanism_trace`、`preferences_resolved` 等欄位應走同樣模式。
+- **來源**：specs/002-template-system/research.md R-009、R-010；
+  src/matcher/audit.py `build_audit_record`；
+  contracts/audit-schema-v1.1.json。
