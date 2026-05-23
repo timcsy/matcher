@@ -110,9 +110,16 @@ uv run matcher run --template study-group \
 
 「研習分組」範例 `roster-m1.csv` 含每位學生的志願組別（分號分隔），可用 M1 跑出含「處理順序 + 每人志願滿足度」的稽核紀錄。
 
-- 規則：M0 不接受任何 preferences；M1 至少需一位提供 preferences。
-- M1 + 全空 preferences → 拒絕（exit 40）；建議改用 M0。
-- 未來機制 M2（Boston 層級填滿）將於 feature 007 加入。
+```bash
+# M2 Boston 層級填滿（先全塞第 1 志願超額抽籤、剩餘退到第 2 志願以此類推）
+uv run matcher run --template study-group \
+                   --roster-csv examples/study-group/roster-m1.csv \
+                   --seed 2026 --mechanism M2 --output audit-m2.json
+```
+
+- 規則：M0 不接受任何 preferences；M1 / M2 至少需一位提供 preferences。
+- M1 / M2 + 全空 preferences → 拒絕（exit 40）；建議改用 M0。
+- M1 vs M2：兩者皆為「公平的志願序」但定義不同——M1 強調「處理順序公平」，M2 強調「同層級內滿足度最大化」。同 roster + 同 seed 下兩者結果可能不同。
 
 ### 從 CSV / Excel 匯入名單
 

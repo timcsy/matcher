@@ -5,11 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from matcher.allocator import allocate_m0, allocate_m1
+from matcher.allocator import allocate_m0, allocate_m1, allocate_m2
 from matcher.audit import build_audit_record
 from matcher.errors import (
     CapacityShortage,
-    M1RequiresPreferences,
+    MechanismRequiresPreferences,
     PreferencesNotSupported,
     SeedMissing,
     UnknownAttribute,
@@ -121,12 +121,12 @@ def run_match(inp: MatcherInput) -> MatcherResult:
             "建議：將名單中所有 preferences 改為空陣列，或改用 --mechanism M1 走志願序機制。"
         )
 
-    # 2c. M1 需要至少一位角色提供志願
-    if inp.mechanism == "M1" and not any(role.preferences for role in inp.roster.roles):
-        raise M1RequiresPreferences(
-            "M1 需要至少一位角色提供志願；若無志願請改用 mechanism=M0。\n"
-            "細節：roster 中所有角色的 preferences 皆為空。\n"
-            "建議：請至少為一位角色填入志願（CSV「志願組別」欄填分號分隔字串），或改用 `--mechanism M0`。"
+    # 2c. M1 / M2 需要至少一位角色提供志願
+    if inp.mechanism in ("M1", "M2") and not any(role.preferences for role in inp.roster.roles):
+        raise MechanismRequiresPreferences(
+            f"{inp.mechanism} 需要至少一位角色提供志願；若無志願請改用 mechanism=M0。\n"
+            f"細節：roster 中所有角色的 preferences 皆為空。\n"
+            f"建議：請至少為一位角色填入志願（CSV「志願組別」欄填分號分隔字串），或改用 `--mechanism M0`。"
         )
 
     # 3. 規則層靜態檢查
@@ -159,8 +159,14 @@ def run_match(inp: MatcherInput) -> MatcherResult:
             qualified_set, preferences_map, capacities, rng,
             role_order=[role.id for role in inp.roster.roles],
         )
+    elif inp.mechanism == "M2":
+        preferences_map = {role.id: list(role.preferences) for role in inp.roster.roles}
+        processing_order, assignment, allocation_trace = allocate_m2(
+            qualified_set, preferences_map, capacities, rng,
+            role_order=[role.id for role in inp.roster.roles],
+        )
     else:
-        raise ValueError(f"不支援的機制 `{inp.mechanism}`；支援：M0、M1")
+        raise ValueError(f"不支援的機制 `{inp.mechanism}`；支援：M0、M1、M2")
 
     # 7. 稽核紀錄
     audit = build_audit_record(

@@ -8,15 +8,18 @@
       ],
       "chosen": "G1",
       "fallback_random_index": null,
-      "preference_rank": null,
-      "preferred_order": null,
+      "preference_rank": 1,
+      "preferred_order": [
+        "G1",
+        "G3"
+      ],
       "random_index": 0,
       "remaining_capacity_after": {
         "G1": 2,
         "G2": 3,
         "G3": 3
       },
-      "role_id": "S01",
+      "role_id": "S02",
       "step": 1,
       "tie_break_random_index": null
     },
@@ -26,17 +29,20 @@
         "G2",
         "G3"
       ],
-      "chosen": "G2",
+      "chosen": "G1",
       "fallback_random_index": null,
-      "preference_rank": null,
-      "preferred_order": null,
+      "preference_rank": 1,
+      "preferred_order": [
+        "G1",
+        "G2"
+      ],
       "random_index": 1,
       "remaining_capacity_after": {
-        "G1": 2,
-        "G2": 2,
+        "G1": 1,
+        "G2": 3,
         "G3": 3
       },
-      "role_id": "S02",
+      "role_id": "S04",
       "step": 2,
       "tie_break_random_index": null
     },
@@ -46,17 +52,19 @@
         "G2",
         "G3"
       ],
-      "chosen": "G3",
+      "chosen": "G1",
       "fallback_random_index": null,
-      "preference_rank": null,
-      "preferred_order": null,
+      "preference_rank": 1,
+      "preferred_order": [
+        "G1"
+      ],
       "random_index": 2,
       "remaining_capacity_after": {
-        "G1": 2,
-        "G2": 2,
-        "G3": 2
+        "G1": 0,
+        "G2": 3,
+        "G3": 3
       },
-      "role_id": "S03",
+      "role_id": "S08",
       "step": 3,
       "tie_break_random_index": null
     },
@@ -66,18 +74,68 @@
         "G2",
         "G3"
       ],
-      "chosen": "G3",
+      "chosen": "G2",
       "fallback_random_index": null,
-      "preference_rank": null,
-      "preferred_order": null,
-      "random_index": 2,
+      "preference_rank": 1,
+      "preferred_order": [
+        "G2",
+        "G1",
+        "G3"
+      ],
+      "random_index": 3,
       "remaining_capacity_after": {
-        "G1": 2,
+        "G1": 0,
         "G2": 2,
-        "G3": 1
+        "G3": 3
       },
-      "role_id": "S04",
+      "role_id": "S01",
       "step": 4,
+      "tie_break_random_index": null
+    },
+    {
+      "candidates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "chosen": "G2",
+      "fallback_random_index": null,
+      "preference_rank": 1,
+      "preferred_order": [
+        "G2"
+      ],
+      "random_index": 4,
+      "remaining_capacity_after": {
+        "G1": 0,
+        "G2": 1,
+        "G3": 3
+      },
+      "role_id": "S05",
+      "step": 5,
+      "tie_break_random_index": null
+    },
+    {
+      "candidates": [
+        "G1",
+        "G2",
+        "G3"
+      ],
+      "chosen": "G2",
+      "fallback_random_index": null,
+      "preference_rank": 1,
+      "preferred_order": [
+        "G2",
+        "G3",
+        "G1"
+      ],
+      "random_index": 5,
+      "remaining_capacity_after": {
+        "G1": 0,
+        "G2": 0,
+        "G3": 3
+      },
+      "role_id": "S07",
+      "step": 6,
       "tie_break_random_index": null
     },
     {
@@ -88,83 +146,57 @@
       ],
       "chosen": "G3",
       "fallback_random_index": null,
-      "preference_rank": null,
-      "preferred_order": null,
-      "random_index": 2,
-      "remaining_capacity_after": {
-        "G1": 2,
-        "G2": 2,
-        "G3": 0
-      },
-      "role_id": "S05",
-      "step": 5,
-      "tie_break_random_index": null
-    },
-    {
-      "candidates": [
-        "G1",
+      "preference_rank": 1,
+      "preferred_order": [
+        "G3",
         "G2"
       ],
-      "chosen": "G1",
-      "fallback_random_index": null,
-      "preference_rank": null,
-      "preferred_order": null,
-      "random_index": 0,
-      "remaining_capacity_after": {
-        "G1": 1,
-        "G2": 2,
-        "G3": 0
-      },
-      "role_id": "S06",
-      "step": 6,
-      "tie_break_random_index": null
-    },
-    {
-      "candidates": [
-        "G1",
-        "G2"
-      ],
-      "chosen": "G1",
-      "fallback_random_index": null,
-      "preference_rank": null,
-      "preferred_order": null,
-      "random_index": 0,
+      "random_index": 6,
       "remaining_capacity_after": {
         "G1": 0,
-        "G2": 2,
-        "G3": 0
+        "G2": 0,
+        "G3": 2
       },
-      "role_id": "S07",
+      "role_id": "S03",
       "step": 7,
       "tie_break_random_index": null
     },
     {
       "candidates": [
-        "G2"
+        "G1",
+        "G2",
+        "G3"
       ],
-      "chosen": "G2",
+      "chosen": "G3",
       "fallback_random_index": null,
-      "preference_rank": null,
-      "preferred_order": null,
-      "random_index": 0,
+      "preference_rank": 1,
+      "preferred_order": [
+        "G3",
+        "G1"
+      ],
+      "random_index": 7,
       "remaining_capacity_after": {
         "G1": 0,
-        "G2": 1,
-        "G3": 0
+        "G2": 0,
+        "G3": 1
       },
-      "role_id": "S08",
+      "role_id": "S06",
       "step": 8,
       "tie_break_random_index": null
     },
     {
       "candidates": [
-        "G2"
+        "G1",
+        "G2",
+        "G3"
       ],
-      "chosen": "G2",
+      "chosen": "G3",
       "fallback_random_index": null,
-      "preference_rank": null,
-      "preferred_order": null,
-      "random_index": 0,
+      "preference_rank": 1,
+      "preferred_order": [
+        "G3"
+      ],
+      "random_index": 8,
       "remaining_capacity_after": {
         "G1": 0,
         "G2": 0,
@@ -176,15 +208,15 @@
     }
   ],
   "assignment": {
-    "S01": "G1",
-    "S02": "G2",
+    "S01": "G2",
+    "S02": "G1",
     "S03": "G3",
-    "S04": "G3",
-    "S05": "G3",
-    "S06": "G1",
-    "S07": "G1",
-    "S08": "G2",
-    "S09": "G2"
+    "S04": "G1",
+    "S05": "G2",
+    "S06": "G3",
+    "S07": "G2",
+    "S08": "G1",
+    "S09": "G3"
   },
   "filter_trace": [
     {
@@ -432,9 +464,25 @@
     }
   ],
   "generated_at": null,
-  "import_metadata": null,
-  "mechanism": "M0",
-  "processing_order": null,
+  "import_metadata": {
+    "encoding": "utf-8",
+    "file_basename": "roster-m1.csv",
+    "row_count": 9,
+    "sheet_name": null,
+    "source_type": "csv"
+  },
+  "mechanism": "M2",
+  "processing_order": [
+    "S02",
+    "S04",
+    "S08",
+    "S01",
+    "S05",
+    "S07",
+    "S03",
+    "S06",
+    "S09"
+  ],
   "qualified_set": {
     "S01": [
       "G1",
@@ -490,7 +538,11 @@
           "name": "小明"
         },
         "id": "S01",
-        "preferences": []
+        "preferences": [
+          "G2",
+          "G1",
+          "G3"
+        ]
       },
       {
         "attributes": {
@@ -498,7 +550,10 @@
           "name": "小華"
         },
         "id": "S02",
-        "preferences": []
+        "preferences": [
+          "G1",
+          "G3"
+        ]
       },
       {
         "attributes": {
@@ -506,7 +561,10 @@
           "name": "小美"
         },
         "id": "S03",
-        "preferences": []
+        "preferences": [
+          "G3",
+          "G2"
+        ]
       },
       {
         "attributes": {
@@ -514,7 +572,10 @@
           "name": "小強"
         },
         "id": "S04",
-        "preferences": []
+        "preferences": [
+          "G1",
+          "G2"
+        ]
       },
       {
         "attributes": {
@@ -522,7 +583,9 @@
           "name": "小芳"
         },
         "id": "S05",
-        "preferences": []
+        "preferences": [
+          "G2"
+        ]
       },
       {
         "attributes": {
@@ -530,7 +593,10 @@
           "name": "小傑"
         },
         "id": "S06",
-        "preferences": []
+        "preferences": [
+          "G3",
+          "G1"
+        ]
       },
       {
         "attributes": {
@@ -538,7 +604,11 @@
           "name": "小婷"
         },
         "id": "S07",
-        "preferences": []
+        "preferences": [
+          "G2",
+          "G3",
+          "G1"
+        ]
       },
       {
         "attributes": {
@@ -546,7 +616,9 @@
           "name": "小宇"
         },
         "id": "S08",
-        "preferences": []
+        "preferences": [
+          "G1"
+        ]
       },
       {
         "attributes": {
@@ -554,7 +626,9 @@
           "name": "小薇"
         },
         "id": "S09",
-        "preferences": []
+        "preferences": [
+          "G3"
+        ]
       }
     ],
     "targets": [

@@ -19,7 +19,8 @@
         "G3": 3
       },
       "role_id": "S08",
-      "step": 1
+      "step": 1,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -41,7 +42,8 @@
         "G3": 3
       },
       "role_id": "S04",
-      "step": 2
+      "step": 2,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -63,7 +65,8 @@
         "G3": 2
       },
       "role_id": "S03",
-      "step": 3
+      "step": 3,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -84,7 +87,8 @@
         "G3": 1
       },
       "role_id": "S09",
-      "step": 4
+      "step": 4,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -107,7 +111,8 @@
         "G3": 1
       },
       "role_id": "S01",
-      "step": 5
+      "step": 5,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -130,7 +135,8 @@
         "G3": 1
       },
       "role_id": "S07",
-      "step": 6
+      "step": 6,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -151,7 +157,8 @@
         "G3": 1
       },
       "role_id": "S05",
-      "step": 7
+      "step": 7,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -172,7 +179,8 @@
         "G3": 0
       },
       "role_id": "S06",
-      "step": 8
+      "step": 8,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -192,7 +200,8 @@
         "G3": 0
       },
       "role_id": "S02",
-      "step": 9
+      "step": 9,
+      "tie_break_random_index": null
     }
   ],
   "assignment": {

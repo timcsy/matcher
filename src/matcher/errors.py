@@ -73,5 +73,10 @@ class RosterSheetAmbiguous(MatcherError):
     exit_code = 33
 
 
-class M1RequiresPreferences(MatcherError):
+class MechanismRequiresPreferences(MatcherError):
+    """機制（M1 / M2 等）需要至少一位角色提供志願；通用化自階段 4a 的 M1RequiresPreferences。"""
     exit_code = 40
+
+
+# 向後相容 alias（階段 4a 既有 import 與測試斷言皆可繼續運作）
+M1RequiresPreferences = MechanismRequiresPreferences
