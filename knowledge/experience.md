@@ -118,3 +118,23 @@
 - **來源**：specs/005-individual-view/spec.md FR-003、SC-002；
   tests/integration/test_web_individual_view.py 的 `FORBIDDEN_TECHNICAL_TOKENS`、`FORBIDDEN_PATTERNS`、
   `test_no_technical_tokens_in_individual_view`、`test_error_pages_have_no_technical_tokens`。
+
+### 核心職責 vs 周邊整合的分層邊界
+
+- **理論說**：教訓 5「library + CLI + Web 三入口共用核心」似乎暗示「核心永遠不動」。
+  階段 2a–3b 共 4 個 feature 都做到了。階段 4a 卻**動了核心** 5 個模組
+  （allocator / pipeline / audit / errors / cli）——這是違反教訓 5 嗎？
+- **實際發生**：實作中發現，動核心的合法性取決於變更的**性質**：
+  - 階段 4a 加 M1 RSD 是「**新分配機制**」——核心職責「過濾 → 分配」的擴充
+  - 同樣會動核心的還會有：M2、新規則型態、新稽核欄位、新隨機性來源
+  - 反之，階段 2b 加 CSV/Excel 匯入、3a/3b 加 Web UI、3c 加 PDF 匯出
+    都是「**新入口 / 新格式 / 新呈現視圖**」——周邊整合，不應動核心
+- **解決方式**：精確化教訓 5 的判準——**「動到核心的理由必須是『核心職責的擴充』」**。
+  審視 PR 時用一個簡單問題判斷：「這次變更，library 本身的能力（不考慮 IO 介面）
+  變強了嗎？」若答「是」（如新增 allocate_m1）→ 動核心合法；若答「否」
+  （如加新 Web 端點、新檔案格式 reader）→ 應限於外層、不動核心。
+- **教訓**：分層純度不是「核心永遠不動」，而是「**動核心的理由必須對應核心職責**」。
+  作為 PR 審查的硬規則：動到 `src/matcher/{rules,filter,allocator,pipeline,audit,rng}`
+  的 PR 必須在描述中明確指出「擴充了哪個核心職責」；否則退回外層實作。
+- **來源**：specs/006-m1-rsd-mechanism；commit `91c916a` 動核心 5 個模組；
+  對比 commits `586fd93` / `0384021` / `f8ac328` 三個 feature 皆 0 動核心。

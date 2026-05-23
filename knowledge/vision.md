@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b 已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 4a 已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -88,7 +88,20 @@
 - 自動化測試：169 個（既有 142 + 階段 3b 新增 27），全綠
 - ⏸ SC-001「一般教師 5 分鐘真人測試」待人工驗證
 
-尚未開始：稽核報告 PDF 匯出（階段 3c）、M1/M2 機制（階段 4）、K8s 部署（階段 5）、實際學校場景試行。
+階段 4a M1 RSD 機制（commit `91c916a`，無新依賴）：
+
+- `src/matcher/allocator.py` 新增 `allocate_m1`（Fisher-Yates 洗牌處理順序 → 逐位選最高未滿志願）
+- `_normalize_preferences`：preferences 去重 + 忽略資格集合外 id
+- `pipeline.py` mechanism dispatch（M0/M1）；M1 + 全空 preferences → 拒絕
+- audit schema v1.2 → v1.3：新增 `processing_order` + `allocation_trace[].{preferred_order, preference_rank, fallback_random_index}`
+- CLI `--mechanism M0|M1`（不分大小寫）；不支援值 exit 2
+- 新錯誤類別 `M1RequiresPreferences`（exit 40）
+- 範例 `examples/study-group/roster-m1.csv`（9 學生含 1-3 志願）
+- 5 個既有黃金檔重生（v1.3 + null 欄位）+ 1 個新 `study-group-m1.audit.json`
+- 自動化測試：188 個（既有 169 + 階段 4a 新增 19），全綠
+- **首次合法動核心 5 個模組**（allocator/pipeline/audit/errors/cli）——「分配機制就是核心職責」
+
+尚未開始：稽核報告 PDF 匯出（階段 3c）、M2 Boston 機制（階段 4b）、Web UI 填志願介面（階段 4c）、K8s 部署（階段 5）、實際學校場景試行。
 
 ## 架構
 
@@ -228,22 +241,53 @@
 - [ ] 稽核報告可匯出（PDF 或結構化檔案）
 - [ ] 報告依模板 report_fields 宣告渲染欄位
 
-### 階段 4：分配機制擴充（M1 / M2 + 機制切換）
+### 階段 4a：M1 RSD（隨機輪流挑）機制
 
-- [ ] 完成
+- [x] 完成（commit `91c916a`，2026-05-24）
 
 <!--
-  交付：新增 M1（RSD）、M2（Boston）兩個分配機制；啟用核心引擎中
-  「志願非空」分支；模板支援宣告志願欄位；Web UI 提供當事人填志願的介面；
-  活動建立時可在 M0 / M1 / M2 之間選擇機制。
-  前置條件：階段 3
+  交付：啟用核心引擎中「志願非空」分支；mechanism dispatch（M0/M1）；
+  CLI --mechanism M0|M1；audit schema v1.2→v1.3 加處理順序與志願排名；
+  preferences 規範化（去重 + 忽略資格外）。Web UI 不動。
+  前置條件：階段 1+2a+2b
 -->
 
 **成功標準：**
 
-- [ ] 同一場活動可在「純抽籤（M0）/ RSD（M1）/ Boston（M2）」三種機制間切換，
-      核心引擎走不同分支
-- [ ] M1 的「處理順序」與 M2 的「同層級超額抽籤」皆由可驗證的 seed 決定
+- [x] M1 路徑可由 seed 推導處理順序，逐位選最高未滿志願；同 seed 兩次跑出 bytewise 相同 audit
+- [x] M1 + 全空 preferences 明確拒絕（`M1RequiresPreferences`，exit 40）
+- [x] 既有 M0 路徑邏輯完全不變；5 個既有黃金檔重生為 v1.3 後 assignment / qualified_set 等核心欄位不變
+
+### 階段 4b：M2 Boston（層級填滿）機制
+
+- [ ] 完成
+
+<!--
+  交付：新增 M2 演算法（先全塞第 1 志願→超額抽籤→沒進的退到第 2 志願…）；
+  audit 對應紀錄；CLI --mechanism 擴為 M0|M1|M2。
+  前置條件：階段 4a
+-->
+
+**成功標準：**
+
+- [ ] M2 路徑可在 seed 推導下完成層級填滿；audit 完整記錄每層級的超額抽籤過程
+- [ ] CLI / pipeline 可在 M0 / M1 / M2 三種機制間切換
+
+### 階段 4c：Web UI 填志願介面 + 機制選擇器
+
+- [ ] 完成
+
+<!--
+  交付：Web UI 新建媒合流程支援填志願（表單）；活動建立時可選 M0/M1/M2 機制；
+  個別查詢頁顯示志願滿足度。
+  前置條件：階段 4a、階段 4b
+-->
+
+**成功標準：**
+
+- [ ] Web 新建媒合流程提供志願填寫表單欄位
+- [ ] 活動建立時可選 M0 / M1 / M2 機制（下拉），不可選機制 disabled 並附說明
+- [ ] 個別查詢頁顯示「您被分到第幾志願」（沿用 audit 中的 preference_rank）
       （仍符合原則 2）
 - [ ] 至少 1 個模板包含志願欄位（例如「研習分組」可填 3 個志願）
 - [ ] 稽核紀錄包含：每位當事人的志願表、被分配到的志願編號、
