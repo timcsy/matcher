@@ -1,0 +1,11 @@
+roles: []
+targets:
+  - id: G1
+    capacity: 3
+    attributes: {name: "程式組", topic: "program", min_grade: 4}
+  - id: G2
+    capacity: 3
+    attributes: {name: "自然組", topic: "science", min_grade: 4}
+  - id: G3
+    capacity: 3
+    attributes: {name: "人文組", topic: "humanities", min_grade: 4}

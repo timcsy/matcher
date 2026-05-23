@@ -45,8 +45,8 @@ def test_template_snapshot_contains_full_template(tmp_path: Path):
     assert "rules" in snap
 
 
-def test_audit_schema_version_is_1_2(tmp_path: Path):
+def test_audit_schema_version_is_1_3(tmp_path: Path):
     out = tmp_path / "audit.json"
     _run(out)
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.2"
+    assert data["schema_version"] == "1.3"

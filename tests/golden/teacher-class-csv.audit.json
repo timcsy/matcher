@@ -8,6 +8,9 @@
         "C05"
       ],
       "chosen": "C04",
+      "fallback_random_index": null,
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 2,
       "remaining_capacity_after": {
         "C01": 2,
@@ -25,6 +28,9 @@
         "C03"
       ],
       "chosen": "C01",
+      "fallback_random_index": null,
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 1,
@@ -42,6 +48,9 @@
         "C04"
       ],
       "chosen": "C02",
+      "fallback_random_index": null,
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 1,
@@ -61,6 +70,9 @@
         "C05"
       ],
       "chosen": "C01",
+      "fallback_random_index": null,
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -77,6 +89,9 @@
         "C03"
       ],
       "chosen": "C03",
+      "fallback_random_index": null,
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -95,6 +110,9 @@
         "C05"
       ],
       "chosen": "C02",
+      "fallback_random_index": null,
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -111,6 +129,9 @@
         "C04"
       ],
       "chosen": "C04",
+      "fallback_random_index": null,
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -127,6 +148,9 @@
         "C05"
       ],
       "chosen": "C05",
+      "fallback_random_index": null,
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -143,6 +167,9 @@
         "C05"
       ],
       "chosen": "C05",
+      "fallback_random_index": null,
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -159,6 +186,9 @@
         "C03"
       ],
       "chosen": "C03",
+      "fallback_random_index": null,
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -694,6 +724,7 @@
     "source_type": "csv"
   },
   "mechanism": "M0",
+  "processing_order": null,
   "qualified_set": {
     "T01": [
       "C01",
@@ -940,7 +971,7 @@
     ],
     "version": "1.0"
   },
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "seed": 123456,
   "template_snapshot": {
     "attributes": {

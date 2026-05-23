@@ -50,7 +50,10 @@ def _print_summary(audit: dict) -> None:
     typer.echo(f"資格集合大小：{n_pairs} 個合法配對；{n_with_options} 位角色至少有一個可分配對象。")
 
     typer.echo("")
-    typer.echo(f"=== 分配階段（{audit['mechanism']} 純抽籤）===")
+    mechanism_label = "M1 RSD 隨機輪流挑" if audit["mechanism"] == "M1" else "M0 純抽籤"
+    typer.echo(f"=== 分配階段（{mechanism_label}）===")
+    if audit.get("processing_order"):
+        typer.echo(f"處理順序：{' → '.join(audit['processing_order'])}")
     typer.echo(f"seed：{audit['seed']}")
     typer.echo("最終配對：")
 
@@ -90,7 +93,7 @@ def run_cmd(
     preferences: Optional[Path] = typer.Option(
         None, "--preferences", exists=True, dir_okay=False, readable=True
     ),
-    mechanism: str = typer.Option("M0", "--mechanism"),
+    mechanism: str = typer.Option("M0", "--mechanism", help="分配機制：M0（純抽籤）或 M1（RSD 隨機輪流挑）"),
     output: Path = typer.Option(Path("audit.json"), "--output"),
     template: Optional[str] = typer.Option(None, "--template", help="使用內建模板的 id"),
     template_file: Optional[Path] = typer.Option(
@@ -177,12 +180,23 @@ def run_cmd(
 
         prefs = load_preferences(preferences)
 
+        # 規範化 mechanism
+        mechanism_norm = mechanism.upper()
+        if mechanism_norm not in ("M0", "M1"):
+            typer.echo(
+                f"錯誤：不支援的機制 `{mechanism}`。\n"
+                f"細節：目前支援：M0、M1。\n"
+                f"建議：請以 --mechanism M0 或 --mechanism M1 重試。",
+                err=True,
+            )
+            raise typer.Exit(code=2)
+
         result = run_match(MatcherInput(
             ruleset=rs,
             roster=ro,
             seed=seed,
             preferences=prefs if prefs else None,
-            mechanism=mechanism,
+            mechanism=mechanism_norm,
             template=tpl_obj,
             import_metadata=import_metadata,
         ))

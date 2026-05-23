@@ -25,7 +25,7 @@ def test_legacy_rules_roster_still_works(tmp_path: Path):
     assert r.exit_code == 0, r.output
     data = json.loads(out.read_text(encoding="utf-8"))
     # schema 升級到 1.2
-    assert data["schema_version"] == "1.2"
+    assert data["schema_version"] == "1.3"
     # 但不使用模板 → template_snapshot 為 null
     assert data["template_snapshot"] is None
     # YAML 路徑 → import_metadata 為 null

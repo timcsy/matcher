@@ -24,7 +24,8 @@ def test_nonempty_preferences_in_roster_rejected(tmp_path: Path):
     msg = r.output + (r.stderr or "")
     assert "M0 純抽籤" in msg
     assert "不接受志願輸入" in msg
-    assert "階段 4" in msg
+    # 階段 6 改：M1 已啟用，訊息現在指引「改用 --mechanism M1」
+    assert ("--mechanism M1" in msg) or ("階段 4" in msg)
 
 
 def test_empty_preferences_in_roster_passes(tmp_path: Path):

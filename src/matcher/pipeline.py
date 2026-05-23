@@ -5,10 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from matcher.allocator import allocate_m0
+from matcher.allocator import allocate_m0, allocate_m1
 from matcher.audit import build_audit_record
 from matcher.errors import (
     CapacityShortage,
+    M1RequiresPreferences,
     PreferencesNotSupported,
     SeedMissing,
     UnknownAttribute,
@@ -117,7 +118,15 @@ def run_match(inp: MatcherInput) -> MatcherResult:
         raise PreferencesNotSupported(
             "此機制（M0 純抽籤）不接受志願輸入。\n"
             "原因：名單中有角色帶有非空 preferences；本階段僅支援 M0。\n"
-            "建議：將名單中所有 preferences 改為空陣列，或等待階段 4 的志願序機制。"
+            "建議：將名單中所有 preferences 改為空陣列，或改用 --mechanism M1 走志願序機制。"
+        )
+
+    # 2c. M1 需要至少一位角色提供志願
+    if inp.mechanism == "M1" and not any(role.preferences for role in inp.roster.roles):
+        raise M1RequiresPreferences(
+            "M1 需要至少一位角色提供志願；若無志願請改用 mechanism=M0。\n"
+            "細節：roster 中所有角色的 preferences 皆為空。\n"
+            "建議：請至少為一位角色填入志願（CSV「志願組別」欄填分號分隔字串），或改用 `--mechanism M0`。"
         )
 
     # 3. 規則層靜態檢查
@@ -140,7 +149,18 @@ def run_match(inp: MatcherInput) -> MatcherResult:
     # 6. 分配
     capacities = {t.id: t.capacity for t in inp.roster.targets}
     rng = SeededRandom(inp.seed)
-    assignment, allocation_trace = allocate_m0(qualified_set, capacities, rng)
+    processing_order: list | None = None
+
+    if inp.mechanism == "M0":
+        assignment, allocation_trace = allocate_m0(qualified_set, capacities, rng)
+    elif inp.mechanism == "M1":
+        preferences_map = {role.id: list(role.preferences) for role in inp.roster.roles}
+        processing_order, assignment, allocation_trace = allocate_m1(
+            qualified_set, preferences_map, capacities, rng,
+            role_order=[role.id for role in inp.roster.roles],
+        )
+    else:
+        raise ValueError(f"不支援的機制 `{inp.mechanism}`；支援：M0、M1")
 
     # 7. 稽核紀錄
     audit = build_audit_record(
@@ -154,6 +174,7 @@ def run_match(inp: MatcherInput) -> MatcherResult:
         mechanism=inp.mechanism,
         template=inp.template,
         import_metadata=inp.import_metadata,
+        processing_order=processing_order,
     )
 
     return MatcherResult(

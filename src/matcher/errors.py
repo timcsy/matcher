@@ -71,3 +71,7 @@ class RosterTypeError(MatcherError):
 
 class RosterSheetAmbiguous(MatcherError):
     exit_code = 33
+
+
+class M1RequiresPreferences(MatcherError):
+    exit_code = 40

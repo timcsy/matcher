@@ -94,6 +94,26 @@ uv run matcher serve
 
 頁面為純讀取——同一 URL 多次訪問結果完全一致。
 
+### 分配機制
+
+```bash
+# M0 純抽籤（預設；無偏好）
+uv run matcher run --template teacher-class \
+                   --roster examples/teacher-class/roster.yaml \
+                   --seed 123456 --output audit.json
+
+# M1 RSD 隨機輪流挑（含志願；先隨機洗牌處理順序、再逐位選最高未滿志願）
+uv run matcher run --template study-group \
+                   --roster-csv examples/study-group/roster-m1.csv \
+                   --seed 2026 --mechanism M1 --output audit-m1.json
+```
+
+「研習分組」範例 `roster-m1.csv` 含每位學生的志願組別（分號分隔），可用 M1 跑出含「處理順序 + 每人志願滿足度」的稽核紀錄。
+
+- 規則：M0 不接受任何 preferences；M1 至少需一位提供 preferences。
+- M1 + 全空 preferences → 拒絕（exit 40）；建議改用 M0。
+- 未來機制 M2（Boston 層級填滿）將於 feature 007 加入。
+
 ### 從 CSV / Excel 匯入名單
 
 支援 CSV（UTF-8 / UTF-8-BOM / CP950 三種編碼自動偵測）與 Excel（.xlsx）：
