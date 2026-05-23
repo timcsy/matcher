@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AuditRecord (v1.3, M2 extension)",
+  "description": "audit schema v1.3 不升版本；allocation_trace 條目新增可選欄位 tie_break_random_index。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "mechanism",
+    "seed",
+    "rules_snapshot",
+    "roster_snapshot",
+    "qualified_set",
+    "filter_trace",
+    "allocation_trace",
+    "assignment",
+    "generated_at",
+    "template_snapshot",
+    "import_metadata",
+    "processing_order"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.3" },
+    "mechanism": { "enum": ["M0", "M1", "M2"] },
+    "allocation_trace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "step", "role_id", "candidates", "random_index", "chosen",
+          "remaining_capacity_after"
+        ],
+        "properties": {
+          "step": { "type": "integer", "minimum": 1 },
+          "role_id": { "type": "string" },
+          "candidates": { "type": "array", "items": { "type": "string" } },
+          "random_index": { "type": "integer", "minimum": 0 },
+          "chosen": { "type": ["string", "null"] },
+          "remaining_capacity_after": {
+            "type": "object",
+            "additionalProperties": { "type": "integer", "minimum": 0 }
+          },
+          "preferred_order": {
+            "anyOf": [{ "type": "null" }, { "type": "array", "items": { "type": "string" } }]
+          },
+          "preference_rank": {
+            "anyOf": [{ "type": "null" }, { "type": "integer", "minimum": 1 }]
+          },
+          "fallback_random_index": {
+            "anyOf": [{ "type": "null" }, { "type": "integer", "minimum": 0 }]
+          },
+          "tie_break_random_index": {
+            "anyOf": [{ "type": "null" }, { "type": "integer", "minimum": 0 }],
+            "description": "M2 + 同層超額抽籤時為 Fisher-Yates 洗牌結果中的 0-based 索引；其他情境為 null"
+          }
+        }
+      }
+    }
+  }
+}
