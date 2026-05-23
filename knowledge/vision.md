@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 4a 已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 4a、階段 4b 已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -101,7 +101,19 @@
 - 自動化測試：188 個（既有 169 + 階段 4a 新增 19），全綠
 - **首次合法動核心 5 個模組**（allocator/pipeline/audit/errors/cli）——「分配機制就是核心職責」
 
-尚未開始：稽核報告 PDF 匯出（階段 3c）、M2 Boston 機制（階段 4b）、Web UI 填志願介面（階段 4c）、K8s 部署（階段 5）、實際學校場景試行。
+階段 4b M2 Boston 機制（commit `51d7e89`，無新依賴）：
+
+- `src/matcher/allocator.py` 新增 `allocate_m2`：層級逐次填滿、同層超額用 Fisher-Yates 取前 N、fallback 抽籤、未分配者亦寫入 trace
+- `pipeline.py` dispatch 擴充為 M0 / M1 / M2 三選一
+- `errors.py` `M1RequiresPreferences` 重新命名為 `MechanismRequiresPreferences`；保留 alias 維持向後相容
+- `audit_trace` 條目新增 `tie_break_random_index`（M0/M1/M2 非超額為 null）
+- audit schema **保持 v1.3 不升版本**（教訓 3 的最節制版本）
+- CLI `--mechanism` 接受 M0/M1/M2；訊息依 mechanism 動態填寫
+- 6 個既有黃金檔重生（diff 僅每筆 trace 新增 `tie_break_random_index: null`）+ 1 個新 `study-group-m2.audit.json`
+- 自動化測試：210 個（既有 188 + 階段 4b 新增 22），全綠
+- **第二次合法動核心** 5 個模組——符合教訓 7「新分配機制 = 核心職責擴充」判準
+
+尚未開始：稽核報告 PDF 匯出（階段 3c）、Web UI 填志願介面（階段 4c）、K8s 部署（階段 5）、實際學校場景試行。
 
 ## 架構
 
@@ -260,7 +272,7 @@
 
 ### 階段 4b：M2 Boston（層級填滿）機制
 
-- [ ] 完成
+- [x] 完成（commit `51d7e89`，2026-05-24）
 
 <!--
   交付：新增 M2 演算法（先全塞第 1 志願→超額抽籤→沒進的退到第 2 志願…）；
@@ -270,8 +282,8 @@
 
 **成功標準：**
 
-- [ ] M2 路徑可在 seed 推導下完成層級填滿；audit 完整記錄每層級的超額抽籤過程
-- [ ] CLI / pipeline 可在 M0 / M1 / M2 三種機制間切換
+- [x] M2 路徑可在 seed 推導下完成層級填滿；audit 完整記錄每層級的超額抽籤過程（`tie_break_random_index`）
+- [x] CLI / pipeline 可在 M0 / M1 / M2 三種機制間切換
 
 ### 階段 4c：Web UI 填志願介面 + 機制選擇器
 
@@ -288,10 +300,6 @@
 - [ ] Web 新建媒合流程提供志願填寫表單欄位
 - [ ] 活動建立時可選 M0 / M1 / M2 機制（下拉），不可選機制 disabled 並附說明
 - [ ] 個別查詢頁顯示「您被分到第幾志願」（沿用 audit 中的 preference_rank）
-      （仍符合原則 2）
-- [ ] 至少 1 個模板包含志願欄位（例如「研習分組」可填 3 個志願）
-- [ ] 稽核紀錄包含：每位當事人的志願表、被分配到的志願編號、
-      所選機制名稱、機制內部每一步的選擇/抽籤紀錄
 
 ### 階段 5：K8s 部署
 
