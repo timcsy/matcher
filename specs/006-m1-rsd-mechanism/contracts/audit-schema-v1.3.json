@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AuditRecord (v1.3)",
+  "description": "稽核紀錄 schema 升級至 1.3。相對於 1.2，新增 processing_order 頂層欄位與 allocation_trace 條目可選欄位（preferred_order、preference_rank、fallback_random_index）。其餘欄位不變。",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "mechanism",
+    "seed",
+    "rules_snapshot",
+    "roster_snapshot",
+    "qualified_set",
+    "filter_trace",
+    "allocation_trace",
+    "assignment",
+    "generated_at",
+    "template_snapshot",
+    "import_metadata",
+    "processing_order"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.3" },
+    "mechanism": { "enum": ["M0", "M1"] },
+    "seed": { "type": "integer" },
+    "rules_snapshot": { "type": "object" },
+    "roster_snapshot": { "type": "object" },
+    "qualified_set": { "type": "object" },
+    "filter_trace": { "type": "array" },
+    "allocation_trace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "step", "role_id", "candidates", "random_index", "chosen",
+          "remaining_capacity_after"
+        ],
+        "properties": {
+          "step": { "type": "integer", "minimum": 1 },
+          "role_id": { "type": "string" },
+          "candidates": { "type": "array", "items": { "type": "string" } },
+          "random_index": { "type": "integer", "minimum": 0 },
+          "chosen": { "type": ["string", "null"] },
+          "remaining_capacity_after": {
+            "type": "object",
+            "additionalProperties": { "type": "integer", "minimum": 0 }
+          },
+          "preferred_order": {
+            "anyOf": [
+              { "type": "null" },
+              { "type": "array", "items": { "type": "string" } }
+            ],
+            "description": "M1 路徑：規範化後的 preferences；M0 為 null"
+          },
+          "preference_rank": {
+            "anyOf": [{ "type": "null" }, { "type": "integer", "minimum": 1 }],
+            "description": "M1 路徑：被分配對象在 preferred_order 中的 1-based 排名；fallback 抽中或 M0 為 null"
+          },
+          "fallback_random_index": {
+            "anyOf": [{ "type": "null" }, { "type": "integer", "minimum": 0 }],
+            "description": "M1 路徑 fallback 抽籤時為抽中索引；其他為 null"
+          }
+        }
+      }
+    },
+    "assignment": {
+      "type": "object",
+      "additionalProperties": { "type": ["string", "null"] }
+    },
+    "generated_at": { "type": "null" },
+    "template_snapshot": {
+      "anyOf": [{ "type": "null" }, { "type": "object" }]
+    },
+    "import_metadata": {
+      "anyOf": [{ "type": "null" }, { "type": "object" }]
+    },
+    "processing_order": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "array", "items": { "type": "string" } }
+      ],
+      "description": "M1 時為 role_id 陣列（Fisher-Yates 洗牌結果）；M0 時為 null"
+    }
+  }
+}

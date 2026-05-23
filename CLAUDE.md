@@ -30,9 +30,9 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3.11+: Follow standard conventions
 
 ## Recent Changes
+- 006-m1-rsd-mechanism: Added Python 3.11+（沿用） + 沿用（無新增）
 - 005-individual-view: Added Python 3.11+（沿用） + 沿用（無新增）；本 feature 僅在 `matcher.web` 套件內加程式碼
 - 004-web-ui-main: Added Python 3.11+（沿用） + 沿用（Typer、PyYAML、pytest、openpyxl）+ **新增 fastapi ≥ 0.110、uvicorn[standard] ≥ 0.27、jinja2 ≥ 3.1、python-multipart ≥ 0.0.9**
-- 003-data-import: Added Python 3.11+（沿用） + Typer、PyYAML、pytest（沿用）+ **openpyxl ≥ 3.1**（新增，用於 .xlsx）
 
 
 <!-- MANUAL ADDITIONS START -->
