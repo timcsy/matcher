@@ -31,9 +31,18 @@
 <div class="card">
   <h3>您的分配結果</h3>
   {% if subset.assignment.target_id %}
-    <p class="status-success">您被分到：
-      <strong>{{ subset.assignment.target_attributes.get('name', subset.assignment.target_id) }}</strong>
-    </p>
+    {% set assigned_display = subset.assignment.target_attributes.get('name', subset.assignment.target_id) %}
+    {% if mechanism in ('M1', 'M2') %}
+      {% if preference_rank is not none %}
+        <p class="status-success">您被分到第 {{ preference_rank }} 志願：<strong>{{ assigned_display }}</strong></p>
+      {% elif preferred_count > 0 %}
+        <p class="status-success">您原本的志願已被分配給其他人，由公平抽籤分到 <strong>{{ assigned_display }}</strong>。</p>
+      {% else %}
+        <p class="status-success">您未在志願清單中，由公平抽籤分到 <strong>{{ assigned_display }}</strong>。</p>
+      {% endif %}
+    {% else %}
+      <p class="status-success">您被分到：<strong>{{ assigned_display }}</strong></p>
+    {% endif %}
   {% else %}
     <p class="status-failed">您未被分配。</p>
     {% set qualified_count = subset.filter_trace_subset | selectattr('qualified') | list | length %}
