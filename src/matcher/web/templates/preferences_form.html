@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}填寫志願{% endblock %}
+{% block content %}
+<h2>填寫志願</h2>
+
+<div class="card">
+  <p><strong>已上傳名單</strong>：{{ roster_filename }}（{{ roles_for_form | length }} 位）</p>
+  <p><strong>模板</strong>：{{ template_name }}</p>
+  <p><strong>機制</strong>：{{ mechanism_label }}</p>
+  <p><strong>隨機種子</strong>：<code>{{ seed }}</code></p>
+  <p><small>⚠️ 離開頁面不會自動儲存——請一次填完再離開。</small></p>
+</div>
+
+{% if not targets_for_options %}
+<div class="error-box">
+  <p><strong>此模板未宣告候選對象清單，無法在 UI 上填志願。</strong></p>
+  <p>請改用 CSV 並在「志願組別」欄填寫，或回到上一步使用其他模板。</p>
+  <p style="margin-top:1rem">
+    <a class="btn btn-secondary" href="/match/new?template_id={{ template_id }}">回到上一步</a>
+  </p>
+</div>
+{% else %}
+
+<div class="card">
+  <h3>候選對象</h3>
+  <ul>
+    {% for t in targets_for_options %}
+    <li>{{ t.summary }}</li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% if form_errors %}
+<div class="error-box">
+  <p><strong>表單驗證失敗：</strong></p>
+  <ul>
+    {% for err in form_errors %}<li>{{ err }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form method="post" action="/match/preferences">
+  <input type="hidden" name="template_id" value="{{ template_id }}">
+  <input type="hidden" name="mechanism" value="{{ mechanism }}">
+  <input type="hidden" name="seed" value="{{ seed }}">
+  <input type="hidden" name="roster_bytes_b64" value="{{ roster_bytes_b64 }}">
+  <input type="hidden" name="roster_filename" value="{{ roster_filename }}">
+
+  <table>
+    <thead>
+      <tr>
+        <th>角色</th>
+        {% for rank in range(1, max_choices + 1) %}
+        <th>您的第 {{ rank }} 志願</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for role in roles_for_form %}
+      <tr>
+        <td><code>{{ role.id }}</code>（{{ role.display_name }}）</td>
+        {% for rank in range(1, max_choices + 1) %}
+        {% set field_name = "pref_" ~ role.id ~ "_" ~ rank %}
+        {% set selected_value = previous_form_values.get(field_name, "") if previous_form_values else "" %}
+        <td>
+          <select name="{{ field_name }}">
+            <option value="" {% if selected_value == "" %}selected{% endif %}>（未選）</option>
+            {% for t in targets_for_options %}
+            <option value="{{ t.id }}" {% if selected_value == t.id %}selected{% endif %}>{{ t.name }}</option>
+            {% endfor %}
+          </select>
+        </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p style="margin-top:2rem">
+    <button class="btn btn-success" type="submit" name="_action" value="submit">確認執行</button>
+    <button class="btn btn-secondary" type="submit" name="_action" value="skip">跳過此步驟，以全空志願執行</button>
+  </p>
+</form>
+
+{% endif %}
+
+{% endblock %}
