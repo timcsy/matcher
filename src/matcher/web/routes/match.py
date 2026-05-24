@@ -17,12 +17,20 @@ from matcher.errors import MatcherError, SeedMissing, TemplateNotFound
 from matcher.pipeline import MatcherInput, run_match
 from matcher.template_loader import TemplateRegistry
 from matcher.web.errors import MatchRecordNotFound, UploadInvalidMime, UploadTooLarge
+from matcher.web.humanize import mechanism_label, preference_rank_display
 from matcher.web.individual import build_individual_audit_subset
 from matcher.web.store import MatchRecord, MatchStore, SCHEMA_VERSION
 
 router = APIRouter()
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
+
+MECHANISMS = [
+    ("M0", "M0 純抽籤"),
+    ("M1", "M1 RSD（隨機輪流挑）"),
+    ("M2", "M2 Boston（層級填滿）"),
+]
+VALID_MECHANISMS = {value for value, _ in MECHANISMS}
 ALLOWED_MIMES = {
     "text/csv",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -40,7 +48,12 @@ async def new_match(request: Request, template_id: Optional[str] = None):
     items = [reg.get(tid) for tid in reg.list_ids()]
     return _templates(request).TemplateResponse(
         request, "new_match.html",
-        {"templates": items, "selected_id": template_id},
+        {
+            "templates": items,
+            "selected_id": template_id,
+            "mechanisms": MECHANISMS,
+            "default_mechanism": "M0",
+        },
     )
 
 
@@ -50,7 +63,20 @@ async def run(
     template_id: str = Form(...),
     seed: int = Form(...),
     roster: UploadFile = File(...),
+    mechanism: str = Form("M0"),
 ):
+    # 驗證機制
+    mechanism = (mechanism or "M0").strip().upper()
+    if mechanism not in VALID_MECHANISMS:
+        return _templates(request).TemplateResponse(
+            request, "error_page.html",
+            {
+                "error_type": "InvalidMechanism",
+                "error_message": f"不支援的機制：{mechanism}（請選 M0、M1、M2）",
+            },
+            status_code=400,
+        )
+
     # 驗證大小
     data = await roster.read()
     if len(data) > MAX_UPLOAD_BYTES:
@@ -92,7 +118,7 @@ async def run(
         template_id=template_id,
         seed=seed,
         input_file=roster.filename,
-        mechanism="M0",
+        mechanism=mechanism,
     )
 
     with tempfile.NamedTemporaryFile(suffix=suffix or (".xlsx" if is_xlsx else ".csv"), delete=False) as tmp:
@@ -114,7 +140,7 @@ async def run(
                 roster=ro,
                 seed=seed,
                 preferences=None,
-                mechanism="M0",
+                mechanism=mechanism,
                 template=tpl,
                 import_metadata=import_meta,
             ))
@@ -137,14 +163,40 @@ async def match_detail(request: Request, record_id: str):
     record = store.get(record_id)
 
     roles_for_links: list = []
+    mechanism = "M0"
+    processing_order_display = None
+    rank_display_by_role: dict = {}
     if record.status == "success" and record.audit:
         roles_for_links = [
             {"id": r["id"], "name": r.get("attributes", {}).get("name", r["id"])}
             for r in record.audit.get("roster_snapshot", {}).get("roles", [])
         ]
+        mechanism = record.audit.get("mechanism", "M0")
+        # 處理順序段（M1/M2 才注入；M0 audit.processing_order 為 null）
+        po = record.audit.get("processing_order")
+        if po:
+            name_by_id = {r["id"]: r.get("attributes", {}).get("name", r["id"])
+                          for r in record.audit.get("roster_snapshot", {}).get("roles", [])}
+            processing_order_display = [(rid, name_by_id.get(rid, rid)) for rid in po]
+        # 志願排名欄（M1/M2）
+        for entry in record.audit.get("allocation_trace", []):
+            display = preference_rank_display(
+                mechanism,
+                entry.get("preference_rank"),
+                entry.get("fallback_random_index"),
+            )
+            if display is not None:
+                rank_display_by_role[entry["role_id"]] = display
     return _templates(request).TemplateResponse(
         request, "match_result.html",
-        {"record": record, "roles_for_links": roles_for_links},
+        {
+            "record": record,
+            "roles_for_links": roles_for_links,
+            "mechanism": mechanism,
+            "mechanism_label": mechanism_label(mechanism),
+            "processing_order_display": processing_order_display,
+            "rank_display_by_role": rank_display_by_role,
+        },
     )
 
 
@@ -183,6 +235,17 @@ async def individual_view(request: Request, record_id: str, role_id: str):
 
     subset = build_individual_audit_subset(record.audit, role_id)
 
+    # US2：志願滿足度
+    mechanism = record.audit.get("mechanism", "M0")
+    preference_rank = None
+    fallback_random_index = None
+    for entry in record.audit.get("allocation_trace", []):
+        if entry.get("role_id") == role_id:
+            preference_rank = entry.get("preference_rank")
+            fallback_random_index = entry.get("fallback_random_index")
+            break
+    preferred_count = len(role.get("preferences", []) or [])
+
     rules_lookup = {
         r["id"]: r["description"]
         for r in record.audit.get("rules_snapshot", {}).get("rules", [])
@@ -201,6 +264,10 @@ async def individual_view(request: Request, record_id: str, role_id: str):
             "template": template,
             "rules_lookup": rules_lookup,
             "target_lookup": target_lookup,
+            "mechanism": mechanism,
+            "preference_rank": preference_rank,
+            "fallback_random_index": fallback_random_index,
+            "preferred_count": preferred_count,
         },
     )
 

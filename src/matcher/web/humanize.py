@@ -37,3 +37,30 @@ def humanize_rule_description(description: str, template: Any) -> str:
     out = ROLE_PATTERN.sub(_role_repl, description)
     out = TARGET_PATTERN.sub(_target_repl, out)
     return out
+
+
+_MECHANISM_LABELS = {
+    "M0": "M0 純抽籤",
+    "M1": "M1 RSD 隨機輪流挑",
+    "M2": "M2 Boston 層級填滿",
+}
+
+
+def mechanism_label(mechanism: str) -> str:
+    """機制代號 → 顯示名。未知值原樣回傳。"""
+    return _MECHANISM_LABELS.get(mechanism, mechanism)
+
+
+def preference_rank_display(
+    mechanism: str,
+    preference_rank: int | None,
+    fallback_random_index: int | None,
+) -> str | None:
+    """志願排名欄文案；M0 路徑回 None（呼叫端應隱藏整欄）。"""
+    if mechanism == "M0":
+        return None
+    if preference_rank is not None:
+        return f"第 {preference_rank} 志願"
+    if fallback_random_index is not None:
+        return "抽籤"
+    return ""

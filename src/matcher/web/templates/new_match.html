@@ -38,10 +38,17 @@
   </div>
 
   <div class="card">
-    <h3>4. 機制</h3>
-    <p><strong>M0 純抽籤</strong>（無偏好、從資格集合隨機分配）</p>
-    <p><small>志願序機制（M1 隨機輪流挑、M2 層級填滿）將於階段 4 啟用。</small></p>
-    <button class="btn btn-success" type="submit">執行媒合</button>
+    <h3>4. 分配機制</h3>
+    <label>
+      分配機制：
+      <select name="mechanism">
+        {% for value, label in mechanisms %}
+        <option value="{{ value }}" {% if value == default_mechanism %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <small>無志願選 M0；有志願選 M1（隨機輪流挑）或 M2（先填高志願）。</small>
+    <p style="margin-top:1rem"><button class="btn btn-success" type="submit">執行媒合</button></p>
   </div>
 </form>
 {% endblock %}

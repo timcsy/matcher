@@ -9,12 +9,21 @@
   <p><strong>時間</strong>：{{ record.created_at }}</p>
   <p><strong>模板</strong>：{{ record.audit.template_snapshot.name }}（<code>{{ record.template_id }}</code>）</p>
   <p><strong>隨機種子</strong>：<code>{{ record.seed }}</code></p>
-  <p><strong>機制</strong>：{{ record.mechanism }} 純抽籤</p>
+  <p><strong>機制</strong>：{{ mechanism_label }}</p>
 </div>
+
+{% if processing_order_display %}
+<div class="card">
+  <p><strong>處理順序</strong>：
+    {% for rid, name in processing_order_display %}<code>{{ rid }}</code>（{{ name }}）{% if not loop.last %} → {% endif %}{% endfor %}
+  </p>
+  <small>本機制下，角色依此順序輪流挑選對象。</small>
+</div>
+{% endif %}
 
 <h3>分配結果</h3>
 <table>
-  <thead><tr><th>角色</th><th>對象</th></tr></thead>
+  <thead><tr><th>角色</th><th>對象</th>{% if mechanism != 'M0' %}<th>志願排名</th>{% endif %}</tr></thead>
   <tbody>
     {% set role_attrs = {} %}
     {% for r in record.audit.roster_snapshot.roles %}{% if role_attrs.update({r.id: r.attributes}) %}{% endif %}{% endfor %}
@@ -30,6 +39,9 @@
           <em>未分配</em>
         {% endif %}
       </td>
+      {% if mechanism != 'M0' %}
+      <td>{{ rank_display_by_role.get(role_id, '') }}</td>
+      {% endif %}
     </tr>
     {% endfor %}
   </tbody>
