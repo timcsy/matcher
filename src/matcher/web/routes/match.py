@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import dataclasses
 import json
 import tempfile
 from datetime import datetime, timezone
@@ -17,7 +19,7 @@ from matcher.errors import MatcherError, SeedMissing, TemplateNotFound
 from matcher.pipeline import MatcherInput, run_match
 from matcher.template_loader import TemplateRegistry
 from matcher.web.errors import MatchRecordNotFound, UploadInvalidMime, UploadTooLarge
-from matcher.web.humanize import mechanism_label, preference_rank_display
+from matcher.web.humanize import mechanism_label, preference_rank_display, target_summary
 from matcher.web.individual import build_individual_audit_subset
 from matcher.web.store import MatchRecord, MatchStore, SCHEMA_VERSION
 
@@ -135,6 +137,21 @@ async def run(
             # 修正 import_metadata 中的 basename 為原檔名（避免暴露 tmp 路徑）
             import_meta["file_basename"] = roster.filename or import_meta["file_basename"]
 
+            # Feature 009：偵測「需要使用者填志願」→ 跳到中介頁，不執行 pipeline
+            if (
+                tpl.preferences_schema is not None
+                and mechanism in ("M1", "M2")
+                and all(not role.preferences for role in ro.roles)
+            ):
+                tmp_path.unlink(missing_ok=True)
+                return _render_preferences_form(
+                    request, template_id=template_id, template_name=tpl.name,
+                    mechanism=mechanism, seed=seed,
+                    roster_bytes=data, roster_filename=roster.filename or "roster.csv",
+                    roles=ro.roles, default_targets=tpl.default_targets,
+                    max_choices=tpl.preferences_schema.max_choices,
+                )
+
             result = run_match(MatcherInput(
                 ruleset=tpl.ruleset,
                 roster=ro,
@@ -153,6 +170,193 @@ async def run(
     finally:
         tmp_path.unlink(missing_ok=True)
 
+    store.save(record)
+    return RedirectResponse(url=f"/match/{record.id}", status_code=303)
+
+
+# ── Feature 009：填志願表單中介頁面 ────────────────────────────
+
+def _render_preferences_form(
+    request: Request,
+    *,
+    template_id: str,
+    template_name: str,
+    mechanism: str,
+    seed: int,
+    roster_bytes: bytes,
+    roster_filename: str,
+    roles,
+    default_targets,
+    max_choices: int,
+    form_errors: Optional[list] = None,
+    previous_form_values: Optional[dict] = None,
+    status_code: int = 200,
+):
+    """渲染填志願中介頁面。default_targets 為空 tuple → 樣板顯示錯誤段。"""
+    targets_for_options = None
+    if default_targets:
+        targets_for_options = [
+            {
+                "id": t.id,
+                "name": (t.attributes or {}).get("name", t.id),
+                "capacity": t.capacity,
+                "summary": target_summary({
+                    "id": t.id,
+                    "name": (t.attributes or {}).get("name", t.id),
+                    "capacity": t.capacity,
+                }),
+            }
+            for t in default_targets
+        ]
+    roles_for_form = [
+        {"id": r.id, "display_name": (r.attributes or {}).get("name", r.id)}
+        for r in roles
+    ]
+    return _templates(request).TemplateResponse(
+        request, "preferences_form.html",
+        {
+            "template_id": template_id,
+            "template_name": template_name,
+            "mechanism": mechanism,
+            "mechanism_label": mechanism_label(mechanism),
+            "seed": seed,
+            "roster_bytes_b64": base64.b64encode(roster_bytes).decode("ascii"),
+            "roster_filename": roster_filename,
+            "roles_for_form": roles_for_form,
+            "targets_for_options": targets_for_options,
+            "max_choices": max_choices,
+            "form_errors": form_errors or [],
+            "previous_form_values": previous_form_values or {},
+        },
+        status_code=status_code,
+    )
+
+
+def _error_page(request: Request, error_type: str, message: str, status_code: int = 400):
+    return _templates(request).TemplateResponse(
+        request, "error_page.html",
+        {"error_type": error_type, "error_message": message},
+        status_code=status_code,
+    )
+
+
+@router.post("/match/preferences")
+async def submit_preferences(request: Request):
+    form = await request.form()
+    try:
+        template_id = form["template_id"]
+        mechanism = (form["mechanism"] or "M0").strip().upper()
+        seed = int(form["seed"])
+        roster_bytes_b64 = form["roster_bytes_b64"]
+        roster_filename = form["roster_filename"]
+        action = form.get("_action", "submit")
+    except (KeyError, ValueError):
+        return _error_page(request, "PreferencesFormCorrupt", "填志願表單資料異常，請回到上一步重新上傳。")
+
+    try:
+        roster_bytes = base64.b64decode(roster_bytes_b64)
+    except Exception:
+        return _error_page(request, "PreferencesFormCorrupt", "填志願表單資料異常，請回到上一步重新上傳。")
+
+    try:
+        tpl = TemplateRegistry().get(template_id)
+    except TemplateNotFound as e:
+        return _error_page(request, "TemplateNotFound", str(e), status_code=404)
+
+    suffix = Path(roster_filename).suffix.lower()
+    is_xlsx = suffix == ".xlsx"
+
+    with tempfile.NamedTemporaryFile(suffix=suffix or ".csv", delete=False) as tmp:
+        tmp.write(roster_bytes)
+        tmp_path = Path(tmp.name)
+
+    try:
+        try:
+            if is_xlsx:
+                ro, import_meta = load_roster_xlsx(tmp_path, tpl)
+            else:
+                ro, import_meta = load_roster_csv(tmp_path, tpl)
+            import_meta["file_basename"] = roster_filename
+        except MatcherError as e:
+            return _error_page(request, type(e).__name__, str(e))
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+    max_choices = tpl.preferences_schema.max_choices if tpl.preferences_schema else 0
+    valid_target_ids = {t.id for t in tpl.default_targets}
+
+    # _action == "submit"：驗證 + 組裝；"skip"：保留空 prefs 直接跑
+    form_errors: list[str] = []
+    previous_form_values: dict[str, str] = {}
+    if action == "submit":
+        new_roles = []
+        any_pref = False
+        for role in ro.roles:
+            prefs: list[str] = []
+            for rank in range(1, max_choices + 1):
+                field = f"pref_{role.id}_{rank}"
+                value = (form.get(field) or "").strip()
+                previous_form_values[field] = value
+                if value:
+                    if value not in valid_target_ids:
+                        form_errors.append(f"角色 {role.id} 的第 {rank} 志願選了無效的對象「{value}」。")
+                        continue
+                    prefs.append(value)
+            if len(set(prefs)) != len(prefs):
+                form_errors.append(f"角色 {role.id} 的志願中有重複——同列不可重複選同對象。")
+            if prefs:
+                any_pref = True
+            new_roles.append(dataclasses.replace(role, preferences=tuple(prefs)))
+
+        if form_errors:
+            return _render_preferences_form(
+                request,
+                template_id=template_id, template_name=tpl.name,
+                mechanism=mechanism, seed=seed,
+                roster_bytes=roster_bytes, roster_filename=roster_filename,
+                roles=ro.roles, default_targets=tpl.default_targets,
+                max_choices=max_choices,
+                form_errors=form_errors,
+                previous_form_values=previous_form_values,
+            )
+
+        if not any_pref:
+            form_errors.append("請至少為一位角色填寫 1 個志願；若確實沒有志願，請點「跳過此步驟」。")
+            return _render_preferences_form(
+                request,
+                template_id=template_id, template_name=tpl.name,
+                mechanism=mechanism, seed=seed,
+                roster_bytes=roster_bytes, roster_filename=roster_filename,
+                roles=ro.roles, default_targets=tpl.default_targets,
+                max_choices=max_choices,
+                form_errors=form_errors,
+                previous_form_values=previous_form_values,
+            )
+
+        ro = dataclasses.replace(ro, roles=tuple(new_roles))
+    # action == "skip" → ro 不動（preferences 全空），交由 pipeline reject
+
+    # 跑 pipeline 並寫 record
+    store = MatchStore()
+    record_id = MatchRecord.new_id()
+    now = datetime.now(timezone.utc).isoformat()
+    common = dict(
+        schema_version=SCHEMA_VERSION,
+        id=record_id, created_at=now,
+        template_id=template_id, seed=seed,
+        input_file=roster_filename, mechanism=mechanism,
+    )
+    try:
+        result = run_match(MatcherInput(
+            ruleset=tpl.ruleset, roster=ro, seed=seed, preferences=None,
+            mechanism=mechanism, template=tpl, import_metadata=import_meta,
+        ))
+        record = MatchRecord(**common, status="success", audit=result.audit, error=None)
+    except MatcherError as e:
+        record = MatchRecord(
+            **common, status="failed", audit=None,
+            error={"type": type(e).__name__, "exit_code": e.exit_code, "message": str(e)},
+        )
     store.save(record)
     return RedirectResponse(url=f"/match/{record.id}", status_code=303)
 

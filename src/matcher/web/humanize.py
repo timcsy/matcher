@@ -51,6 +51,18 @@ def mechanism_label(mechanism: str) -> str:
     return _MECHANISM_LABELS.get(mechanism, mechanism)
 
 
+def target_summary(target: dict) -> str:
+    """填志願頁的「候選對象」段與下拉選項文字。
+
+    格式：「<name>（容量 <N> 人）」；無 name 用 id；無 capacity 僅顯示名。
+    """
+    name = target.get("name") or target.get("id", "")
+    capacity = target.get("capacity")
+    if capacity is None:
+        return name
+    return f"{name}（容量 {capacity} 人）"
+
+
 def preference_rank_display(
     mechanism: str,
     preference_rank: int | None,
