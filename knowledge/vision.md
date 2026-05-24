@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 4a、階段 4b、階段 4c 已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 4a、階段 4b、階段 4c、階段 4d 已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -125,7 +125,22 @@
 - 自動化測試：234 個（既有 210 + 階段 4c 新增 24，2 個資料相依 skip），全綠
 - Web/CLI bytewise 等價對 M1+M2 各 1 個 parametrize 測試守住
 
-尚未開始：稽核報告 PDF 匯出（階段 3c）、Web UI 動態填志願表單（階段 4d）、K8s 部署（階段 5）、實際學校場景試行。
+階段 4d Web UI 動態填志願表單（commit `6087ffb`，無新依賴）：
+
+- `/match/run` 偵測「模板含 `preferences_schema` + roster 全空 + M1/M2」→ 跳到填志願中介頁面
+- 新增 `POST /match/preferences` 端點：hidden inputs 攜帶 base64(roster bytes) + `pref_<role_id>_<rank>` 動態欄位 + `_action=submit/skip`
+- 新增 `preferences_form.html` 樣板：候選對象段、N 列 × max_choices 個 `<select>` 表格、「確認執行」與「跳過此步驟」兩按鈕
+- 新增 `humanize.target_summary` 純函式（「程式組（容量 3 人）」格式）
+- 表單驗證：同列重複、未知 target id、全空 submit → 回填志願頁 + 友善繁中訊息
+- M0 + 全空、teacher-class（無 schema）+ M1、CSV 已含 prefs → 不跳填志願頁（向後相容 008）
+- **D1 決策**：用 hidden inputs 而非 session 中介軟體——避免引入 stateful 機制（YAGNI 原則的具體應用）
+- **D3 決策**：重新解 base64 + data_import 而非序列化 parsed roster——對複雜不可信狀態，重做 parse 比序列化更可靠
+- 技術詞零容忍延伸：`default_targets` / `preferences_schema` / `max_choices` 加入禁用清單
+- **核心模組 0 改動**（教訓 7 純度示範第 3 次：「新呈現視圖 + 新輸入路徑」皆為周邊整合）
+- 自動化測試：256 個（既有 234 + 階段 4d 新增 22，2 個資料相依 skip），全綠
+- Web/CSV bytewise 等價守住（SC-001）；50 學生 × 3 志願 = 150 select 規模測試通過
+
+尚未開始：稽核報告 PDF 匯出（階段 3c）、K8s 部署（階段 5）、實際學校場景試行。
 
 ## 架構
 
@@ -316,7 +331,7 @@
 
 ### 階段 4d：Web UI 動態填志願表單
 
-- [ ] 完成
+- [x] 完成（commit `6087ffb`，2026-05-24）
 
 <!--
   交付：Web UI 新建媒合流程支援在介面上直接填志願（每位角色 N 個下拉），
@@ -326,8 +341,8 @@
 
 **成功標準：**
 
-- [ ] Web 新建媒合流程提供志願填寫表單欄位（每位角色可即時填寫 1..max_choices 個志願）
-- [ ] 表單提交後產出的 audit 與「同樣志願以 CSV 上傳跑出的 audit」逐位元組相同
+- [x] Web 新建媒合流程提供志願填寫表單欄位（每位角色可即時填寫 1..max_choices 個志願；自動偵測「模板含 schema + roster 全空 + M1/M2」時觸發）
+- [x] 表單提交後產出的 audit 與「同樣志願以 CSV 上傳跑出的 audit」逐位元組相同（SC-001 of 4d，整合測試守住）
 
 ### 階段 5：K8s 部署
 
