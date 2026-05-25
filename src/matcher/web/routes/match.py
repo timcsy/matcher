@@ -29,9 +29,9 @@ router = APIRouter()
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
 
 MECHANISMS = [
-    ("M0", "M0 純抽籤"),
-    ("M1", "M1 RSD（隨機輪流挑）"),
-    ("M2", "M2 Boston（層級填滿）"),
+    ("M0", "純抽籤"),
+    ("M1", "輪流挑"),
+    ("M2", "依志願先後填滿"),
 ]
 VALID_MECHANISMS = {value for value, _ in MECHANISMS}
 ALLOWED_MIMES = {
@@ -76,7 +76,7 @@ async def run(
             request, "error_page.html",
             {
                 "error_type": "InvalidMechanism",
-                "error_message": f"不支援的機制：{mechanism}（請選 M0、M1、M2）",
+                "error_message": f"不支援的抽籤方式 `{mechanism}`；請選「純抽籤」、「輪流挑」或「依志願先後填滿」。",
             },
             status_code=400,
         )

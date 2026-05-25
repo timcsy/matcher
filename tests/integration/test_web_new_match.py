@@ -23,9 +23,9 @@ def test_new_match_page(tmp_path: Path):
     c = _client(tmp_path)
     r = c.get("/match/new")
     assert r.status_code == 200
-    assert "新建媒合" in r.text
+    assert "新增一次配對" in r.text
     assert "teacher-class" in r.text
-    assert "隨機種子" in r.text
+    assert "亂數種子" in r.text
 
 
 def test_run_match_csv_to_result_to_audit(tmp_path: Path):
@@ -40,8 +40,8 @@ def test_run_match_csv_to_result_to_audit(tmp_path: Path):
             files={"roster": ("roster.csv", f, "text/csv")},
         )
     assert r.status_code == 200, r.text  # follow_redirects 預設啟用 → 直接看到結果頁
-    assert "媒合完成" in r.text
-    assert "下載稽核紀錄" in r.text
+    assert "配對完成" in r.text
+    assert "下載完整紀錄" in r.text
 
     # 從結果頁取出 record_id
     import re
@@ -87,7 +87,7 @@ def test_run_with_xlsx(tmp_path: Path):
             )},
         )
     assert r.status_code == 200, r.text
-    assert "媒合完成" in r.text
+    assert "配對完成" in r.text
 
 
 def test_failed_match_writes_record(tmp_path: Path):
@@ -103,6 +103,6 @@ def test_failed_match_writes_record(tmp_path: Path):
             files={"roster": ("bad.csv", f, "text/csv")},
         )
     assert r.status_code == 200
-    assert "媒合失敗" in r.text
+    assert "配對失敗" in r.text
     assert "RosterColumnMismatch" in r.text
     assert "speciality" in r.text

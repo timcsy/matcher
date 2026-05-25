@@ -1,4 +1,4 @@
-"""US3：過去媒合紀錄整合測試。"""
+"""US3：過去紀錄紀錄整合測試。"""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def test_empty_records_list(tmp_path: Path):
     c = _client(tmp_path)
     r = c.get("/matches")
     assert r.status_code == 200
-    assert "尚未執行" in r.text
+    assert "還沒做過" in r.text
 
 
 def test_records_list_after_runs(tmp_path: Path):

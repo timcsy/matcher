@@ -56,8 +56,9 @@ def _form_minimal(template_id: str = "club", **overrides):
 def test_get_new_page_default_simple_mode(client: TestClient):
     r = client.get("/templates/new")
     assert r.status_code == 200
-    assert "簡單模式" in r.text
-    assert "進階模式" in r.text
+    # 兩種建立方式：表單導引 vs 直接寫 YAML（含 AI 助手）
+    assert "用表單建立" in r.text
+    assert "直接寫 YAML" in r.text
     assert "name=\"template_id\"" in r.text
 
 

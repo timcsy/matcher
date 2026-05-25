@@ -53,9 +53,9 @@ def test_50_students_3_choices_renders_and_submits(tmp_path: Path):
 
     r2 = c.post("/match/preferences", data=data)
     assert r2.status_code == 200, r2.text
-    assert "媒合完成" in r2.text or "媒合失敗" in r2.text
+    assert "配對完成" in r2.text or "配對失敗" in r2.text
 
-    if "媒合完成" in r2.text:
+    if "配對完成" in r2.text:
         m = re.search(r'<code>([0-9T:-]+-[a-f0-9]{8})</code>', r2.text)
         rid = m.group(1)
         audit = json.loads(c.get(f"/match/{rid}/audit").content)

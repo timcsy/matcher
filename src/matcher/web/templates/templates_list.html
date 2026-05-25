@@ -1,13 +1,14 @@
 {% extends "base.html" %}
-{% block title %}模板列表{% endblock %}
+{% block title %}範本列表{% endblock %}
 {% block content %}
-<h2>模板列表</h2>
+<h2>所有範本</h2>
+<p><small>範本決定了「要配對什麼」和「需要符合什麼條件」。先看看內建範本，或建立自己的。</small></p>
 
-<p style="margin-bottom:1.5rem">
-  <a class="btn btn-success" href="/templates/new">＋ 新增模板</a>
-  <small style="margin-left:1rem">
-    或：直接寫 YAML 並放到 <code>src/matcher/templates/builtin/</code>。
-    <a href="https://github.com/timcsy/matcher/blob/main/docs/template-authoring-guide.md">模板撰寫指南 →</a>
+<p style="margin-bottom:1.5rem;margin-top:1rem">
+  <a class="btn btn-success" href="/templates/new">＋ 建立新範本</a>
+  <small style="margin-left:1rem;color:var(--color-muted)">
+    懂技術的也可以直接寫設定檔，請參考
+    <a href="https://github.com/timcsy/matcher/blob/main/docs/template-authoring-guide.md">範本撰寫指南</a>
   </small>
 </p>
 
@@ -24,8 +25,8 @@
     <p><code>{{ item.tpl.id }}</code></p>
     <p>{{ item.tpl.description }}</p>
     <p>
-      <a class="btn btn-secondary" href="/templates/{{ item.tpl.id }}">瀏覽</a>
-      <a class="btn btn-success" href="/match/new?template_id={{ item.tpl.id }}">立即使用</a>
+      <a class="btn btn-secondary" href="/templates/{{ item.tpl.id }}">看細節</a>
+      <a class="btn btn-success" href="/match/new?template_id={{ item.tpl.id }}">用這個配對</a>
     </p>
   </div>
   {% endfor %}

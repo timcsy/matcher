@@ -70,5 +70,5 @@ def test_m1_stdout_shows_processing_order(tmp_path: Path):
         "--mechanism", "M1",
         "--output", str(out),
     ])
-    assert "M1 RSD 隨機輪流挑" in r.output
-    assert "處理順序" in r.output
+    assert "輪流挑" in r.output
+    assert "挑志願順序" in r.output

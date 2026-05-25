@@ -2,7 +2,7 @@
 {% block title %}個別查詢{% endblock %}
 {% block content %}
 
-<h2>您的媒合結果</h2>
+<h2>您的配對結果</h2>
 
 <div class="card">
   <h3>您的基本資訊</h3>
@@ -55,8 +55,8 @@
 </div>
 
 <div class="card">
-  <h3>媒合過程說明</h3>
-  <p>系統依以下規則判定您是否能分到各對象：</p>
+  <h3>配對是怎麼決定的</h3>
+  <p>系統依以下條件判斷您是否能被分到各個對象：</p>
 
   {% for entry in subset.filter_trace_subset %}
     {% set target_attrs = target_lookup.get(entry.target_id, {}) %}
@@ -85,21 +85,21 @@
 
   {% if subset.allocation_step %}
     <h4>抽籤過程</h4>
-    <p>在符合條件的對象中，系統以公平的隨機抽籤決定您的分配：</p>
+    <p>在您有資格的對象中，以公平隨機方式抽出一個：</p>
     <ul>
-      <li>當時可選的對象（已扣除容量耗盡者）：
+      <li>當時還有名額可選的對象：
         {% for cid in subset.allocation_step.candidates %}
           {{ target_lookup.get(cid, {}).get('name', cid) }}{% if not loop.last %}、{% endif %}
         {% endfor %}
       </li>
-      <li>抽中：<strong>{{ target_lookup.get(subset.allocation_step.chosen, {}).get('name', subset.allocation_step.chosen) }}</strong></li>
+      <li>您抽到：<strong>{{ target_lookup.get(subset.allocation_step.chosen, {}).get('name', subset.allocation_step.chosen) }}</strong></li>
     </ul>
   {% endif %}
 </div>
 
 <p style="margin-top:2rem">
-  <a class="btn btn-success" href="/match/{{ record.id }}/role/{{ role.id }}/audit.json">下載我的稽核紀錄</a>
-  <a class="btn btn-success" href="/match/{{ record.id }}/role/{{ role.id }}/report.pdf">下載我的報告 PDF</a>
+  <a class="btn btn-success" href="/match/{{ record.id }}/role/{{ role.id }}/report.pdf">下載 PDF 報告（可印出簽收）</a>
+  <a class="btn btn-secondary" href="/match/{{ record.id }}/role/{{ role.id }}/audit.json">下載完整紀錄（JSON）</a>
   <a class="btn btn-secondary" href="/">回首頁</a>
 </p>
 

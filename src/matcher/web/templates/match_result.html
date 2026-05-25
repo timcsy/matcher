@@ -3,25 +3,25 @@
 {% block content %}
 
 {% if record.status == "success" %}
-<h2>✅ 媒合完成</h2>
+<h2>✅ 配對完成</h2>
 <div class="card">
   <p><strong>紀錄編號</strong>：<code>{{ record.id }}</code></p>
   <p><strong>時間</strong>：{{ record.created_at }}</p>
-  <p><strong>模板</strong>：{{ record.audit.template_snapshot.name }}（<code>{{ record.template_id }}</code>）</p>
-  <p><strong>隨機種子</strong>：<code>{{ record.seed }}</code></p>
-  <p><strong>機制</strong>：{{ mechanism_label }}</p>
+  <p><strong>使用範本</strong>：{{ record.audit.template_snapshot.name }}（<code>{{ record.template_id }}</code>）</p>
+  <p><strong>亂數種子</strong>：<code>{{ record.seed }}</code> <small>（事後想重現結果就用這個數字）</small></p>
+  <p><strong>抽籤方式</strong>：{{ mechanism_label }}</p>
 </div>
 
 {% if processing_order_display %}
 <div class="card">
-  <p><strong>處理順序</strong>：
+  <p><strong>挑志願的順序</strong>：
     {% for rid, name in processing_order_display %}<code>{{ rid }}</code>（{{ name }}）{% if not loop.last %} → {% endif %}{% endfor %}
   </p>
-  <small>本機制下，角色依此順序輪流挑選對象。</small>
+  <small>這次採用「輪流挑」或「依志願先後填滿」方式，每個人按上述順序輪流挑自己最高的志願。</small>
 </div>
 {% endif %}
 
-<h3>分配結果</h3>
+<h3>配對結果</h3>
 <table>
   <thead><tr><th>角色</th><th>對象</th>{% if mechanism != 'M0' %}<th>志願排名</th>{% endif %}</tr></thead>
   <tbody>
@@ -48,17 +48,17 @@
 </table>
 
 <p style="margin-top:2rem">
-  <a class="btn btn-success" href="/match/{{ record.id }}/audit">下載稽核紀錄（JSON）</a>
-  <a class="btn btn-success" href="/match/{{ record.id }}/report.pdf">下載 PDF 報告</a>
-  <a class="btn btn-secondary" href="/match/new?template_id={{ record.template_id }}">再執行一次</a>
-  <a class="btn btn-secondary" href="/matches">回到媒合列表</a>
+  <a class="btn btn-success" href="/match/{{ record.id }}/report.pdf">下載 PDF 報告（可印給家長 / 委員）</a>
+  <a class="btn btn-secondary" href="/match/{{ record.id }}/audit">下載完整紀錄（JSON 檔，給技術人員）</a>
+  <a class="btn btn-secondary" href="/match/new?template_id={{ record.template_id }}">再跑一次</a>
+  <a class="btn btn-secondary" href="/matches">回到所有紀錄</a>
 </p>
 
 <details style="margin-top:2rem">
-  <summary>個別查詢連結（共 {{ roles_for_links | length }} 位）</summary>
-  <p><small>將以下連結個別發送給對應的被媒合者，他們可獨立查看自己的媒合結果與判定依據。</small></p>
+  <summary>給每位當事人的個別連結（共 {{ roles_for_links | length }} 位）</summary>
+  <p><small>把以下連結各自寄給對應的當事人（家長、老師），他們可以獨立查看自己的配對結果和判定理由，不會看到別人的資料。</small></p>
   <table>
-    <thead><tr><th>姓名</th><th>角色編號</th><th>個別查詢連結</th></tr></thead>
+    <thead><tr><th>姓名</th><th>編號</th><th>個別查詢連結</th></tr></thead>
     <tbody>
       {% for r in roles_for_links %}
       <tr>
@@ -72,22 +72,22 @@
 </details>
 
 {% else %}
-<h2>❌ 媒合失敗</h2>
+<h2>❌ 配對失敗</h2>
 <div class="card">
   <p><strong>紀錄編號</strong>：<code>{{ record.id }}</code></p>
   <p><strong>時間</strong>：{{ record.created_at }}</p>
-  <p><strong>模板</strong>：<code>{{ record.template_id }}</code></p>
-  <p><strong>輸入檔</strong>：{{ record.input_file or '（無）' }}</p>
+  <p><strong>使用範本</strong>：<code>{{ record.template_id }}</code></p>
+  <p><strong>上傳檔</strong>：{{ record.input_file or '（無）' }}</p>
 </div>
 
 <div class="error-box">
-  <p><strong>{{ record.error.type }}</strong>（exit {{ record.error.exit_code }}）</p>
+  <p><strong>{{ record.error.type }}</strong>（系統錯誤代碼 {{ record.error.exit_code }}）</p>
   <pre>{{ record.error.message }}</pre>
 </div>
 
 <p style="margin-top:2rem">
-  <a class="btn btn-secondary" href="/match/new?template_id={{ record.template_id }}">重試</a>
-  <a class="btn btn-secondary" href="/matches">回到媒合列表</a>
+  <a class="btn btn-secondary" href="/match/new?template_id={{ record.template_id }}">重新試一次</a>
+  <a class="btn btn-secondary" href="/matches">回到所有紀錄</a>
 </p>
 {% endif %}
 

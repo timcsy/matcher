@@ -76,6 +76,16 @@ async def template_new(
     elif scenario and scenario in SCENARIO_TEMPLATES:
         prefill = dict(SCENARIO_TEMPLATES[scenario])
 
+    # Feature 011 動態表單：依 prefill 計算每段初始要 render 幾行
+    import re as _re
+    def _max_idx(prefix: str) -> int:
+        out = -1
+        for k in prefill:
+            m = _re.match(rf"^{prefix}_(\d+)_", k)
+            if m:
+                out = max(out, int(m.group(1)))
+        return out
+
     return _templates(request).TemplateResponse(
         request, "template_authoring.html",
         {
@@ -84,6 +94,10 @@ async def template_new(
             "prefill": prefill,
             "edit_id": edit_id,
             "fork_from": fork,
+            "role_attr_count": max(1, _max_idx("role_attr") + 1),
+            "target_attr_count": max(1, _max_idx("target_attr") + 1),
+            "rule_count": max(1, _max_idx("rule") + 1),
+            "target_count": max(1, _max_idx("target") + 1),
         },
     )
 

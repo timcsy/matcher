@@ -12,9 +12,9 @@ client = TestClient(create_app())
 def test_index():
     r = client.get("/")
     assert r.status_code == 200
-    assert "新建媒合" in r.text
-    assert "模板列表" in r.text
-    assert "過去媒合" in r.text
+    assert "新增一次配對" in r.text
+    assert "所有範本" in r.text
+    assert "過去紀錄" in r.text
 
 
 def test_templates_list():

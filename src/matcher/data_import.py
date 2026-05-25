@@ -75,7 +75,9 @@ def resolve_header(name: str, decls: tuple) -> Optional[AttributeDecl]:
             return decl
 
     for decl in decls:
-        for alias in decl.aliases:
+        # 別稱清單 + 顯示名稱本身（自動視為 alias，讓使用者不必重複填寫）
+        candidate_aliases = list(decl.aliases) + ([decl.description] if decl.description else [])
+        for alias in candidate_aliases:
             if normalized == alias:
                 return decl
             if _is_ascii(normalized) and _is_ascii(alias) and normalized.lower() == alias.lower():

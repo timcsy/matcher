@@ -40,10 +40,20 @@ def humanize_rule_description(description: str, template: Any) -> str:
 
 
 _MECHANISM_LABELS = {
-    "M0": "M0 純抽籤",
-    "M1": "M1 RSD 隨機輪流挑",
-    "M2": "M2 Boston 層級填滿",
+    "M0": "純抽籤",
+    "M1": "輪流挑",
+    "M2": "依志願先後填滿",
 }
+
+_MECHANISM_DESCRIPTIONS = {
+    "M0": "所有人不填志願、完全公平隨機（適合：分組順序無偏好的場景）",
+    "M1": "按隨機順序，每個人輪流挑自己最高志願（適合：研習分組、社團選填）",
+    "M2": "先把每組的第一志願填滿，剩下的人再填第二志願⋯（適合：志願清楚分高低的場景）",
+}
+
+
+def mechanism_description(mechanism: str) -> str:
+    return _MECHANISM_DESCRIPTIONS.get(mechanism, "")
 
 
 def mechanism_label(mechanism: str) -> str:

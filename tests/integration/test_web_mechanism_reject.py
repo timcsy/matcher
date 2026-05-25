@@ -46,8 +46,8 @@ def test_m1_with_empty_prefs_failed_record(tmp_path: Path):
     hidden = _hidden_from(r1.text)
     r2 = c.post("/match/preferences", data={**hidden, "_action": "skip"})
     assert r2.status_code == 200
-    assert "媒合失敗" in r2.text
-    assert "M1 需要至少一位角色提供志願" in r2.text
+    assert "配對失敗" in r2.text
+    assert "「輪流挑」需要至少一位填了志願" in r2.text
     assert "MechanismRequiresPreferences" in r2.text
 
 
@@ -60,8 +60,8 @@ def test_m2_with_empty_prefs_failed_record(tmp_path: Path):
     hidden = _hidden_from(r1.text)
     r2 = c.post("/match/preferences", data={**hidden, "_action": "skip"})
     assert r2.status_code == 200
-    assert "媒合失敗" in r2.text
-    assert "M2 需要至少一位角色提供志願" in r2.text
+    assert "配對失敗" in r2.text
+    assert "「依志願先後填滿」需要至少一位填了志願" in r2.text
 
 
 def test_m0_with_prefs_failed_record(tmp_path: Path):
@@ -75,5 +75,5 @@ def test_m0_with_prefs_failed_record(tmp_path: Path):
             files={"roster": ("roster-m1.csv", f, "text/csv")},
         )
     assert r.status_code == 200
-    assert "媒合失敗" in r.text
+    assert "配對失敗" in r.text
     assert "PreferencesNotSupported" in r.text

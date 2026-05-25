@@ -43,8 +43,8 @@ def test_skip_button_triggers_mechanism_requires_preferences_m1(tmp_path: Path):
     hidden = _get_hidden(c, mechanism="M1")
     r = c.post("/match/preferences", data={**hidden, "_action": "skip"})
     assert r.status_code == 200
-    assert "媒合失敗" in r.text
-    assert "M1 需要至少一位角色提供志願" in r.text
+    assert "配對失敗" in r.text
+    assert "「輪流挑」需要至少一位填了志願" in r.text
 
 
 def test_skip_button_m2_message(tmp_path: Path):
@@ -53,8 +53,8 @@ def test_skip_button_m2_message(tmp_path: Path):
     hidden = _get_hidden(c, mechanism="M2")
     r = c.post("/match/preferences", data={**hidden, "_action": "skip"})
     assert r.status_code == 200
-    assert "媒合失敗" in r.text
-    assert "M2 需要至少一位角色提供志願" in r.text
+    assert "配對失敗" in r.text
+    assert "「依志願先後填滿」需要至少一位填了志願" in r.text
 
 
 def test_m0_with_empty_prefs_does_not_jump_to_form(tmp_path: Path):
@@ -68,7 +68,7 @@ def test_m0_with_empty_prefs_does_not_jump_to_form(tmp_path: Path):
     assert r.status_code == 200
     assert "填寫志願" not in r.text  # 沒跳填志願頁
     # M0 應成功完成
-    assert "媒合完成" in r.text
+    assert "配對完成" in r.text
 
 
 def test_teacher_class_template_does_not_jump_to_form(tmp_path: Path):
@@ -84,4 +84,4 @@ def test_teacher_class_template_does_not_jump_to_form(tmp_path: Path):
     assert r.status_code == 200
     assert "填寫志願" not in r.text
     # teacher-class 無 schema，M1 不能跑 → reject
-    assert "媒合失敗" in r.text
+    assert "配對失敗" in r.text
