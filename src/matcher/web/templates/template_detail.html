@@ -1,9 +1,25 @@
 {% extends "base.html" %}
 {% block title %}{{ tpl.name }}{% endblock %}
 {% block content %}
-<h2>{{ tpl.name }}</h2>
+<h2>{{ tpl.name }}
+  {% if is_builtin %}
+    <small style="background:#0070b8;color:white;padding:2px 8px;border-radius:3px;font-size:13px;vertical-align:middle">內建</small>
+  {% else %}
+    <small style="background:#5a8;color:white;padding:2px 8px;border-radius:3px;font-size:13px;vertical-align:middle">自訂{% if current_version %}（目前是 v{{ current_version }}）{% endif %}</small>
+  {% endif %}
+</h2>
 <p><code>{{ tpl.id }}</code></p>
 <p>{{ tpl.description }}</p>
+
+<p style="margin: 1rem 0">
+  <a class="btn btn-success" href="/match/new?template_id={{ tpl.id }}">用此範本配對</a>
+  {% if is_builtin %}
+    <a class="btn btn-secondary" href="/templates/new?fork={{ tpl.id }}">複製為自訂版本</a>
+  {% else %}
+    <a class="btn btn-secondary" href="/templates/{{ tpl.id }}/edit">編輯</a>
+  {% endif %}
+  <a href="/templates" style="margin-left:1rem">回所有範本</a>
+</p>
 
 <h3>「角色」資料欄位</h3>
 <p><small>要被配對的人或單位（例：學生、老師）有哪些資料。</small></p>
@@ -59,8 +75,20 @@
 <p>{{ tpl.preferences_schema.description }}</p>
 {% endif %}
 
-<p style="margin-top:2rem">
-  <a class="btn btn-success" href="/match/new?template_id={{ tpl.id }}">用此範本配對</a>
-  <a class="btn btn-secondary" href="/templates">回所有範本</a>
-</p>
+{% if versions and versions|length > 0 %}
+<h3>版本歷史</h3>
+<p><small>每次儲存都會建立一個新版本，舊版本永遠保留。</small></p>
+<table>
+  <thead><tr><th>版本</th><th>儲存時間</th><th></th></tr></thead>
+  <tbody>
+    {% for v in versions | reverse %}
+    <tr>
+      <td><code>v{{ v.n }}</code>{% if v.n == current_version %} <small style="color:#5a8">（目前）</small>{% endif %}</td>
+      <td>{{ v.mtime }}</td>
+      <td><a href="/templates/{{ tpl.id }}/versions/{{ v.n }}">查看此版本 YAML</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
 {% endblock %}

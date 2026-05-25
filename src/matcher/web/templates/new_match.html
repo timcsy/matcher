@@ -3,6 +3,13 @@
 {% block content %}
 <h2>新建一次配對</h2>
 
+{% if snapshot_note %}
+<div class="card" style="background:#e3f2fd; border-left:4px solid #1976d2">
+  <p style="margin:0"><strong>📌 {{ snapshot_note }}</strong></p>
+  <small>之後即使這個範本被改成新版本，這次配對仍會用原來的版本。</small>
+</div>
+{% endif %}
+
 <form method="post" action="/match/run" enctype="multipart/form-data">
   <div class="card">
     <h3>1. 選擇範本</h3>

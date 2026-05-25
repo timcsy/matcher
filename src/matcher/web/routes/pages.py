@@ -205,7 +205,7 @@ async def template_save(request: Request):
 async def template_authoring_guide():
     """提供 docs/template-authoring-guide.md 內容（給前端 JS fetch 用）。"""
     from pathlib import Path as _P
-    guide = _P(__file__).resolve().parents[3] / "docs" / "template-authoring-guide.md"
+    guide = _P(__file__).resolve().parents[4] / "docs" / "template-authoring-guide.md"
     if not guide.exists():
         raise HTTPException(404, "找不到 docs/template-authoring-guide.md")
     return Response(content=guide.read_text(encoding="utf-8"), media_type="text/plain; charset=utf-8")
