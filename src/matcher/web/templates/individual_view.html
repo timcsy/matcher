@@ -11,15 +11,15 @@
       {% for key, value in role.attributes.items() %}
       <tr>
         <th>
-          {% set display_name = key %}
+          {% set ns = namespace(display_name=key) %}
           {% if template %}
             {% for decl in template.attributes.roles %}
               {% if decl.key == key and decl.description %}
-                {% set display_name = decl.description %}
+                {% set ns.display_name = decl.description %}
               {% endif %}
             {% endfor %}
           {% endif %}
-          {{ display_name }}
+          {{ ns.display_name }}
         </th>
         <td>{{ value }}</td>
       </tr>

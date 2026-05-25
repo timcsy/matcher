@@ -86,6 +86,24 @@ def test_no_technical_tokens_in_individual_view(tmp_path: Path):
         assert m is None, f"頁面匹配禁用 pattern: {pattern.pattern}（找到 {m.group(0) if m else None}）"
 
 
+def test_attribute_description_displayed_instead_of_key(tmp_path: Path):
+    """回歸：個別頁基本資訊表應顯示模板 description（如「老師專業科目」）而非英文 key。
+
+    bug 來源：jinja2 `{% set %}` 在 `{% for %}` 內 block-scoped；fix：改用 namespace。
+    """
+    c = _client(tmp_path)
+    rid = _make_success_record(c)
+    r = c.get(f"/match/{rid}/role/T01")
+    assert r.status_code == 200
+    # teacher-class 模板 attribute description 含「老師專業科目」「教學年資」
+    # （見 src/matcher/templates/builtin/teacher-class.yaml）
+    # 修 fix 後應出現中文 description；修 fix 前只會看到英文 key
+    body = r.text
+    # 至少其中一個中文 description 必須出現（不只看到英文 key）
+    has_chinese_desc = ("專業" in body) or ("年資" in body) or ("姓名" in body)
+    assert has_chinese_desc, "個別頁基本資訊表未顯示中文 description（jinja2 namespace 修正失效？）"
+
+
 def test_humanized_rule_in_individual_view(tmp_path: Path):
     """代名詞替換：原本「role.speciality」應變為「您的 老師專業科目」。"""
     c = _client(tmp_path)
