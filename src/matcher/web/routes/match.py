@@ -47,7 +47,8 @@ def _templates(request: Request) -> Jinja2Templates:
 
 @router.get("/match/new")
 async def new_match(request: Request, template_id: Optional[str] = None):
-    reg = TemplateRegistry()
+    from matcher.web.routes.pages import _reg as _shared_reg  # feature 011：共用 singleton
+    reg = _shared_reg()
     items = [reg.get(tid) for tid in reg.list_ids()]
     return _templates(request).TemplateResponse(
         request, "new_match.html",
@@ -97,8 +98,9 @@ async def run(
         )
 
     # 載入模板
+    from matcher.web.routes.pages import _reg as _shared_reg  # feature 011：共用 singleton
     try:
-        reg = TemplateRegistry()
+        reg = _shared_reg()
         tpl = reg.get(template_id)
     except TemplateNotFound as e:
         return _templates(request).TemplateResponse(
@@ -260,7 +262,8 @@ async def submit_preferences(request: Request):
         return _error_page(request, "PreferencesFormCorrupt", "填志願表單資料異常，請回到上一步重新上傳。")
 
     try:
-        tpl = TemplateRegistry().get(template_id)
+        from matcher.web.routes.pages import _reg as _shared_reg
+        tpl = _shared_reg().get(template_id)
     except TemplateNotFound as e:
         return _error_page(request, "TemplateNotFound", str(e), status_code=404)
 
@@ -432,7 +435,8 @@ async def individual_view(request: Request, record_id: str, role_id: str):
         return _individual_error(request, "您不在這次媒合的名單中")
 
     # 載入模板（用於 humanize 規則描述）
-    reg = TemplateRegistry()
+    from matcher.web.routes.pages import _reg as _shared_reg  # feature 011：共用 singleton
+    reg = _shared_reg()
     try:
         template = reg.get(record.template_id)
     except TemplateNotFound:

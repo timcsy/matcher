@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}{% if edit_id %}編輯模板{% else %}新增模板{% endif %}{% endblock %}
+{% block content %}
+
+<h2>{% if edit_id %}編輯模板：{{ edit_id }}{% elif fork_from %}Fork 內建模板：{{ fork_from }}{% else %}新增模板{% endif %}</h2>
+
+<details {% if mode != "advanced" %}open{% endif %}>
+  <summary><strong>📝 簡單模式（表單導引）</strong></summary>
+
+  {% if not edit_id and not fork_from %}
+  <div class="card">
+    <label>從場景樣板起：
+      <select id="scenario-select">
+        {% for s in scenarios %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="btn btn-secondary" onclick="loadScenario()">套用</button>
+    </label>
+    <small>選定後重新整理頁面，表單會預填該場景的常見欄位。</small>
+  </div>
+  {% endif %}
+
+  <form id="simple-form" method="post" action="/templates/save" onsubmit="return false">
+    <input type="hidden" name="mode" value="simple">
+
+    <div class="card">
+      <h3>1. 基本資訊</h3>
+      <p><label>模板 id：<input type="text" name="template_id" value="{{ prefill.get('template_id', '') }}" pattern="[a-z0-9-]+" required></label>
+        <small>限定小寫英數 + 連字號；不可與內建模板（teacher-class、study-group）重複。</small></p>
+      <p><label>名稱：<input type="text" name="template_name" value="{{ prefill.get('template_name', '') }}" required></label></p>
+      <p><label>描述：<input type="text" name="template_description" value="{{ prefill.get('template_description', '') }}" required></label></p>
+    </div>
+
+    <div class="card">
+      <h3>2. 角色屬性</h3>
+      <table><thead><tr><th>key</th><th>type</th><th>必填</th><th>中文 description</th><th>aliases（逗號分隔）</th></tr></thead>
+      <tbody id="role-attrs-tbody">
+        {% for i in range(10) %}
+        <tr>
+          <td><input type="text" name="role_attr_{{ i }}_key" value="{{ prefill.get('role_attr_' ~ i ~ '_key', '') }}"></td>
+          <td><select name="role_attr_{{ i }}_type">
+            {% for t in ['str', 'int', 'list_str'] %}
+            <option value="{{ t }}" {% if prefill.get('role_attr_' ~ i ~ '_type') == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select></td>
+          <td><input type="checkbox" name="role_attr_{{ i }}_required" {% if prefill.get('role_attr_' ~ i ~ '_required') %}checked{% endif %}></td>
+          <td><input type="text" name="role_attr_{{ i }}_description" value="{{ prefill.get('role_attr_' ~ i ~ '_description', '') }}"></td>
+          <td><input type="text" name="role_attr_{{ i }}_aliases" value="{{ prefill.get('role_attr_' ~ i ~ '_aliases', '') }}"></td>
+        </tr>
+        {% endfor %}
+      </tbody></table>
+    </div>
+
+    <div class="card">
+      <h3>3. 對象屬性</h3>
+      <table><thead><tr><th>key</th><th>type</th><th>必填</th><th>中文 description</th><th>aliases</th></tr></thead>
+      <tbody>
+        {% for i in range(10) %}
+        <tr>
+          <td><input type="text" name="target_attr_{{ i }}_key" value="{{ prefill.get('target_attr_' ~ i ~ '_key', '') }}"></td>
+          <td><select name="target_attr_{{ i }}_type">
+            {% for t in ['str', 'int', 'list_str'] %}
+            <option value="{{ t }}" {% if prefill.get('target_attr_' ~ i ~ '_type') == t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+          </select></td>
+          <td><input type="checkbox" name="target_attr_{{ i }}_required" {% if prefill.get('target_attr_' ~ i ~ '_required') %}checked{% endif %}></td>
+          <td><input type="text" name="target_attr_{{ i }}_description" value="{{ prefill.get('target_attr_' ~ i ~ '_description', '') }}"></td>
+          <td><input type="text" name="target_attr_{{ i }}_aliases" value="{{ prefill.get('target_attr_' ~ i ~ '_aliases', '') }}"></td>
+        </tr>
+        {% endfor %}
+      </tbody></table>
+    </div>
+
+    <div class="card">
+      <h3>4. 規則</h3>
+      <p><small>每條規則一張卡。「描述」留空則自動生成；填了則覆蓋。支援 5 種類型（ge / le / eq / in / role_in_target_field）。如需 and / or / not 巢狀請改用進階模式。</small></p>
+      {% for i in range(6) %}
+      <div class="card" style="margin-bottom:0.5rem">
+        <p><label>規則 id：<input type="text" name="rule_{{ i }}_id" value="{{ prefill.get('rule_' ~ i ~ '_id', '') }}" placeholder="R{{ '%03d' % (i+1) }}"></label></p>
+        <p><label>類型：<select name="rule_{{ i }}_type">
+          <option value="">（不啟用）</option>
+          {% for code, label in [('ge', '角色屬性 ≥ 數值'), ('le', '角色屬性 ≤ 數值'), ('eq', '角色屬性等於某值'), ('in', '角色屬性屬於集合'), ('role_in_target_field', '角色屬性出現在對象列表中')] %}
+          <option value="{{ code }}" {% if prefill.get('rule_' ~ i ~ '_type') == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select></label></p>
+        <p><label>field（如 role.grade）：<input type="text" name="rule_{{ i }}_field" value="{{ prefill.get('rule_' ~ i ~ '_field', '') }}"></label></p>
+        <p><label>value（給 ge/le/eq；如 4 / 「數學」）：<input type="text" name="rule_{{ i }}_value" value="{{ prefill.get('rule_' ~ i ~ '_value', '') }}"></label></p>
+        <p><label>set（給 in；以分號分隔，如 「國文;數學」）：<input type="text" name="rule_{{ i }}_set" value="{{ prefill.get('rule_' ~ i ~ '_set', '') }}"></label></p>
+        <p><label>role_field（給 role_in_target_field；如 speciality）：<input type="text" name="rule_{{ i }}_role_field" value="{{ prefill.get('rule_' ~ i ~ '_role_field', '') }}"></label></p>
+        <p><label>target_field（給 role_in_target_field；如 required_subjects）：<input type="text" name="rule_{{ i }}_target_field" value="{{ prefill.get('rule_' ~ i ~ '_target_field', '') }}"></label></p>
+        <p><label>自訂描述（留空則自動生成）：<input type="text" name="rule_{{ i }}_custom_description" value="{{ prefill.get('rule_' ~ i ~ '_custom_description', '') }}"></label></p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      <h3>5. 預設對象（default_targets）</h3>
+      <p><small>提供預設對象清單可省下使用者每次上傳對象旁檔。每個對象需提供上方「對象屬性」段宣告的所有屬性 key。</small></p>
+      <table>
+        <thead><tr><th>id</th><th>capacity</th><th>各屬性值（逗號分隔多 key 名:值 對；或預填欄位）</th></tr></thead>
+        <tbody>
+          {% for i in range(10) %}
+          <tr>
+            <td><input type="text" name="target_{{ i }}_id" value="{{ prefill.get('target_' ~ i ~ '_id', '') }}"></td>
+            <td><input type="number" name="target_{{ i }}_capacity" value="{{ prefill.get('target_' ~ i ~ '_capacity', '') }}" min="1"></td>
+            <td>
+              <small>name: <input type="text" name="target_{{ i }}_name" value="{{ prefill.get('target_' ~ i ~ '_name', '') }}" style="width:120px"></small>
+              <small>topic: <input type="text" name="target_{{ i }}_topic" value="{{ prefill.get('target_' ~ i ~ '_topic', '') }}" style="width:120px"></small>
+              <small>min_grade: <input type="text" name="target_{{ i }}_min_grade" value="{{ prefill.get('target_' ~ i ~ '_min_grade', '') }}" style="width:60px"></small>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <small>※ MVP 版面：對象屬性欄位固定為 name / topic / min_grade。若你的對象屬性 key 不同，先用進階模式編輯 YAML。</small>
+    </div>
+
+    <div class="card">
+      <h3>6. 志願結構（可選）</h3>
+      <p><label><input type="checkbox" name="prefs_enabled" {% if prefill.get('prefs_enabled') %}checked{% endif %}> 啟用 M1/M2 志願序機制</label></p>
+      <p><label>每位最多志願數 max_choices：<input type="number" name="prefs_max_choices" value="{{ prefill.get('prefs_max_choices', '3') }}" min="1" max="10"></label></p>
+      <p><label>說明：<input type="text" name="prefs_description" value="{{ prefill.get('prefs_description', '') }}"></label></p>
+    </div>
+
+    <div class="card">
+      <p>
+        <button type="button" class="btn btn-secondary" onclick="validateForm()">驗證</button>
+        <button type="button" class="btn btn-success" onclick="saveForm()">儲存</button>
+      </p>
+      <div id="result-area" style="margin-top:1rem"></div>
+    </div>
+  </form>
+</details>
+
+<details {% if mode == "advanced" %}open{% endif %} style="margin-top:1rem">
+  <summary><strong>🛠 進階模式（YAML 編輯器 + AI prompt）</strong></summary>
+
+  <div class="card">
+    <h3>AI Prompt 助手</h3>
+    <p><small>填空後點「複製完整 Prompt」，把整段（含模板撰寫指南）貼給 Claude / ChatGPT，把 AI 回的 YAML 貼到下方文字框驗證 + 儲存。</small></p>
+    <p><label>場景描述：<input type="text" id="ai-scenario" placeholder="例：社團報名"></label></p>
+    <p><label>角色：<input type="text" id="ai-role" placeholder="例：學生（姓名、年級、興趣）"></label></p>
+    <p><label>對象：<input type="text" id="ai-target" placeholder="例：社團（名稱、主題、最低年級）"></label></p>
+    <p><label>規則：<input type="text" id="ai-rules" placeholder="例：年級 ≥ 最低年級；興趣對得上主題"></label></p>
+    <p><label>是否填志願：<input type="text" id="ai-prefs" placeholder="例：是，最多 3 個"></label></p>
+    <p><button type="button" class="btn btn-secondary" onclick="copyAiPrompt()">📋 複製完整 Prompt</button></p>
+  </div>
+
+  <form id="advanced-form" onsubmit="return false">
+    <input type="hidden" name="mode" value="advanced">
+    <input type="hidden" name="template_id" id="adv-template-id-mirror" value="">
+    <div class="card">
+      <h3>YAML 內容</h3>
+      <textarea name="raw_yaml" id="adv-raw-yaml" rows="20" style="width:100%;font-family:monospace" placeholder="把 AI 生的 YAML 貼這裡..."></textarea>
+      <p>
+        <button type="button" class="btn btn-secondary" onclick="validateAdvanced()">驗證</button>
+        <button type="button" class="btn btn-success" onclick="saveAdvanced()">儲存</button>
+      </p>
+      <div id="adv-result-area" style="margin-top:1rem"></div>
+    </div>
+  </form>
+</details>
+
+<script src="/static/template_form.js"></script>
+<script>
+window._scenarios = {{ scenarios | tojson }};
+</script>
+
+{% endblock %}
