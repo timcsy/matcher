@@ -22,17 +22,17 @@
 
 ### Tests (TDD — 先紅)
 
-- [ ] T001 [P] 撰寫 `tests/unit/test_roster_form_assemble.py::test_assemble_roster_csv_basic` —— 表單 dict（3 位角色 × 3 屬性）→ `assemble_roster_csv_bytes(form, tpl)` 回 utf-8 bytes，可被 `csv.DictReader` 解析；header 含 id + 範本宣告 keys
-- [ ] T002 [P] 撰寫 `tests/unit/test_roster_form_assemble.py::test_assemble_roster_csv_filters_empty_rows` —— 含 2 空白行的 form → 自動過濾、輸出只有非空行
-- [ ] T003 [P] 撰寫 `tests/unit/test_roster_form_assemble.py::test_assemble_roster_csv_byte_equiv_with_csv_path` —— UI 表單組的 CSV bytes 經 `load_roster_csv` 載入後，與「同樣資料以 CSV 上傳」載出的 Roster bytewise 相等（assignment / qualified_set / filter_trace / allocation_trace / template_snapshot 五段）
-- [ ] T004 [P] 撰寫 `tests/unit/test_roster_form_assemble.py::test_assemble_targets_yaml_returns_none_when_default_targets_exists` —— 範本有 default_targets → 函式回 None
-- [ ] T005 [P] 撰寫 `tests/unit/test_roster_form_assemble.py::test_assemble_targets_yaml_basic` —— UI 對象段 2 個對象 × 3 屬性 → YAML bytes，可被 `yaml.safe_load` 解析含 `targets:` key
+- [x] T001 [P] 撰寫 `tests/unit/test_roster_form_assemble.py::test_assemble_roster_csv_basic` —— 表單 dict（3 位角色 × 3 屬性）→ `assemble_roster_csv_bytes(form, tpl)` 回 utf-8 bytes，可被 `csv.DictReader` 解析；header 含 id + 範本宣告 keys
+- [x] T002 [P] 撰寫 `tests/unit/test_roster_form_assemble.py::test_assemble_roster_csv_filters_empty_rows` —— 含 2 空白行的 form → 自動過濾、輸出只有非空行
+- [x] T003 [P] 撰寫 `tests/unit/test_roster_form_assemble.py::test_assemble_roster_csv_byte_equiv_with_csv_path` —— UI 表單組的 CSV bytes 經 `load_roster_csv` 載入後，與「同樣資料以 CSV 上傳」載出的 Roster bytewise 相等（assignment / qualified_set / filter_trace / allocation_trace / template_snapshot 五段）
+- [x] T004 [P] 撰寫 `tests/unit/test_roster_form_assemble.py::test_assemble_targets_yaml_returns_none_when_default_targets_exists` —— 範本有 default_targets → 函式回 None
+- [x] T005 [P] 撰寫 `tests/unit/test_roster_form_assemble.py::test_assemble_targets_yaml_basic` —— UI 對象段 2 個對象 × 3 屬性 → YAML bytes，可被 `yaml.safe_load` 解析含 `targets:` key
 
 ### Implementation
 
-- [ ] T006 新增 `src/matcher/web/roster_form.py`：含 `assemble_roster_csv_bytes(form: dict, template) -> bytes` + `assemble_targets_yaml_bytes(form: dict, template) -> bytes | None` 兩個純函式（沿用 feature 011 `_collect_indexed_rows` 蒐集邏輯）
-- [ ] T007 修改 `src/matcher/web/templates/new_match.html`：把現有 form 包入 Alpine `x-data="{ mode: 'upload' }"`，加三選一 radio（上傳 / 直接填 / 從紀錄）；mode=fill 顯示「選範本 + 開始填寫」段；mode=upload 顯示既有上傳 form；from-record 為連結
-- [ ] T008 確認 T001-T005 由紅轉綠（`uv run pytest tests/unit/test_roster_form_assemble.py -q`）
+- [x] T006 新增 `src/matcher/web/roster_form.py`：含 `assemble_roster_csv_bytes(form: dict, template) -> bytes` + `assemble_targets_yaml_bytes(form: dict, template) -> bytes | None` 兩個純函式（沿用 feature 011 `_collect_indexed_rows` 蒐集邏輯）
+- [x] T007 修改 `src/matcher/web/templates/new_match.html`：把現有 form 包入 Alpine `x-data="{ mode: 'upload' }"`，加三選一 radio（上傳 / 直接填 / 從紀錄）；mode=fill 顯示「選範本 + 開始填寫」段；mode=upload 顯示既有上傳 form；from-record 為連結
+- [x] T008 確認 T001-T005 由紅轉綠（`uv run pytest tests/unit/test_roster_form_assemble.py -q`）
 
 **Checkpoint**：純函式就緒；`/match/new` 三選一可切換顯隱。
 
@@ -46,25 +46,25 @@
 
 ### Tests (TDD — 先紅)
 
-- [ ] T010 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_fill_page_renders_role_attrs_from_template` —— GET `/match/new/fill?template_id=teacher-class` 200 + HTML 含「姓名」「老師專業科目」「年資（年）」三欄標籤 + 「＋ 新增一位」按鈕
-- [ ] T011 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_fill_page_404_on_unknown_template` —— `?template_id=nope` → 404
-- [ ] T012 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_post_run_from_form_m0_succeeds` —— POST `/match/run-from-form` 帶 3 位角色 + M0 + seed → 303 重導 `/match/{rid}` + audit.mechanism="M0" + 3 位都被分配
-- [ ] T013 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_post_run_from_form_audit_bytewise_equals_csv_path` —— 同樣 7 位資料：(a) POST run-from-form (b) CLI runner --roster-csv → 比對 5 段 bytewise 相等
-- [ ] T014 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_post_run_from_form_filters_empty_rows` —— POST 含 3 位實際資料 + 7 空白行 → 5 段 audit 與「只填 3 位的 CSV」等價
-- [ ] T015 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_post_run_from_form_requires_at_least_one_role` —— POST 全空角色 → 400 + 「請至少填一位」訊息
-- [ ] T016 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_new_match_page_has_three_modes` —— GET `/match/new` HTML 含「上傳名單檔」「直接填名單」「從過去紀錄」三項
+- [x] T010 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_fill_page_renders_role_attrs_from_template` —— GET `/match/new/fill?template_id=teacher-class` 200 + HTML 含「姓名」「老師專業科目」「年資（年）」三欄標籤 + 「＋ 新增一位」按鈕
+- [x] T011 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_fill_page_404_on_unknown_template` —— `?template_id=nope` → 404
+- [x] T012 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_post_run_from_form_m0_succeeds` —— POST `/match/run-from-form` 帶 3 位角色 + M0 + seed → 303 重導 `/match/{rid}` + audit.mechanism="M0" + 3 位都被分配
+- [x] T013 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_post_run_from_form_audit_bytewise_equals_csv_path` —— 同樣 7 位資料：(a) POST run-from-form (b) CLI runner --roster-csv → 比對 5 段 bytewise 相等
+- [x] T014 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_post_run_from_form_filters_empty_rows` —— POST 含 3 位實際資料 + 7 空白行 → 5 段 audit 與「只填 3 位的 CSV」等價
+- [x] T015 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_post_run_from_form_requires_at_least_one_role` —— POST 全空角色 → 400 + 「請至少填一位」訊息
+- [x] T016 [P] [US1] 撰寫 `tests/integration/test_web_roster_fill_basic.py::test_new_match_page_has_three_modes` —— GET `/match/new` HTML 含「上傳名單檔」「直接填名單」「從過去紀錄」三項
 
 ### Implementation
 
-- [ ] T017 [US1] 修改 `src/matcher/web/routes/match.py` 新增 `GET /match/new/fill` 端點：取 template 後組 context（template、role_attrs、target_attrs、requires_targets、has_prefs_schema、mechanisms）→ render `roster_form_fill.html`；template_id 不存在 → 404
-- [ ] T018 [US1] 修改 `routes/match.py` 新增 `POST /match/run-from-form` 端點：(a) 驗證 mechanism、seed、template_id；(b) 呼叫 `assemble_roster_csv_bytes` + 可選 `assemble_targets_yaml_bytes`；(c) 寫 tempfile + sidecar；(d) `load_roster_csv` 載入；(e) M0 → run_match → record → redirect；(f) M1/M2 + prefs_schema → render preferences_form.html (feature 009 既有頁) 含 hidden inputs（暫時直接 render；US3 完整接續測試）
-- [ ] T019 [US1] 新增 `src/matcher/web/templates/roster_form_fill.html`：Tailwind + Alpine；含
+- [x] T017 [US1] 修改 `src/matcher/web/routes/match.py` 新增 `GET /match/new/fill` 端點：取 template 後組 context（template、role_attrs、target_attrs、requires_targets、has_prefs_schema、mechanisms）→ render `roster_form_fill.html`；template_id 不存在 → 404
+- [x] T018 [US1] 修改 `routes/match.py` 新增 `POST /match/run-from-form` 端點：(a) 驗證 mechanism、seed、template_id；(b) 呼叫 `assemble_roster_csv_bytes` + 可選 `assemble_targets_yaml_bytes`；(c) 寫 tempfile + sidecar；(d) `load_roster_csv` 載入；(e) M0 → run_match → record → redirect；(f) M1/M2 + prefs_schema → render preferences_form.html (feature 009 既有頁) 含 hidden inputs（暫時直接 render；US3 完整接續測試）
+- [x] T019 [US1] 新增 `src/matcher/web/templates/roster_form_fill.html`：Tailwind + Alpine；含
   - 範本資訊（name + description）+ 「亂數種子」+「抽籤方式」下拉
   - 「① 角色清單」段：依 `role_attrs` 動態渲染每列輸入（含 id 欄 + 每個 attribute key 一欄 + × 移除）；初始 2 列 + 「＋ 新增一位」按鈕
   - 條件渲染「② 對象清單」段：`{% if requires_targets %}`（為 US2 預備；本 US1 路徑下 hidden）
   - 「執行配對」按鈕（POST 到 `/match/run-from-form`）
-- [ ] T020 [US1] 新增 `src/matcher/web/static/roster_form.js`（或 inline 在 roster_form_fill.html）：Alpine 元件 `rosterForm()`，state 含 `roles: []`、`targets: []`；方法 `addRole()` / `removeRole(i)` / `addTarget()` / `removeTarget(i)`
-- [ ] T021 [US1] 執行 `uv run pytest tests/integration/test_web_roster_fill_basic.py tests/unit/test_roster_form_assemble.py -q` 確認全綠
+- [x] T020 [US1] 新增 `src/matcher/web/static/roster_form.js`（或 inline 在 roster_form_fill.html）：Alpine 元件 `rosterForm()`，state 含 `roles: []`、`targets: []`；方法 `addRole()` / `removeRole(i)` / `addTarget()` / `removeTarget(i)`
+- [x] T021 [US1] 執行 `uv run pytest tests/integration/test_web_roster_fill_basic.py tests/unit/test_roster_form_assemble.py -q` 確認全綠
 
 **Checkpoint US1 完成**：MVP 可用 UI 填名單跑 M0；Web/CSV 等價守住。
 
@@ -78,15 +78,15 @@
 
 ### Tests (TDD — 先紅)
 
-- [ ] T030 [P] [US2] 撰寫 `tests/integration/test_web_roster_fill_targets.py::test_fill_page_hides_targets_section_when_default_targets_exists` —— GET `/match/new/fill?template_id=teacher-class`（有 default_targets）→ HTML **不**含「② 對象清單」段（或該段標題不可見）
-- [ ] T031 [P] [US2] 撰寫 `tests/integration/test_web_roster_fill_targets.py::test_fill_page_shows_targets_section_for_custom_template_without_default_targets` —— 預先建一個無 default_targets 的自訂範本 → 訪問 fill 頁 → HTML 含「② 對象清單」+ 依範本對象屬性的欄位
-- [ ] T032 [P] [US2] 撰寫 `tests/integration/test_web_roster_fill_targets.py::test_post_run_from_form_with_ui_targets_succeeds` —— POST 含 5 角色 + 3 對象 + M0 → 跑通；audit.roster_snapshot.targets 含此 3 對象
+- [x] T030 [P] [US2] 撰寫 `tests/integration/test_web_roster_fill_targets.py::test_fill_page_hides_targets_section_when_default_targets_exists` —— GET `/match/new/fill?template_id=teacher-class`（有 default_targets）→ HTML **不**含「② 對象清單」段（或該段標題不可見）
+- [x] T031 [P] [US2] 撰寫 `tests/integration/test_web_roster_fill_targets.py::test_fill_page_shows_targets_section_for_custom_template_without_default_targets` —— 預先建一個無 default_targets 的自訂範本 → 訪問 fill 頁 → HTML 含「② 對象清單」+ 依範本對象屬性的欄位
+- [x] T032 [P] [US2] 撰寫 `tests/integration/test_web_roster_fill_targets.py::test_post_run_from_form_with_ui_targets_succeeds` —— POST 含 5 角色 + 3 對象 + M0 → 跑通；audit.roster_snapshot.targets 含此 3 對象
 
 ### Implementation
 
-- [ ] T033 [US2] 在 `roster_form_fill.html` 對「② 對象清單」段 `{% if requires_targets %}` 條件啟用；段內動態渲染 + 加減行（沿用 US1 的 Alpine pattern）
-- [ ] T034 [US2] `routes/match.py::POST /match/run-from-form` 內呼叫 `assemble_targets_yaml_bytes`，若回非 None → 寫 sidecar yaml 到 tempfile；data_import 會自動撈到
-- [ ] T035 [US2] 執行 `uv run pytest tests/integration/test_web_roster_fill_targets.py -q` 確認全綠
+- [x] T033 [US2] 在 `roster_form_fill.html` 對「② 對象清單」段 `{% if requires_targets %}` 條件啟用；段內動態渲染 + 加減行（沿用 US1 的 Alpine pattern）
+- [x] T034 [US2] `routes/match.py::POST /match/run-from-form` 內呼叫 `assemble_targets_yaml_bytes`，若回非 None → 寫 sidecar yaml 到 tempfile；data_import 會自動撈到
+- [x] T035 [US2] 執行 `uv run pytest tests/integration/test_web_roster_fill_targets.py -q` 確認全綠
 
 ---
 
@@ -98,16 +98,16 @@
 
 ### Tests (TDD — 先紅)
 
-- [ ] T040 [P] [US3] 撰寫 `tests/integration/test_web_roster_fill_m1_handoff.py::test_m1_with_prefs_template_renders_preferences_form` —— POST `/match/run-from-form` 含名單 + M1 + 範本有 prefs schema → 200 + HTML 為填志願頁（含「填寫志願」標題）+ hidden inputs 含 `roster_bytes_b64`
-- [ ] T041 [P] [US3] 撰寫 `tests/integration/test_web_roster_fill_m1_handoff.py::test_m2_with_prefs_template_renders_preferences_form` —— 同上 M2
-- [ ] T042 [P] [US3] 撰寫 `tests/integration/test_web_roster_fill_m1_handoff.py::test_m1_without_prefs_template_falls_back_to_failed_record` —— 範本無 prefs schema + M1 → 直接走 pipeline → 失敗 record (MechanismRequiresPreferences)
-- [ ] T043 [P] [US3] 撰寫 `tests/integration/test_web_roster_fill_m1_handoff.py::test_handed_off_form_can_submit_preferences_and_run_match` —— 完整端到端：UI 填名單 + M1 → 跳填志願頁 → POST `/match/preferences` 含志願 → 跑通
+- [x] T040 [P] [US3] 撰寫 `tests/integration/test_web_roster_fill_m1_handoff.py::test_m1_with_prefs_template_renders_preferences_form` —— POST `/match/run-from-form` 含名單 + M1 + 範本有 prefs schema → 200 + HTML 為填志願頁（含「填寫志願」標題）+ hidden inputs 含 `roster_bytes_b64`
+- [x] T041 [P] [US3] 撰寫 `tests/integration/test_web_roster_fill_m1_handoff.py::test_m2_with_prefs_template_renders_preferences_form` —— 同上 M2
+- [x] T042 [P] [US3] 撰寫 `tests/integration/test_web_roster_fill_m1_handoff.py::test_m1_without_prefs_template_falls_back_to_failed_record` —— 範本無 prefs schema + M1 → 直接走 pipeline → 失敗 record (MechanismRequiresPreferences)
+- [x] T043 [P] [US3] 撰寫 `tests/integration/test_web_roster_fill_m1_handoff.py::test_handed_off_form_can_submit_preferences_and_run_match` —— 完整端到端：UI 填名單 + M1 → 跳填志願頁 → POST `/match/preferences` 含志願 → 跑通
 
 ### Implementation
 
-- [ ] T044 [US3] `routes/match.py::POST /match/run-from-form` 內加分支：mechanism in (M1, M2) AND template.preferences_schema → 直接 render `preferences_form.html`（feature 009 既有樣板），傳入 hidden input 值（template_id、mechanism、seed、roster_bytes_b64、roster_filename、targets_bytes_b64？——若有對象 sidecar 也須攜帶）
-- [ ] T045 [US3] 確認 `preferences_form.html` 與 `POST /match/preferences` 對 sidecar targets 的處理路徑——若 UI-filled 路徑帶有 targets sidecar，preferences 提交時也要寫 sidecar
-- [ ] T046 [US3] 執行 `uv run pytest tests/integration/test_web_roster_fill_m1_handoff.py -q` 確認全綠
+- [x] T044 [US3] `routes/match.py::POST /match/run-from-form` 內加分支：mechanism in (M1, M2) AND template.preferences_schema → 直接 render `preferences_form.html`（feature 009 既有樣板），傳入 hidden input 值（template_id、mechanism、seed、roster_bytes_b64、roster_filename、targets_bytes_b64？——若有對象 sidecar 也須攜帶）
+- [x] T045 [US3] 確認 `preferences_form.html` 與 `POST /match/preferences` 對 sidecar targets 的處理路徑——若 UI-filled 路徑帶有 targets sidecar，preferences 提交時也要寫 sidecar
+- [x] T046 [US3] 執行 `uv run pytest tests/integration/test_web_roster_fill_m1_handoff.py -q` 確認全綠
 
 ---
 
