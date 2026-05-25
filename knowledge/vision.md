@@ -71,7 +71,7 @@
 - 後端 FastAPI + uvicorn；前端 HTMX + Jinja2（server-rendered，無 Node toolchain）
 - CLI 新增 `matcher serve [--host] [--port] [--reload]`
 - 媒合紀錄持久化於 `data/matches/<id>.json`（atomic write、無 DB）；自有 schema `match-record/1.0`
-- 模板新增 `default_targets` 欄位：Web UI 不需上傳 targets 旁檔（CLI 仍支援旁檔）
+- 模板新增 `default_targets` 欄位：Web UI 不需上傳 targets 旁檔（CLI 仍支援旁檔）—— **註**：該欄位於階段 4g 已完全移除
 - 4 個既有黃金檔重生（template_snapshot 含 default_targets；assignment 不變）
 - 自動化測試：142 個（既有 116 + 階段 3a 新增 26），全綠
 - ⏸ SC-001「學校行政 30 分鐘真人測試」待人工驗證
@@ -165,7 +165,7 @@
   - 隨機種子 → **亂數種子**（+ 完整白話 helper：「同一份名單 + 同一個種子 → 永遠抽出一樣的結果」）
   - 型別 str / int / list_str → **文字 / 數字 / 多筆文字**
   - 別稱（aliases）UI 移除；`data_import.py` 自動把顯示名稱（description）視為合法 alias，使用者不必額外填
-  - 預設對象清單從建範本 UI 移除——範本只定義規則，具體對象在跑配對時提供（內建範本仍保留 default_targets）
+  - 預設對象清單從建範本 UI 移除——範本只定義規則，具體對象在跑配對時提供（內建範本暫時保留 default_targets；**階段 4g 已完全移除概念**）
 - **新前端技術棧**：Tailwind Play CDN + Alpine.js（兩者 CDN-only，無 Node toolchain / 無 build step / 無 npm — 符合架構決策原意）
 - Pipeline / CLI 錯誤訊息也同步白話化：「『純抽籤』不接受志願輸入」「『輪流挑』需要至少一位填了志願」（保留 audit JSON 內部 mechanism 代碼）
 - 新檔：`src/matcher/web/template_form.py`（簡單模式表單 → YAML dict 純函式 + SCENARIO_TEMPLATES 範例）
