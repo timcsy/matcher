@@ -3,6 +3,15 @@
 
 {% block extra_head %}
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style>
+  /* 蓋掉 style.css 全域 input { min-width: 240px }，讓表格內 input 自適應欄寬 */
+  .roster-fill-table input { min-width: 0 !important; box-sizing: border-box; }
+  /* 表格容器：欄位多時可橫向捲動，不撐破卡片 */
+  .roster-fill-scroll { overflow-x: auto; }
+  .roster-fill-table { width: 100%; border-collapse: collapse; min-width: max-content; }
+  .roster-fill-table th, .roster-fill-table td { padding: 0.3em; white-space: nowrap; }
+  .roster-fill-table th small { font-weight: normal; color: #666; }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -20,40 +29,41 @@
   <div class="card">
     <h3>1. 角色名單</h3>
     <p><small>每位角色一列。空白列會自動忽略，不用刪。</small></p>
-    <table style="width:100%; border-collapse:collapse">
+    <div class="roster-fill-scroll">
+    <table class="roster-fill-table">
       <thead><tr>
-        <th style="text-align:left; padding:0.3em">#</th>
-        <th style="text-align:left; padding:0.3em"><small>編號</small></th>
+        <th style="text-align:left">#</th>
+        <th style="text-align:left"><small>編號</small></th>
         {% for a in role_attrs %}
-        <th style="text-align:left; padding:0.3em" title="{{ a.key }}">
-          {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %} <small>（多筆用 ; 分隔）</small>{% endif %}
+        <th style="text-align:left" title="{{ a.key }}">
+          {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %}<br><small>（多筆用 ; 分隔）</small>{% endif %}
         </th>
         {% endfor %}
         {% if has_prefs_schema %}
-        <th style="text-align:left; padding:0.3em">志願（以 ; 分隔）</th>
+        <th style="text-align:left">志願<br><small>（多筆用 ; 分隔）</small></th>
         {% endif %}
         <th></th>
       </tr></thead>
       <tbody>
         <template x-for="(row, i) in roles" :key="i">
           <tr>
-            <td style="padding:0.3em" x-text="i + 1"></td>
-            <td style="padding:0.3em">
-              <input type="text" :name="`role_${i}_id`" placeholder="自動產生" style="width:6em">
+            <td x-text="i + 1"></td>
+            <td>
+              <input type="text" :name="`role_${i}_id`" placeholder="自動產生" style="width:7em">
             </td>
             {% for a in role_attrs %}
-            <td style="padding:0.3em">
+            <td>
               <input type="{{ 'number' if a.type == 'int' else 'text' }}"
-                :name="`role_${i}_{{ a.key }}`" style="width:100%">
+                :name="`role_${i}_{{ a.key }}`" style="width:11em">
             </td>
             {% endfor %}
             {% if has_prefs_schema %}
-            <td style="padding:0.3em">
+            <td>
               <input type="text" :name="`role_${i}_preferences`"
-                placeholder="如：G1;G2;G3" style="width:100%">
+                placeholder="G1;G2;G3" style="width:11em">
             </td>
             {% endif %}
-            <td style="padding:0.3em">
+            <td>
               <button type="button" @click="roles.splice(i, 1)"
                 style="color:#c00; background:none; border:none; cursor:pointer">✕</button>
             </td>
@@ -61,6 +71,7 @@
         </template>
       </tbody>
     </table>
+    </div>
     <p style="margin-top:0.5rem">
       <button type="button" @click="roles.push({})"
         style="background:#fff; border:1px dashed #2c5282; color:#2c5282; padding:0.4em 1em; border-radius:6px; cursor:pointer">
@@ -72,14 +83,15 @@
   <div class="card">
     <h3>2. 對象清單</h3>
     <p><small>填寫這次配對的對象（如班級、組別）。每個對象一列。</small></p>
-    <table style="width:100%; border-collapse:collapse">
+    <div class="roster-fill-scroll">
+    <table class="roster-fill-table">
       <thead><tr>
-        <th style="text-align:left; padding:0.3em">#</th>
-        <th style="text-align:left; padding:0.3em"><small>編號</small> *</th>
-        <th style="text-align:left; padding:0.3em">容量 *</th>
+        <th style="text-align:left">#</th>
+        <th style="text-align:left"><small>編號</small> *</th>
+        <th style="text-align:left">容量 *</th>
         {% for a in target_attrs %}
-        <th style="text-align:left; padding:0.3em" title="{{ a.key }}">
-          {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %} <small>（多筆用 ; 分隔）</small>{% endif %}
+        <th style="text-align:left" title="{{ a.key }}">
+          {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %}<br><small>（多筆用 ; 分隔）</small>{% endif %}
         </th>
         {% endfor %}
         <th></th>
@@ -87,16 +99,16 @@
       <tbody>
         <template x-for="(row, j) in targets" :key="j">
           <tr>
-            <td style="padding:0.3em" x-text="j + 1"></td>
-            <td style="padding:0.3em"><input type="text" :name="`target_${j}_id`" placeholder="如 G1" style="width:6em"></td>
-            <td style="padding:0.3em"><input type="number" :name="`target_${j}_capacity`" style="width:5em" min="0"></td>
+            <td x-text="j + 1"></td>
+            <td><input type="text" :name="`target_${j}_id`" placeholder="如 G1" style="width:6em"></td>
+            <td><input type="number" :name="`target_${j}_capacity`" style="width:5em" min="0"></td>
             {% for a in target_attrs %}
-            <td style="padding:0.3em">
+            <td>
               <input type="{{ 'number' if a.type == 'int' else 'text' }}"
-                :name="`target_${j}_{{ a.key }}`" style="width:100%">
+                :name="`target_${j}_{{ a.key }}`" style="width:11em">
             </td>
             {% endfor %}
-            <td style="padding:0.3em">
+            <td>
               <button type="button" @click="targets.splice(j, 1)"
                 style="color:#c00; background:none; border:none; cursor:pointer">✕</button>
             </td>
@@ -104,6 +116,7 @@
         </template>
       </tbody>
     </table>
+    </div>
     <p style="margin-top:0.5rem">
       <button type="button" @click="targets.push({})"
         style="background:#fff; border:1px dashed #2c5282; color:#2c5282; padding:0.4em 1em; border-radius:6px; cursor:pointer">
