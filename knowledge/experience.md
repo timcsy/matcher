@@ -161,3 +161,27 @@
 - **來源**：specs/011-template-author-ui Phase 3 後的 UI 反覆；
   tests/integration/test_template_authoring_simple.py（9 測試持續全綠卻視覺反覆失敗）；
   本輪對話從 commit `ff09842` 之後到下次 commit 之間的所有 UI 嘗試。
+
+### 重大 data model 變動要獨立成 feature，不要塞進其他 feature 的 polish
+
+- **理論說**：feature polish 階段是收尾，把「沒做完的小事」清掉就好；
+  使用者反饋「順便改 X」聽起來合理就順手做。
+- **實際發生**：feature 012（UI 直接填名單）的 polish 階段，使用者要求順便移除
+  `default_targets` 概念。直覺看「就是拔個欄位」似乎小，實際盤點：動到 5 個核心檔
+  + audit schema 升版（v1.3 → v1.4）+ 35 個測試呼叫點 + 4 個 golden audit + 內建範本
+  + examples sidecar 補檔——光是中途的測試紅燈就 78 個。若塞進 012 polish，會跟 UI 工作
+  交織爆炸，無法區分「UI 改壞了」vs「拔欄位改壞了」，且打破核心 0 改動的承諾。
+- **解決方式**：在 polish 邊界拒絕，明確說「這是 feature 級別的變動」，走 spec-kit
+  完整流程開 feature 013。寫 spec 時才發現需要：(a) audit schema 升版的相容策略
+  (b) 舊 YAML 含 default_targets 的靜默忽略決策 (c) examples sidecar 補檔
+  (d) /match/preferences hidden input 攜帶 sidecar bytes——這些都是寫 plan/research
+  才浮現的隱藏需求，邊做邊發現會反覆走回頭路。
+- **教訓**：判準「是否塞 polish」用變動的**爆炸半徑**而不是直覺感覺：
+  - 動 data model（dataclass 加減欄位、audit schema 升版）→ 一定獨立 feature
+  - 動到 ≥ 3 個核心檔 → 一定獨立 feature
+  - 需要新增向下相容決策（舊資料如何讀）→ 一定獨立 feature
+  - 預估改 ≥ 10 個測試檔 → 一定獨立 feature
+  即使「合法核心變動」（呼應教訓 7），也應該獨立排程，讓 spec-kit 的 research /
+  contracts 階段把隱藏複雜度先浮現出來。
+- **來源**：specs/013-remove-default-targets；對比 specs/012-web-roster-form 的核心 0
+  改動成績；commit `b25af35` 49 檔變動（含 audit schema v1.4 升版）。

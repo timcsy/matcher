@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e 已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -170,6 +170,28 @@
 - Pipeline / CLI 錯誤訊息也同步白話化：「『純抽籤』不接受志願輸入」「『輪流挑』需要至少一位填了志願」（保留 audit JSON 內部 mechanism 代碼）
 - 新檔：`src/matcher/web/template_form.py`（簡單模式表單 → YAML dict 純函式 + SCENARIO_TEMPLATES 範例）
 - 自動化測試：303 個（既有 280 + 階段 4e 新增 23，2 個資料相依 skip），全綠
+
+階段 4f UI 直接填名單（commit `6056f98`，無新依賴）：
+
+- `/match/new` 三選一入口：📂 上傳 / ✏️ 直接填 / 📌 過去紀錄
+- 新增 `/match/new/fill` 動態渲染範本宣告欄位（加減列）+ `/match/run-from-form` endpoint
+- 純函式 `assemble_roster_csv_bytes` / `assemble_targets_yaml_bytes`，UI → CSV bytes → 既有 pipeline
+- SC-002 守住：UI 表單路徑與 CSV 上傳路徑 5 段 audit bytewise 等價
+- M1/M2 自動跳 feature 009 志願頁
+- 自動化測試：342 個（既有 326 + 16 新增），全綠
+- 核心 0 改動：`src/matcher/{rules,filter,allocator,pipeline,audit,errors,data_import,template_loader,rng,roster}.py` 不動
+
+階段 4g 移除 default_targets 概念（commit `b25af35`，無新依賴）：
+
+- 拔除 `Template.default_targets` 欄位 + `template_snapshot.default_targets` audit 子鍵
+- audit `schema_version` 升 v1.3 → v1.4
+- 內建範本 teacher-class / study-group 拔除 default_targets 區段；examples 補上對應 sidecar
+- `data_import._load_targets` 一律要求旁檔；錯誤訊息含明確檔名建議
+- UI 填名單頁對象段永遠顯示（移除 `requires_targets` 條件）
+- `/match/preferences` 新增 `targets_bytes_b64` hidden input，志願頁往返不漏 sidecar
+- 向下相容：舊 YAML 含 default_targets 靜默忽略；舊 v1.3 audit viewer 不主動讀此鍵
+- 自動化測試：348 個（既有 342 + 6 新增 + 既有 15+ 調整），全綠
+- 動機：「公平公開」原則——使用者在 UI 填名單時就該透明知道對象有哪些
 
 尚未開始：K8s 部署（階段 5）、實際學校場景試行（UI 白話化已就緒，等真人來試）。
 
@@ -400,6 +422,42 @@
 - [x] 動核心限定於 `template_loader.py`（教訓 7 第 3 種合法情境：模板管理擴充）
 - [x] 自訂範本支援編輯（每次儲存產生新版本）+ 版本歷史查看 + 內建範本 Fork（US3，commit `c67c4b3`）
 - [x] 配對結果頁可「以當時的範本版本再跑一次」（從 audit.template_snapshot 還原；US4 是 audit 完整性的免費延伸，呼應教訓 3）
+
+### 階段 4f：UI 直接填名單
+
+- [x] 完成（commit `6056f98`）
+
+<!--
+  交付：UI 上直接填角色 / 對象名單，不必先做 CSV 檔。
+  策略：純函式組 CSV bytes，走既有 data_import 路徑 → 與「上傳 CSV」5 段 audit bytewise 等價。
+  M1/M2 經由 hidden inputs 跳 feature 009 志願頁（既有機制）。
+  核心 0 改動：所有變動局限於 `matcher.web` 套件內。
+-->
+
+- [x] /match/new 三選一切換：📂 上傳 / ✏️ 直接填 / 📌 過去紀錄（Alpine.js）
+- [x] /match/new/fill 動態渲染範本欄位 + /match/run-from-form 提交
+- [x] 純函式 assemble_roster_csv_bytes / assemble_targets_yaml_bytes
+- [x] UI 與 CSV 路徑 5 段 audit bytewise 等價（SC-002 守門）
+- [x] M1/M2 自動跳 feature 009 志願頁
+
+### 階段 4g：移除 default_targets 概念
+
+- [x] 完成（commit `b25af35`）
+
+<!--
+  交付：範本不再內嵌對象資料；對象一律在配對時提供。
+  動機：使用者明確要求拔黑箱 + UI 填名單頁應透明顯示對象（公平公開原則）。
+  破壞性變動：audit schema v1.3 → v1.4；Template dataclass 拔欄位。
+  向下相容：舊 YAML 含 default_targets 靜默忽略；舊 v1.3 audit viewer 不主動讀。
+-->
+
+- [x] Template dataclass 移除 default_targets 欄位
+- [x] template_loader 對舊 YAML 含此鍵靜默忽略（漸進遷移）
+- [x] data_import._load_targets 一律要旁檔；錯誤訊息升級
+- [x] 內建範本拔除 default_targets；examples 補對應 sidecar
+- [x] audit schema_version 升 v1.4，template_snapshot 不再含 default_targets
+- [x] UI 填名單頁對象段永遠顯示（移除 requires_targets 條件）
+- [x] /match/preferences 攜帶 targets_bytes_b64，志願頁往返不漏 sidecar
 
 ### 階段 5：K8s 部署
 
