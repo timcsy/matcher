@@ -2,6 +2,15 @@
 {% block title %}模板列表{% endblock %}
 {% block content %}
 <h2>內建模板</h2>
+
+<div class="card" style="background:#f5f5f5; margin-bottom:1.5rem">
+  <p><strong>想做新場景的模板嗎？</strong></p>
+  <p><small>matcher 的模板是一份 YAML 檔，定義屬性、規則與預設對象清單。最快做法：把專案內的
+    <a href="https://github.com/timcsy/matcher/blob/main/docs/template-authoring-guide.md">模板撰寫指南</a>
+    （<code>docs/template-authoring-guide.md</code>）複製貼給 Claude / ChatGPT，描述你的場景，AI 會依規格產出 YAML。
+    產出後放到 <code>src/matcher/templates/builtin/</code> 重啟即生效。</small></p>
+</div>
+
 <div class="card-grid">
   {% for tpl in templates %}
   <div class="card">

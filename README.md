@@ -64,6 +64,14 @@ uv run matcher run --template-file tc.yaml \
 
 「研習分組」模板含 `preferences_schema`，但本階段 M0 機制下，若名單帶有非空 preferences → 拒絕並提示等待階段 4。
 
+### 撰寫自訂模板（含 AI 助手 prompt）
+
+需要做新場景的模板？可參考 [`docs/template-authoring-guide.md`](docs/template-authoring-guide.md)——一份完整的 YAML schema 規格 + 6 個 expr 算子說明 + 2 個 worked example + Self-check checklist。
+
+**最省力的做法**：把整份指南複製貼給 Claude / ChatGPT，描述你的場景（角色、對象、規則），AI 會依規格產出 YAML。指南最後 §13 附有現成的 prompt 填空模板。
+
+產出的 YAML 可用 `--template-file my.yaml` 跑 CLI，或放到 `src/matcher/templates/builtin/` 後重啟讓 Web UI 也看得到。
+
 ### Web UI
 
 啟動本地 server：
