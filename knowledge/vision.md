@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d 已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e 已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -152,7 +152,26 @@
 - 新增 `tests/conftest.py`：macOS 自動設 `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib` 讓 WeasyPrint 找到 libgobject
 - 自動化測試：280 個（既有 256 + 階段 3c 新增 24，2 個資料相依 skip），全綠
 
-尚未開始：K8s 部署（階段 5）、實際學校場景試行。
+階段 4e 範本創作 UI + 全 UI 用詞白話化（commit `5d41473`，新增 weasyprint 之外 Tailwind Play CDN + Alpine.js）：
+
+- `/templates/new` 新增「用表單建立」模式：基本資訊 + 角色屬性 + 對象屬性 + 配對條件 + 是否填志願；動態加減欄位 / 規則；條件類型切換時只顯示相關欄位
+- 「自己寫 YAML（或請 AI 幫忙）」進階模式：AI Prompt 助手填空 + 「複製給 AI 看的說明」按鈕（內含整份 `docs/template-authoring-guide.md`）+ YAML textarea
+- 持久化：`data/templates/<id>/v<N>.yaml`，每次儲存 = 新版本；TemplateRegistry 啟動掃描 + invalidate
+- **動核心 `template_loader.py`**——屬「核心職責擴充」（教訓 7 第 3 種合法情境：模板管理本就是核心職責）
+- 內建範本不可覆蓋（save 階段拒絕）；id 格式限定 `[a-z0-9-]+`
+- 配套全 Web UI 用詞白話化（教訓 8 的反向應用——使用者明確指出工程師詞作為對照標的）：
+  - 模板 → **範本**；媒合 → **配對**；新建媒合 → **新增一次配對**；過去媒合 → **過去紀錄**
+  - 分配機制 M0/M1/M2 → **純抽籤 / 輪流挑 / 依志願先後填滿**（內部代碼從使用者介面完全移除）
+  - 隨機種子 → **亂數種子**（+ 完整白話 helper：「同一份名單 + 同一個種子 → 永遠抽出一樣的結果」）
+  - 型別 str / int / list_str → **文字 / 數字 / 多筆文字**
+  - 別稱（aliases）UI 移除；`data_import.py` 自動把顯示名稱（description）視為合法 alias，使用者不必額外填
+  - 預設對象清單從建範本 UI 移除——範本只定義規則，具體對象在跑配對時提供（內建範本仍保留 default_targets）
+- **新前端技術棧**：Tailwind Play CDN + Alpine.js（兩者 CDN-only，無 Node toolchain / 無 build step / 無 npm — 符合架構決策原意）
+- Pipeline / CLI 錯誤訊息也同步白話化：「『純抽籤』不接受志願輸入」「『輪流挑』需要至少一位填了志願」（保留 audit JSON 內部 mechanism 代碼）
+- 新檔：`src/matcher/web/template_form.py`（簡單模式表單 → YAML dict 純函式 + SCENARIO_TEMPLATES 範例）
+- 自動化測試：303 個（既有 280 + 階段 4e 新增 23，2 個資料相依 skip），全綠
+
+尚未開始：K8s 部署（階段 5）、實際學校場景試行（UI 白話化已就緒，等真人來試）。
 
 ## 架構
 
@@ -190,10 +209,13 @@
 - **隨機性**：分配模組接受外部 seed，輸出可重播的過程紀錄
   （見 `principles.md` 原則 2）
 - **部署**：可部署到 K8s，但保持簡單（單一 container、檔案系統儲存即可）
+- **技術棧（已落定）**：
+  - 後端：Python 3.11 + FastAPI + Jinja2（伺服器渲染）
+  - 前端：Tailwind CSS Play CDN + Alpine.js（CDN-only，**無 Node toolchain / 無 build step / 無 npm**——維持「簡單部署」精神）
+  - 持久化：純檔案系統（`data/matches/`、`data/templates/<id>/v<N>.yaml`）
 
 待定：
 
-- 前後端技術棧（TBD，實作前再選）
 - 認證/權限機制（先 TBD，可能先單機/單組織）
 
 ## 路線圖
@@ -356,6 +378,26 @@
 
 - [x] Web 新建媒合流程提供志願填寫表單欄位（每位角色可即時填寫 1..max_choices 個志願；自動偵測「模板含 schema + roster 全空 + M1/M2」時觸發）
 - [x] 表單提交後產出的 audit 與「同樣志願以 CSV 上傳跑出的 audit」逐位元組相同（SC-001 of 4d，整合測試守住）
+
+### 階段 4e：範本創作 UI + 全 UI 用詞白話化
+
+- [x] 完成（commit `5d41473`，2026-05-25）
+
+<!--
+  交付：(a) /templates/new 表單建立自訂範本 + YAML 進階模式 + AI Prompt 助手；
+  (b) data/templates/ 持久化（每存 = 新版本）+ TemplateRegistry 掃描；
+  (c) 全 Web UI 用詞白話化（模板→範本、媒合→配對、M0/M1/M2 → 純抽籤/輪流挑/依志願先後填滿、隨機種子→亂數種子、別稱欄位移除、預設對象從建範本 UI 移除…）；
+  (d) Tailwind Play CDN + Alpine.js（兩者 CDN-only，仍維持無 Node toolchain）。
+  前置條件：階段 2a（範本系統）
+-->
+
+**成功標準：**
+
+- [x] 一般使用者可在 `/templates/new` 不寫 YAML、建立自訂範本並跑配對成功
+- [x] 進階模式提供 AI Prompt 複製按鈕（含整份 `docs/template-authoring-guide.md`）
+- [x] 全 Web UI 與 CLI 錯誤訊息移除工程師導向詞彙（M0/M1/M2 內部代碼、str/int 型別、別稱、aliases、稽核紀錄 → 完整紀錄、媒合 → 配對 等）
+- [x] 自訂範本持久化於 `data/templates/<id>/v<N>.yaml`；重啟後可載入
+- [x] 動核心限定於 `template_loader.py`（教訓 7 第 3 種合法情境：模板管理擴充）
 
 ### 階段 5：K8s 部署
 
