@@ -1,6 +1,6 @@
 """Feature 008：Web UI 機制選擇相關整合測試。
 
-涵蓋 Phase 2 foundational + US1 表單下拉、結果頁機制名/處理順序/志願排名欄。
+涵蓋 Phase 2 foundational + US1 表單下拉、結果頁機制名/挑志願的順序/志願排名欄。
 """
 
 from __future__ import annotations
@@ -62,7 +62,7 @@ def test_match_run_rejects_invalid_mechanism(tmp_path: Path):
             files={"roster": ("roster.csv", f, "text/csv")},
         )
     assert r.status_code == 400, r.text
-    assert "不支援的機制" in r.text
+    assert "不支援的抽籤方式" in r.text
     assert "M9" in r.text
 
 
@@ -121,24 +121,24 @@ def _run_m0_record(c: TestClient) -> str:
 
 
 def test_result_page_shows_mechanism_label_m2(tmp_path: Path):
-    """T011：M2 結果頁含「M2 Boston 層級填滿」。"""
+    """T011：M2 結果頁含「依志願先後填滿」。"""
     c = _client(tmp_path)
     rid = _run_m2_record(c)
     r = c.get(f"/match/{rid}")
     assert r.status_code == 200
-    assert "M2 Boston 層級填滿" in r.text
+    assert "依志願先後填滿" in r.text
 
 
 def test_result_page_shows_processing_order_m1m2(tmp_path: Path):
-    """T012：M2 結果頁含「處理順序」段；M0 不含。"""
+    """T012：M2 結果頁含「挑志願的順序」段；M0 不含。"""
     c = _client(tmp_path)
     rid_m2 = _run_m2_record(c)
     r = c.get(f"/match/{rid_m2}")
-    assert "處理順序" in r.text
+    assert "挑志願的順序" in r.text
 
     rid_m0 = _run_m0_record(c)
     r0 = c.get(f"/match/{rid_m0}")
-    assert "處理順序" not in r0.text
+    assert "挑志願的順序" not in r0.text
 
 
 def test_result_page_shows_preference_rank_column(tmp_path: Path):

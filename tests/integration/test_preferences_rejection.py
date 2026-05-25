@@ -26,9 +26,9 @@ def test_nonempty_preferences_rejected():
     )
     assert r.exit_code == 17
     msg = r.output + (r.stderr or "")
-    assert "M0 純抽籤" in msg
+    assert "純抽籤" in msg
     assert "不接受志願輸入" in msg
-    assert "階段 4" in msg
+    assert "輪流挑" in msg or "依志願先後填滿" in msg
 
 
 def test_empty_preferences_passes():

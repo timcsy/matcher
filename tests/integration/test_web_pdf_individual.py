@@ -72,11 +72,11 @@ def test_download_individual_pdf_only_contains_own_data(tmp_path: Path):
 
 
 def test_individual_pdf_button_present_in_individual_view(tmp_path: Path):
-    """T031：個別查詢頁含「下載我的報告 PDF」連結。"""
+    """T031：個別查詢頁含「下載 PDF 報告」連結。"""
     c = _client(tmp_path)
     rid = _run_m1_record(c)
     r = c.get(f"/match/{rid}/role/S01")
-    assert "下載我的報告 PDF" in r.text
+    assert "下載 PDF 報告" in r.text
     assert f"/match/{rid}/role/S01/report.pdf" in r.text
 
 

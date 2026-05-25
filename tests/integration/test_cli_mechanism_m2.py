@@ -59,7 +59,7 @@ def test_m2_stdout_shows_boston_label(tmp_path: Path):
         "--mechanism", "M2",
         "--output", str(out),
     ])
-    assert "M2 Boston 層級填滿" in r.output
+    assert "依志願先後填滿" in r.output
 
 
 def test_m2_preference_rank_in_audit(tmp_path: Path):

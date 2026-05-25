@@ -69,7 +69,7 @@ def test_individual_view_filter_trace_shown(tmp_path: Path):
     rid = _make_success_record(c)
     r = c.get(f"/match/{rid}/role/T01")
     assert r.status_code == 200
-    # 應顯示媒合過程說明（規則 ID）
+    # 應顯示配對是怎麼決定的（規則 ID）
     assert "R001" in r.text
 
 
@@ -115,7 +115,7 @@ def test_humanized_rule_in_individual_view(tmp_path: Path):
     # 因為內建模板的描述已是「用中文寫的」，所以替換規則被觸發的機率低
     # 換句話說：本測試實際在驗證「即使含 role./target. 字串也會被替換」
     # → 改為直接驗證 humanize filter 已註冊（透過上一個測試的技術詞零容忍隱含驗證）
-    assert "媒合過程說明" in r.text
+    assert "配對是怎麼決定的" in r.text
 
 
 # ── US2：admin 結果頁的個別查詢連結 ───────────────────────────

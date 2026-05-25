@@ -33,9 +33,9 @@ def test_csv_with_nonempty_preferences_rejected(tmp_path: Path):
     ])
     assert r.exit_code == 17
     msg = r.output + (r.stderr or "")
-    assert "M0 純抽籤" in msg
+    assert "純抽籤" in msg
     # 階段 6 改：M1 已啟用，訊息現在指引「改用 --mechanism M1」
-    assert ("--mechanism M1" in msg) or ("階段 4" in msg)
+    assert "輪流挑" in msg or "依志願先後填滿" in msg
 
 
 def test_csv_with_empty_preferences_passes(tmp_path: Path):

@@ -99,8 +99,8 @@ def test_post_preferences_with_valid_choices_succeeds(tmp_path: Path):
     }
     r2 = _submit_preferences(c, hidden, prefs)
     assert r2.status_code == 200, r2.text  # follow_redirects 預設 → 結果頁
-    assert "媒合完成" in r2.text
-    assert "M1 RSD 隨機輪流挑" in r2.text
+    assert "配對完成" in r2.text
+    assert "輪流挑" in r2.text
 
     m = re.search(r'<code>([0-9T:-]+-[a-f0-9]{8})</code>', r2.text)
     rid = m.group(1)
@@ -167,7 +167,7 @@ def test_preferences_form_csv_with_partial_prefs_uses_skip_path(tmp_path: Path):
     # 不應出現填志願頁的標題
     assert "填寫志願" not in r.text
     # 應跳到結果頁
-    assert "媒合完成" in r.text or "媒合失敗" in r.text
+    assert "配對完成" in r.text or "配對失敗" in r.text
 
 
 def test_preferences_form_hidden_inputs_round_trip(tmp_path: Path):

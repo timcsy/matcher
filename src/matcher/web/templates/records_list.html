@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}過去媒合{% endblock %}
+{% block title %}過去紀錄{% endblock %}
 {% block content %}
-<h2>過去媒合</h2>
+<h2>過去配對紀錄</h2>
 
 {% if records %}
 <table>
   <thead>
-    <tr><th>時間</th><th>模板</th><th>種子</th><th>狀態</th><th>操作</th></tr>
+    <tr><th>時間</th><th>使用範本</th><th>亂數種子</th><th>狀態</th><th>操作</th></tr>
   </thead>
   <tbody>
     {% for r in records %}
@@ -24,7 +24,7 @@
       <td>
         <a href="/match/{{ r.id }}">查看</a>
         {% if r.status == "success" %}
-          · <a href="/match/{{ r.id }}/audit">下載 audit</a>
+          · <a href="/match/{{ r.id }}/report.pdf">下載 PDF</a>
         {% endif %}
       </td>
     </tr>
@@ -32,7 +32,7 @@
   </tbody>
 </table>
 {% else %}
-<p>尚未執行任何媒合。<a class="btn btn-success" href="/match/new">新建第一次媒合</a></p>
+<p>還沒做過任何配對。<a class="btn btn-success" href="/match/new">做第一次配對</a></p>
 {% endif %}
 
 {% endblock %}

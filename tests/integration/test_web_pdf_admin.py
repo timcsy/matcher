@@ -71,7 +71,7 @@ def test_admin_pdf_contains_record_id_and_mechanism_label(tmp_path: Path):
         capture_output=True, text=True, check=True,
     ).stdout
     assert rid in text
-    assert "M2 Boston 層級填滿" in text
+    assert "依志願先後填滿" in text
 
 
 def test_admin_pdf_for_failed_record_shows_error(tmp_path: Path):

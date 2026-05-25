@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% block title %}{% if edit_id %}編輯範本{% else %}新增範本{% endif %}{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style>
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif; }
+  /* 蓋掉 style.css 全域 input { min-width: 240px } 讓 Tailwind w-* 生效 */
+  [x-data="templateAuthor()"] input,
+  [x-data="templateAuthor()"] select,
+  [x-data="templateAuthor()"] textarea { min-width: 0 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div x-data="templateAuthor()" class="max-w-3xl mx-auto py-6 px-4 text-gray-800">
+
+  {# 頁首 #}
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold tracking-tight">
+      {% if edit_id %}編輯範本{% elif fork_from %}複製內建範本{% else %}新增範本{% endif %}
+    </h1>
+    <p class="text-gray-500 mt-2">
+      {% if edit_id %}修改後會建立新版本，舊版本保留可隨時查看。
+      {% elif fork_from %}以「{{ fork_from }}」為起點建立你自己的版本。
+      {% else %}建立一份配對設定檔，行政上傳名單就能一鍵分配。{% endif %}
+    </p>
+  </div>
+
+  {# 範例下拉（僅新增時） #}
+  {% if not edit_id and not fork_from %}
+  <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-3">
+    <span class="text-sm text-blue-900">不知道從哪開始？選個現成範例：</span>
+    <select id="scenario-select" class="flex-1 max-w-xs bg-white border border-blue-300 rounded-md px-3 py-1.5 text-sm">
+      {% for s in scenarios %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+    </select>
+    <button type="button" onclick="loadScenario()"
+      class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm">套用</button>
+  </div>
+  {% endif %}
+
+  {# 切換 簡單 / 進階 #}
+  <div class="flex gap-1 border-b border-gray-200 mb-6">
+    <button type="button" @click="tab='simple'"
+      :class="tab==='simple' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'"
+      class="px-4 py-2 border-b-2 -mb-px text-sm font-medium">用表單建立</button>
+    <button type="button" @click="tab='advanced'"
+      :class="tab==='advanced' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-800'"
+      class="px-4 py-2 border-b-2 -mb-px text-sm font-medium">直接寫 YAML</button>
+  </div>
+
+  {# ──────────── 簡單模式 ──────────── #}
+  <form id="simple-form" x-show="tab==='simple'" @submit.prevent class="space-y-8">
+    <input type="hidden" name="mode" value="simple">
+
+    {# 1. 基本資訊 #}
+    <section>
+      <h2 class="text-lg font-semibold mb-1">基本資訊</h2>
+      <p class="text-sm text-gray-500 mb-4">給這份範本取個名字。</p>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">代號</label>
+          <input type="text" name="template_id" value="{{ prefill.get('template_id', '') }}" pattern="[a-z0-9-]+" required
+            placeholder="club-signup"
+            class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+          <p class="text-xs text-gray-500 mt-1">英文小寫＋連字號，例：<code class="bg-gray-100 px-1 rounded">club-signup</code></p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">中文名稱</label>
+          <input type="text" name="template_name" value="{{ prefill.get('template_name', '') }}" required
+            placeholder="社團報名"
+            class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">說明</label>
+          <input type="text" name="template_description" value="{{ prefill.get('template_description', '') }}" required
+            placeholder="依年級與興趣分配學生到社團"
+            class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+      </div>
+    </section>
+
+    {# 2. 角色資料欄位 #}
+    <section>
+      <div class="flex items-end justify-between mb-1">
+        <h2 class="text-lg font-semibold">「角色」資料欄位</h2>
+      </div>
+      <p class="text-sm text-gray-500 mb-4">要被分配的人或單位（例：學生、老師）有哪些資料？</p>
+
+      <div class="space-y-2">
+        <template x-for="(row, i) in roleAttrs" :key="row._k">
+          <div class="border border-gray-200 rounded-lg p-4 bg-white" x-data="{open: !row.key}">
+            <div class="flex items-center gap-3">
+              <input type="text" :name="`role_attr_${i}_key`" x-model="row.key" placeholder="代號（如 name）"
+                class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select :name="`role_attr_${i}_type`" x-model="row.type"
+                class="border border-gray-300 rounded-md px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="str">文字</option>
+                <option value="int">數字</option>
+                <option value="list_str">多筆文字</option>
+              </select>
+              <label class="flex items-center gap-1.5 text-sm text-gray-600 whitespace-nowrap">
+                <input type="checkbox" :name="`role_attr_${i}_required`" x-model="row.required" class="h-4 w-4">
+                必填
+              </label>
+              <button type="button" @click="open=!open" class="text-gray-400 hover:text-gray-600 p-1" title="展開/收合">
+                <span x-text="open ? '▴' : '▾'"></span>
+              </button>
+              <button type="button" @click="roleAttrs.splice(i,1)" class="text-red-500 hover:bg-red-50 rounded p-1" title="移除">×</button>
+            </div>
+            <div x-show="open" class="mt-3 pt-3 border-t border-gray-100">
+              <label class="block text-xs text-gray-500 mb-1">中文顯示名稱</label>
+              <input type="text" :name="`role_attr_${i}_description`" x-model="row.description" placeholder="如：學生姓名"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="text-xs text-gray-400 mt-1">CSV 表頭可以寫這個顯示名稱、也可以寫上面的英文代號，系統都會自動對齊。</p>
+            </div>
+          </div>
+        </template>
+        <button type="button" @click="addRoleAttr()"
+          class="w-full border border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-600 hover:text-blue-700 rounded-lg py-3 text-sm font-medium">
+          ＋ 新增一個欄位
+        </button>
+      </div>
+    </section>
+
+    {# 3. 對象資料欄位 #}
+    <section>
+      <h2 class="text-lg font-semibold mb-1">「對象」資料欄位</h2>
+      <p class="text-sm text-gray-500 mb-4">被分配進去的位置或群組（例：班級、社團）有哪些資料？</p>
+
+      <div class="space-y-2">
+        <template x-for="(row, i) in targetAttrs" :key="row._k">
+          <div class="border border-gray-200 rounded-lg p-4 bg-white" x-data="{open: !row.key}">
+            <div class="flex items-center gap-3">
+              <input type="text" :name="`target_attr_${i}_key`" x-model="row.key" placeholder="代號（如 name）"
+                class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select :name="`target_attr_${i}_type`" x-model="row.type"
+                class="border border-gray-300 rounded-md px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="str">文字</option>
+                <option value="int">數字</option>
+                <option value="list_str">多筆文字</option>
+              </select>
+              <label class="flex items-center gap-1.5 text-sm text-gray-600 whitespace-nowrap">
+                <input type="checkbox" :name="`target_attr_${i}_required`" x-model="row.required" class="h-4 w-4">
+                必填
+              </label>
+              <button type="button" @click="open=!open" class="text-gray-400 hover:text-gray-600 p-1">
+                <span x-text="open ? '▴' : '▾'"></span>
+              </button>
+              <button type="button" @click="targetAttrs.splice(i,1)" class="text-red-500 hover:bg-red-50 rounded p-1">×</button>
+            </div>
+            <div x-show="open" class="mt-3 pt-3 border-t border-gray-100">
+              <label class="block text-xs text-gray-500 mb-1">中文顯示名稱</label>
+              <input type="text" :name="`target_attr_${i}_description`" x-model="row.description" placeholder="如：社團名稱"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <p class="text-xs text-gray-400 mt-1">CSV 表頭可以寫這個顯示名稱、也可以寫上面的英文代號，系統都會自動對齊。</p>
+            </div>
+          </div>
+        </template>
+        <button type="button" @click="addTargetAttr()"
+          class="w-full border border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-600 hover:text-blue-700 rounded-lg py-3 text-sm font-medium">
+          ＋ 新增一個欄位
+        </button>
+      </div>
+    </section>
+
+    {# 4. 配對條件 #}
+    <section>
+      <h2 class="text-lg font-semibold mb-1">配對條件</h2>
+      <p class="text-sm text-gray-500 mb-4">
+        角色要符合什麼條件，才能被分到對象？所有條件都會同時檢查。
+        <br>欄位寫成 <code class="bg-gray-100 px-1 rounded">role.代號</code> 或 <code class="bg-gray-100 px-1 rounded">target.代號</code>，如 <code class="bg-gray-100 px-1 rounded">role.grade</code>。
+      </p>
+
+      <div class="space-y-3">
+        <template x-for="(rule, i) in rules" :key="rule._k">
+          <div class="border border-gray-200 rounded-lg p-4 bg-white">
+            <div class="flex items-center gap-3 mb-3">
+              <input type="text" :name="`rule_${i}_id`" x-model="rule.id" :placeholder="`R${String(i+1).padStart(3,'0')}`"
+                class="w-24 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <select :name="`rule_${i}_type`" x-model="rule.type"
+                class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">— 選一種條件 —</option>
+                <option value="ge">數字大於等於某值</option>
+                <option value="le">數字小於等於某值</option>
+                <option value="eq">欄位等於某值</option>
+                <option value="in">欄位是清單之一</option>
+                <option value="role_in_target_field">角色欄位在對象的清單中</option>
+              </select>
+              <button type="button" @click="rules.splice(i,1)" class="text-red-500 hover:bg-red-50 rounded p-1">×</button>
+            </div>
+
+            {# 條件型別動態欄位 #}
+            <div x-show="rule.type" class="grid grid-cols-2 gap-3 mb-3">
+              <template x-if="['ge','le','eq','in'].includes(rule.type)">
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">哪個欄位</label>
+                  <input type="text" :name="`rule_${i}_field`" x-model="rule.field" placeholder="role.grade"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+              </template>
+              <template x-if="['ge','le','eq'].includes(rule.type)">
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">比較的值</label>
+                  <input type="text" :name="`rule_${i}_value`" x-model="rule.value" placeholder="4"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+              </template>
+              <template x-if="rule.type === 'in'">
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">允許的清單（分號分隔）</label>
+                  <input type="text" :name="`rule_${i}_set`" x-model="rule.set" placeholder="國文;數學"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+              </template>
+              <template x-if="rule.type === 'role_in_target_field'">
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">角色欄位代號（不含 role.）</label>
+                  <input type="text" :name="`rule_${i}_role_field`" x-model="rule.role_field" placeholder="speciality"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+              </template>
+              <template x-if="rule.type === 'role_in_target_field'">
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">對象清單欄位（不含 target.）</label>
+                  <input type="text" :name="`rule_${i}_target_field`" x-model="rule.target_field" placeholder="required_subjects"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+              </template>
+            </div>
+
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">條件說明（留空會自動產生）</label>
+              <input type="text" :name="`rule_${i}_custom_description`" x-model="rule.custom_description"
+                placeholder="老師年資至少 3 年"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+          </div>
+        </template>
+        <button type="button" @click="addRule()"
+          class="w-full border border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-600 hover:text-blue-700 rounded-lg py-3 text-sm font-medium">
+          ＋ 新增一條條件
+        </button>
+      </div>
+    </section>
+
+    {# 志願 #}
+    <section>
+      <h2 class="text-lg font-semibold mb-1">填志願功能</h2>
+      <p class="text-sm text-gray-500 mb-4">允許被配對者填寫志願順序（之後可用「輪流挑」或「依志願先後填滿」抽籤方式）。</p>
+
+      <div class="border border-gray-200 rounded-lg p-4 bg-white space-y-3">
+        <label class="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" name="prefs_enabled" {% if prefill.get('prefs_enabled') %}checked{% endif %} class="h-4 w-4">
+          啟用填志願功能
+        </label>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">每人最多幾個志願</label>
+          <input type="number" name="prefs_max_choices" value="{{ prefill.get('prefs_max_choices', '3') }}" min="1" max="10"
+            class="w-24 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-500 mb-1">給填志願者的說明</label>
+          <input type="text" name="prefs_description" value="{{ prefill.get('prefs_description', '') }}"
+            placeholder="每位學生可填 1~3 個志願"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+      </div>
+    </section>
+
+    {# 動作 #}
+    <div class="sticky bottom-0 bg-white border-t border-gray-200 -mx-4 px-4 py-4 mt-8">
+      <div class="flex justify-end gap-2">
+        <button type="button" onclick="validateForm()"
+          class="px-5 py-2.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-md text-sm font-medium">先檢查</button>
+        <button type="button" onclick="saveForm()"
+          class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium shadow-sm">儲存範本</button>
+      </div>
+      <div id="result-area" class="mt-3"></div>
+    </div>
+  </form>
+
+  {# ──────────── 進階模式 ──────────── #}
+  <div x-show="tab==='advanced'" class="space-y-6">
+
+    <section>
+      <h2 class="text-lg font-semibold mb-1">請 AI 幫你寫</h2>
+      <p class="text-sm text-gray-500 mb-4">填下面幾格，按按鈕複製，貼給 Claude / ChatGPT 即可。</p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">情境</label>
+          <input type="text" id="ai-scenario" placeholder="社團報名"
+            class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">角色</label>
+          <input type="text" id="ai-role" placeholder="學生（姓名、年級、興趣）"
+            class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">對象</label>
+          <input type="text" id="ai-target" placeholder="社團（名稱、主題、最低年級）"
+            class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">條件</label>
+          <input type="text" id="ai-rules" placeholder="年級不能低於最低年級；興趣對得上主題"
+            class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">是否填志願</label>
+          <input type="text" id="ai-prefs" placeholder="是，每人最多 3 個"
+            class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <button type="button" onclick="copyAiPrompt()"
+          class="w-full px-5 py-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-700 rounded-md text-sm font-medium">
+          📋 複製給 AI 看的說明
+        </button>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-lg font-semibold mb-1">把 AI 給的 YAML 貼這裡</h2>
+      <form id="advanced-form" @submit.prevent>
+        <input type="hidden" name="mode" value="advanced">
+        <textarea name="raw_yaml" id="adv-raw-yaml" rows="18"
+          placeholder="把 AI 生的 YAML 內容貼到這裡..."
+          class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        <div class="flex justify-end gap-2 mt-3">
+          <button type="button" onclick="validateAdvanced()"
+            class="px-5 py-2.5 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 rounded-md text-sm font-medium">先檢查</button>
+          <button type="button" onclick="saveAdvanced()"
+            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium shadow-sm">儲存範本</button>
+        </div>
+        <div id="adv-result-area" class="mt-3"></div>
+      </form>
+    </section>
+  </div>
+
+</div>
+
+<script>
+window._initialPrefill = {{ prefill | tojson }};
+</script>
+<script src="/static/template_form.js"></script>
+
+{% endblock %}

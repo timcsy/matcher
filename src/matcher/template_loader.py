@@ -162,12 +162,19 @@ def load_template_file(path: str | Path) -> Template:
 # ── 內建模板登錄 ─────────────────────────────────────────────────
 
 
-class TemplateRegistry:
-    """掃描內建模板目錄並提供查詢介面。"""
+_CUSTOM_VERSION_PATTERN = __import__("re").compile(r"^v(\d+)\.yaml$")
 
-    def __init__(self) -> None:
+
+class TemplateRegistry:
+    """掃描內建模板目錄並提供查詢介面。Feature 011 擴充：自訂模板（檔案系統）+ 版本歷史。"""
+
+    def __init__(self, custom_dir: Path | str = Path("data/templates")) -> None:
         self._cache: dict[str, Template] = {}
+        self._builtin_ids: set[str] = set()
+        self._custom_versions: dict[str, dict[int, Template]] = {}
+        self._custom_dir = Path(custom_dir)
         self._scan()
+        self._scan_custom_dir()
 
     def _scan(self) -> None:
         pkg = resources.files("matcher.templates.builtin")
@@ -182,6 +189,44 @@ class TemplateRegistry:
                         f"{self._cache[tpl.id]} 與 {entry.name}"
                     )
                 self._cache[tpl.id] = tpl
+                self._builtin_ids.add(tpl.id)
+
+    def _scan_custom_dir(self) -> None:
+        """掃 data/templates/<id>/v<N>.yaml；最新版本進主 cache、所有版本進 _custom_versions。"""
+        if not self._custom_dir.exists():
+            return
+        for tpl_dir in self._custom_dir.iterdir():
+            if not tpl_dir.is_dir() or tpl_dir.name.startswith("."):
+                continue
+            tpl_id = tpl_dir.name
+            versions: dict[int, Template] = {}
+            for entry in tpl_dir.iterdir():
+                m = _CUSTOM_VERSION_PATTERN.match(entry.name)
+                if not m:
+                    continue
+                version_n = int(m.group(1))
+                with entry.open("r", encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+                tpl = parse_template(data)
+                if tpl.id != tpl_id:
+                    raise TemplateConflict(
+                        f"自訂模板檔內 id `{tpl.id}` 與目錄名 `{tpl_id}` 不一致"
+                    )
+                versions[version_n] = tpl
+            if versions:
+                self._custom_versions[tpl_id] = versions
+                latest = max(versions.keys())
+                # 自訂模板不可覆蓋內建（理論上 save_custom 已擋；萬一發生則 builtin 優先）
+                if tpl_id not in self._builtin_ids:
+                    self._cache[tpl_id] = versions[latest]
+
+    def invalidate(self) -> None:
+        """重新掃描所有來源（save_custom 後呼叫）。"""
+        self._cache = {}
+        self._builtin_ids = set()
+        self._custom_versions = {}
+        self._scan()
+        self._scan_custom_dir()
 
     def list_ids(self) -> list[str]:
         return sorted(self._cache.keys())
@@ -198,6 +243,58 @@ class TemplateRegistry:
 
     def has(self, template_id: str) -> bool:
         return template_id in self._cache
+
+    def is_builtin(self, template_id: str) -> bool:
+        return template_id in self._builtin_ids
+
+    def list_versions(self, template_id: str) -> list[int]:
+        """回此自訂模板的版本號（排序）。內建模板回 []。"""
+        return sorted(self._custom_versions.get(template_id, {}).keys())
+
+    def get_version(self, template_id: str, version: int) -> Template:
+        """取自訂模板的指定版本。內建或版本不存在 → raise TemplateNotFound。"""
+        if template_id not in self._custom_versions:
+            raise TemplateNotFound(f"自訂模板 `{template_id}` 不存在")
+        versions = self._custom_versions[template_id]
+        if version not in versions:
+            raise TemplateNotFound(
+                f"自訂模板 `{template_id}` 沒有版本 v{version}（現有：{sorted(versions.keys())}）"
+            )
+        return versions[version]
+
+    def save_custom(self, tpl_dict: dict) -> tuple[str, int]:
+        """寫入新版本檔案；返回 (id, version)。
+
+        驗證流程：
+        1. parse_template 確認 tpl_dict 合法（fail → raise）
+        2. 檢查 id 不在內建模板（fail → raise ValueError "id 已存在於內建模板"）
+        3. 檢查 id 格式（限定 `[a-z0-9-]+`）
+        4. 計算 next_version = max(現有) + 1（或 1）
+        5. 寫檔 + invalidate
+        """
+        import re as _re
+        tpl = parse_template(tpl_dict)  # 1
+        if tpl.id in self._builtin_ids:
+            raise ValueError(
+                f"模板 id `{tpl.id}` 已存在於內建模板，不可覆蓋；請改名或選擇 Fork"
+            )
+        if not _re.fullmatch(r"[a-z0-9-]+", tpl.id):
+            raise ValueError(
+                f"模板 id `{tpl.id}` 格式不合法；僅允許小寫英數字與連字號"
+            )
+        tpl_dir = self._custom_dir / tpl.id
+        tpl_dir.mkdir(parents=True, exist_ok=True)
+        existing = [
+            int(_CUSTOM_VERSION_PATTERN.match(p.name).group(1))
+            for p in tpl_dir.iterdir()
+            if _CUSTOM_VERSION_PATTERN.match(p.name)
+        ]
+        next_version = (max(existing) if existing else 0) + 1
+        path = tpl_dir / f"v{next_version}.yaml"
+        with path.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(tpl_dict, f, allow_unicode=True, sort_keys=False)
+        self.invalidate()
+        return tpl.id, next_version
 
 
 def dump_template_yaml(tpl: Template, path: str | Path) -> None:

@@ -18,7 +18,7 @@ from matcher.template_loader import TemplateRegistry, dump_template_yaml
 
 app = typer.Typer(
     add_completion=False,
-    help="matcher：核心媒合引擎。依規則過濾出資格集合，於 M0 純抽籤分支下完成分配。",
+    help="matcher：可解釋、公平、可重現的角色／對象配對工具。",
 )
 
 template_app = typer.Typer(
@@ -55,13 +55,13 @@ def _print_summary(audit: dict) -> None:
 
     typer.echo("")
     mechanism_label = {
-        "M0": "M0 純抽籤",
-        "M1": "M1 RSD 隨機輪流挑",
-        "M2": "M2 Boston 層級填滿",
+        "M0": "純抽籤",
+        "M1": "輪流挑",
+        "M2": "依志願先後填滿",
     }.get(audit["mechanism"], audit["mechanism"])
-    typer.echo(f"=== 分配階段（{mechanism_label}）===")
+    typer.echo(f"=== 配對（{mechanism_label}）===")
     if audit.get("processing_order"):
-        typer.echo(f"處理順序：{' → '.join(audit['processing_order'])}")
+        typer.echo(f"挑志願順序：{' → '.join(audit['processing_order'])}")
     typer.echo(f"seed：{audit['seed']}")
     typer.echo("最終配對：")
 
@@ -192,9 +192,8 @@ def run_cmd(
         mechanism_norm = mechanism.upper()
         if mechanism_norm not in ("M0", "M1", "M2"):
             typer.echo(
-                f"錯誤：不支援的機制 `{mechanism}`。\n"
-                f"細節：目前支援：M0、M1、M2。\n"
-                f"建議：請以 --mechanism M0、M1 或 M2 重試。",
+                f"錯誤：不支援的抽籤方式 `{mechanism}`。\n"
+                f"目前支援：純抽籤（M0）、輪流挑（M1）、依志願先後填滿（M2）。",
                 err=True,
             )
             raise typer.Exit(code=2)

@@ -1,25 +1,32 @@
 {% extends "base.html" %}
-{% block title %}模板列表{% endblock %}
+{% block title %}範本列表{% endblock %}
 {% block content %}
-<h2>內建模板</h2>
+<h2>所有範本</h2>
+<p><small>範本決定了「要配對什麼」和「需要符合什麼條件」。先看看內建範本，或建立自己的。</small></p>
 
-<div class="card" style="background:#f5f5f5; margin-bottom:1.5rem">
-  <p><strong>想做新場景的模板嗎？</strong></p>
-  <p><small>matcher 的模板是一份 YAML 檔，定義屬性、規則與預設對象清單。最快做法：把專案內的
-    <a href="https://github.com/timcsy/matcher/blob/main/docs/template-authoring-guide.md">模板撰寫指南</a>
-    （<code>docs/template-authoring-guide.md</code>）複製貼給 Claude / ChatGPT，描述你的場景，AI 會依規格產出 YAML。
-    產出後放到 <code>src/matcher/templates/builtin/</code> 重啟即生效。</small></p>
-</div>
+<p style="margin-bottom:1.5rem;margin-top:1rem">
+  <a class="btn btn-success" href="/templates/new">＋ 建立新範本</a>
+  <small style="margin-left:1rem;color:var(--color-muted)">
+    懂技術的也可以直接寫設定檔，請參考
+    <a href="https://github.com/timcsy/matcher/blob/main/docs/template-authoring-guide.md">範本撰寫指南</a>
+  </small>
+</p>
 
 <div class="card-grid">
-  {% for tpl in templates %}
+  {% for item in templates %}
   <div class="card">
-    <h3>{{ tpl.name }}</h3>
-    <p><code>{{ tpl.id }}</code></p>
-    <p>{{ tpl.description }}</p>
+    <h3>{{ item.tpl.name }}
+      {% if item.is_builtin %}
+        <small style="background:#0070b8;color:white;padding:2px 6px;border-radius:3px;font-size:11px">內建</small>
+      {% else %}
+        <small style="background:#5a8;color:white;padding:2px 6px;border-radius:3px;font-size:11px">自訂</small>
+      {% endif %}
+    </h3>
+    <p><code>{{ item.tpl.id }}</code></p>
+    <p>{{ item.tpl.description }}</p>
     <p>
-      <a class="btn btn-secondary" href="/templates/{{ tpl.id }}">瀏覽</a>
-      <a class="btn btn-success" href="/match/new?template_id={{ tpl.id }}">立即使用</a>
+      <a class="btn btn-secondary" href="/templates/{{ item.tpl.id }}">看細節</a>
+      <a class="btn btn-success" href="/match/new?template_id={{ item.tpl.id }}">用這個配對</a>
     </p>
   </div>
   {% endfor %}

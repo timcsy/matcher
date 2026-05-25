@@ -24,8 +24,9 @@ def test_m1_with_empty_preferences_rejected(tmp_path: Path):
     ])
     assert r.exit_code == 40
     msg = r.output + (r.stderr or "")
-    assert "M1 需要至少一位角色提供志願" in msg
-    assert ("--mechanism M0" in msg) or ("mechanism=M0" in msg)
+    assert "「輪流挑」需要至少一位填了志願" in msg
+    assert "純抽籤" in msg
+
 
 
 def test_unsupported_mechanism_value(tmp_path: Path):
@@ -40,9 +41,9 @@ def test_unsupported_mechanism_value(tmp_path: Path):
     ])
     assert r.exit_code == 2
     msg = r.output + (r.stderr or "")
-    assert "不支援的機制" in msg
+    assert "不支援的抽籤方式" in msg
     assert "M5" in msg
-    assert "M0、M1" in msg
+    assert "純抽籤" in msg and "輪流挑" in msg
 
 
 def test_m0_with_nonempty_prefs_still_rejected(tmp_path: Path):
@@ -57,4 +58,4 @@ def test_m0_with_nonempty_prefs_still_rejected(tmp_path: Path):
     ])
     assert r.exit_code == 17
     msg = r.output + (r.stderr or "")
-    assert "M0 純抽籤" in msg
+    assert "純抽籤" in msg

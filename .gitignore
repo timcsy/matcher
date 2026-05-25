@@ -27,4 +27,7 @@ build/
 /tmp_audit.json
 
 # Web 媒合紀錄（persistent runtime data）
-/data/
+/data/*
+# 例外：自訂模板可入 git（使用者建立的模板跨設備保存）
+!/data/templates/
+!/data/templates/**

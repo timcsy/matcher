@@ -1,26 +1,31 @@
 {% extends "base.html" %}
 {% block title %}首頁{% endblock %}
 {% block content %}
-<h2>matcher：以可解釋規則與公平程序媒合對象</h2>
-<p>讓學校行政能在 30 分鐘內完成一次有公信力、爭議發生時能拿出紀錄的角色屬性媒合。</p>
+<h2>matcher：可解釋、公平、可重現的配對工具</h2>
+<p>
+  讓學校行政能在 30 分鐘內完成一次有公信力的配對——
+  <strong>誰被分到哪裡有清楚的規則理由，全程可追溯，爭議時能拿出紙本給家長 / 委員。</strong>
+</p>
 
 <div class="card-grid">
   <div class="card">
-    <h3>新建媒合</h3>
-    <p>選模板、上傳名單、執行——一條龍流程。</p>
+    <h3>新增一次配對</h3>
+    <p>選範本、上傳名單、抽籤——三步完成。</p>
     <a class="btn btn-success" href="/match/new">開始</a>
   </div>
   <div class="card">
-    <h3>模板列表</h3>
-    <p>瀏覽內建情境（教師-班級配對、研習分組）。</p>
+    <h3>所有範本</h3>
+    <p>瀏覽內建範本（教師配班、研習分組）或建立自己的範本。</p>
     <a class="btn btn-secondary" href="/templates">瀏覽</a>
   </div>
   <div class="card">
-    <h3>過去媒合</h3>
-    <p>查看歷次媒合、重新下載稽核紀錄。</p>
+    <h3>過去紀錄</h3>
+    <p>查看歷次配對結果、重新下載 PDF 報告。</p>
     <a class="btn btn-secondary" href="/matches">查看</a>
   </div>
 </div>
 
-<p style="margin-top:2rem;color:var(--color-muted)"><small>執行前請瀏覽「模板」了解判斷規則。</small></p>
+<p style="margin-top:2rem;color:var(--color-muted)">
+  <small>第一次使用？建議先到「所有範本」看看內建範本長什麼樣，了解可以做哪些配對情境。</small>
+</p>
 {% endblock %}

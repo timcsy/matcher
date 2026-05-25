@@ -105,28 +105,29 @@ def run_match(inp: MatcherInput) -> MatcherResult:
             "seed 未提供。\n建議：以 --seed <整數> 提供隨機種子。"
         )
 
-    # 2. preferences 在 M0 不接受
+    _FRIENDLY = {"M0": "純抽籤", "M1": "輪流挑", "M2": "依志願先後填滿"}
+
+    # 2. preferences 在純抽籤模式下不接受
     if inp.mechanism == "M0" and inp.preferences:
         raise PreferencesNotSupported(
-            "此機制（M0 純抽籤）不接受志願輸入。\n"
-            "原因：本階段僅支援 M0；志願序機制（M1 / M2）將於階段 4 加入。\n"
-            "建議：移除 --preferences 參數，或等待後續版本。"
+            "「純抽籤」不接受志願輸入。\n"
+            "建議：若需要使用志願，請改用「輪流挑」或「依志願先後填滿」。"
         )
 
-    # 2b. 名單中內嵌的 preferences（每位角色的志願）在 M0 也不接受
+    # 2b. 名單中內嵌的 preferences 在純抽籤模式下也不接受
     if inp.mechanism == "M0" and any(role.preferences for role in inp.roster.roles):
         raise PreferencesNotSupported(
-            "此機制（M0 純抽籤）不接受志願輸入。\n"
-            "原因：名單中有角色帶有非空 preferences；本階段僅支援 M0。\n"
-            "建議：將名單中所有 preferences 改為空陣列，或改用 --mechanism M1 走志願序機制。"
+            "「純抽籤」不接受志願輸入。\n"
+            "原因：名單中有人填了志願。\n"
+            "建議：清空名單中的志願欄，或改用「輪流挑」或「依志願先後填滿」。"
         )
 
-    # 2c. M1 / M2 需要至少一位角色提供志願
+    # 2c. 輪流挑 / 依志願先後填滿 需要至少一位角色提供志願
     if inp.mechanism in ("M1", "M2") and not any(role.preferences for role in inp.roster.roles):
+        friendly = _FRIENDLY.get(inp.mechanism, inp.mechanism)
         raise MechanismRequiresPreferences(
-            f"{inp.mechanism} 需要至少一位角色提供志願；若無志願請改用 mechanism=M0。\n"
-            f"細節：roster 中所有角色的 preferences 皆為空。\n"
-            f"建議：請至少為一位角色填入志願（CSV「志願組別」欄填分號分隔字串），或改用 `--mechanism M0`。"
+            f"「{friendly}」需要至少一位填了志願；若所有人都沒志願，請改用「純抽籤」。\n"
+            f"建議：CSV「志願組別」欄填分號分隔的對象代號（如 G1;G2;G3），或改用「純抽籤」。"
         )
 
     # 3. 規則層靜態檢查

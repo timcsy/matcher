@@ -2,35 +2,37 @@
 {% block title %}{{ tpl.name }}{% endblock %}
 {% block content %}
 <h2>{{ tpl.name }}</h2>
-<p><code>{{ tpl.id }}</code> · 版本 {{ tpl.schema_version }}</p>
+<p><code>{{ tpl.id }}</code></p>
 <p>{{ tpl.description }}</p>
 
-<h3>屬性 schema</h3>
-<h4>角色屬性</h4>
+<h3>「角色」資料欄位</h3>
+<p><small>要被配對的人或單位（例：學生、老師）有哪些資料。</small></p>
 <table>
-  <thead><tr><th>欄位</th><th>型別</th><th>說明</th><th>別名</th></tr></thead>
+  <thead><tr><th>欄位代號（英文）</th><th>類型</th><th>顯示名稱</th></tr></thead>
+  {% set type_label = {'str': '文字', 'int': '數字', 'list_str': '多筆文字'} %}
   <tbody>
     {% for a in tpl.attributes.roles %}
-    <tr><td><code>{{ a.key }}</code></td><td>{{ a.type }}</td><td>{{ a.description }}</td>
-        <td>{% for al in a.aliases %}{{ al }}{% if not loop.last %}、{% endif %}{% endfor %}</td></tr>
+    <tr><td><code>{{ a.key }}</code></td><td>{{ type_label.get(a.type, a.type) }}</td><td>{{ a.description }}</td></tr>
     {% endfor %}
   </tbody>
 </table>
 
-<h4>對象屬性</h4>
+<h3>「對象」資料欄位</h3>
+<p><small>被分配進去的位置或群組（例：班級、社團）有哪些資料。</small></p>
 <table>
-  <thead><tr><th>欄位</th><th>型別</th><th>說明</th><th>別名</th></tr></thead>
+  <thead><tr><th>欄位代號（英文）</th><th>類型</th><th>顯示名稱</th></tr></thead>
+  {% set type_label = {'str': '文字', 'int': '數字', 'list_str': '多筆文字'} %}
   <tbody>
     {% for a in tpl.attributes.targets %}
-    <tr><td><code>{{ a.key }}</code></td><td>{{ a.type }}</td><td>{{ a.description }}</td>
-        <td>{% for al in a.aliases %}{{ al }}{% if not loop.last %}、{% endif %}{% endfor %}</td></tr>
+    <tr><td><code>{{ a.key }}</code></td><td>{{ type_label.get(a.type, a.type) }}</td><td>{{ a.description }}</td></tr>
     {% endfor %}
   </tbody>
 </table>
 
-<h3>規則</h3>
+<h3>配對條件</h3>
+<p><small>角色要符合什麼條件，才能被分到對象。所有條件都會同時檢查。</small></p>
 <table>
-  <thead><tr><th>ID</th><th>說明（繁中）</th></tr></thead>
+  <thead><tr><th>編號</th><th>條件說明</th></tr></thead>
   <tbody>
     {% for r in tpl.ruleset.rules %}
     <tr><td><code>{{ r.id }}</code></td><td>{{ r.description }}</td></tr>
@@ -39,9 +41,10 @@
 </table>
 
 {% if tpl.default_targets %}
-<h3>預設對象（default_targets）</h3>
+<h3>預設對象清單</h3>
+<p><small>這個範本附帶的對象，使用時不必另外提供。</small></p>
 <table>
-  <thead><tr><th>ID</th><th>名稱</th><th>容量</th></tr></thead>
+  <thead><tr><th>代號</th><th>名稱</th><th>容量（最多幾人）</th></tr></thead>
   <tbody>
     {% for t in tpl.default_targets %}
     <tr><td><code>{{ t.id }}</code></td><td>{{ t.attributes.get('name', '') }}</td><td>{{ t.capacity }}</td></tr>
@@ -51,14 +54,13 @@
 {% endif %}
 
 {% if tpl.preferences_schema %}
-<h3>preferences schema（志願表）</h3>
-<p>最多可填：{{ tpl.preferences_schema.max_choices }} 個志願</p>
+<h3>填志願功能</h3>
+<p>本範本允許每位最多填 <strong>{{ tpl.preferences_schema.max_choices }}</strong> 個志願。</p>
 <p>{{ tpl.preferences_schema.description }}</p>
-<p><em>本階段（M0 純抽籤）不啟用；將於階段 4 的志願序機制啟用。</em></p>
 {% endif %}
 
 <p style="margin-top:2rem">
-  <a class="btn btn-success" href="/match/new?template_id={{ tpl.id }}">立即使用此模板</a>
-  <a class="btn btn-secondary" href="/templates">回模板列表</a>
+  <a class="btn btn-success" href="/match/new?template_id={{ tpl.id }}">用此範本配對</a>
+  <a class="btn btn-secondary" href="/templates">回所有範本</a>
 </p>
 {% endblock %}
