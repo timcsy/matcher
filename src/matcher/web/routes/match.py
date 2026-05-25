@@ -46,10 +46,36 @@ def _templates(request: Request) -> Jinja2Templates:
 
 
 @router.get("/match/new")
-async def new_match(request: Request, template_id: Optional[str] = None):
-    from matcher.web.routes.pages import _reg as _shared_reg  # feature 011：共用 singleton
+async def new_match(
+    request: Request,
+    template_id: Optional[str] = None,
+    template_snapshot: Optional[str] = None,
+):
+    """新建配對表單。
+
+    US4：?template_snapshot=<rid> 從某次配對紀錄還原其使用的範本快照。
+    用於「以此版本再執行」——即使該範本後來被改成新版本，仍能用當時的版本跑。
+    """
+    from matcher.web.routes.pages import _reg as _shared_reg
     reg = _shared_reg()
     items = [reg.get(tid) for tid in reg.list_ids()]
+
+    snapshot_template = None
+    snapshot_note = None
+    if template_snapshot:
+        # 從 record 還原 template snapshot
+        store = MatchStore()
+        try:
+            record = store.get(template_snapshot)
+        except MatchRecordNotFound:
+            raise HTTPException(404, "找不到該配對紀錄")
+        if record.audit is None or "template_snapshot" not in record.audit:
+            raise HTTPException(404, "該紀錄沒有範本快照")
+        from matcher.template_loader import parse_template
+        snapshot_template = parse_template(record.audit["template_snapshot"])
+        snapshot_note = f"已預載「{snapshot_template.name}」當時的版本（來自配對紀錄 {template_snapshot}）"
+        template_id = snapshot_template.id
+
     return _templates(request).TemplateResponse(
         request, "new_match.html",
         {
@@ -57,6 +83,7 @@ async def new_match(request: Request, template_id: Optional[str] = None):
             "selected_id": template_id,
             "mechanisms": MECHANISMS,
             "default_mechanism": "M0",
+            "snapshot_note": snapshot_note,
         },
     )
 

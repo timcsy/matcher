@@ -50,7 +50,8 @@
 <p style="margin-top:2rem">
   <a class="btn btn-success" href="/match/{{ record.id }}/report.pdf">下載 PDF 報告（可印給家長 / 委員）</a>
   <a class="btn btn-secondary" href="/match/{{ record.id }}/audit">下載完整紀錄（JSON 檔，給技術人員）</a>
-  <a class="btn btn-secondary" href="/match/new?template_id={{ record.template_id }}">再跑一次</a>
+  <a class="btn btn-secondary" href="/match/new?template_id={{ record.template_id }}">再跑一次（用目前的範本）</a>
+  <a class="btn btn-secondary" href="/match/new?template_snapshot={{ record.id }}">用當時的範本版本再跑一次</a>
   <a class="btn btn-secondary" href="/matches">回到所有紀錄</a>
 </p>
 
