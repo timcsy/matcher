@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 4a、階段 4b、階段 4c、階段 4d 已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d 已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -140,7 +140,19 @@
 - 自動化測試：256 個（既有 234 + 階段 4d 新增 22，2 個資料相依 skip），全綠
 - Web/CSV bytewise 等價守住（SC-001）；50 學生 × 3 志願 = 150 select 規模測試通過
 
-尚未開始：稽核報告 PDF 匯出（階段 3c）、K8s 部署（階段 5）、實際學校場景試行。
+階段 3c 稽核報告 PDF 匯出（commit `76c9689`，新增 weasyprint 依賴）：
+
+- `src/matcher/web/pdf.py` 新檔：`render_match_report_pdf` 純函式（Web + CLI 共用，教訓 5 第 4 次驗證）；`PdfRenderUnavailable` 例外
+- Web 端點：`GET /match/{rid}/report.pdf`（admin 版）+ `GET /match/{rid}/role/{role_id}/report.pdf`（individual 版）
+- CLI：`matcher report --audit X --output Y [--role-id Z]` 子指令；`cli.py` 僅 1 行新增（cli_report.py 兄弟檔，**核心 0 改動第 4 次**）
+- 2 個新樣板 `templates/pdf/{match,individual}_report.html`（A4 列印版，與螢幕樣板分離）
+- **graceful degrade**：WeasyPrint 系統依賴不可用 → Web 503 + CLI exit 50 + 友善安裝指引；既有 256 測試不受影響
+- 技術詞零容忍延伸至 PDF（pdftotext 驗證）；中文用系統字體渲染 + 可搜尋
+- **實作偏離 spec**：D3/FR-005 要求嵌入 ~10MB Noto Sans CJK 字體；實作改用系統字體 fallback（pdftotext 已驗證 CJK 可搜尋；10MB binary 不宜入 repo）——已在 commit message 與 tasks.md 誠實揭露（教訓 4「spec 在 implement 階段被推翻」模式的再次應用）
+- 新增 `tests/conftest.py`：macOS 自動設 `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib` 讓 WeasyPrint 找到 libgobject
+- 自動化測試：280 個（既有 256 + 階段 3c 新增 24，2 個資料相依 skip），全綠
+
+尚未開始：K8s 部署（階段 5）、實際學校場景試行。
 
 ## 架構
 
@@ -266,19 +278,20 @@
 - [x] 被媒合者個別查詢視圖（原則 5）可運作
 - [x] 個別查詢頁面用語面向一般教師，避免技術名詞（以正則自動化驗證；⏸ 真人測試待安排）
 
-### 階段 3c：稽核報告匯出（PDF / 結構化）
+### 階段 3c：稽核報告匯出（PDF）
 
-- [ ] 完成
+- [x] 完成（commit `76c9689`，2026-05-25）
 
 <!--
-  交付：依模板 report_fields 宣告渲染稽核報告，可下載為 PDF 或結構化檔案。
-  前置條件：階段 3a
+  交付：admin + individual 兩版 PDF；Web 結果頁/個別頁可下載；CLI `matcher report` 指令；
+  WeasyPrint 整合 + graceful degrade；技術詞零容忍延伸；core 0 改動。
+  前置條件：階段 3a、3b
 -->
 
 **成功標準：**
 
-- [ ] 稽核報告可匯出（PDF 或結構化檔案）
-- [ ] 報告依模板 report_fields 宣告渲染欄位
+- [x] 稽核報告可匯出為 PDF（Web `/report.pdf` 端點 + CLI `matcher report` 指令；含 admin 與 individual 兩版）
+- [ ] 報告依模板 `report_fields` 宣告渲染欄位（**未完成 / 延後**：feature 010 採用固定欄位渲染（標題/紀錄資訊/機制/分配表/志願排名），未實作 `report_fields` schema 解譯；如需要可另開 feature）
 
 ### 階段 4a：M1 RSD（隨機輪流挑）機制
 
