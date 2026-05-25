@@ -398,6 +398,8 @@
 - [x] 全 Web UI 與 CLI 錯誤訊息移除工程師導向詞彙（M0/M1/M2 內部代碼、str/int 型別、別稱、aliases、稽核紀錄 → 完整紀錄、媒合 → 配對 等）
 - [x] 自訂範本持久化於 `data/templates/<id>/v<N>.yaml`；重啟後可載入
 - [x] 動核心限定於 `template_loader.py`（教訓 7 第 3 種合法情境：模板管理擴充）
+- [x] 自訂範本支援編輯（每次儲存產生新版本）+ 版本歷史查看 + 內建範本 Fork（US3，commit `c67c4b3`）
+- [x] 配對結果頁可「以當時的範本版本再跑一次」（從 audit.template_snapshot 還原；US4 是 audit 完整性的免費延伸，呼應教訓 3）
 
 ### 階段 5：K8s 部署
 
