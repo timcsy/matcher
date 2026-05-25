@@ -251,7 +251,7 @@ def _build_roles(
 
 
 def _load_targets(path: Path, template: Template) -> tuple:
-    """取得 targets：優先讀旁檔 `<stem>.targets.yaml`；若不存在則使用 template.default_targets。"""
+    """取得 targets：要求旁檔 `<stem>.targets.yaml`（feature 013：移除 default_targets fallback）。"""
     sidecar = path.parent / f"{path.stem}.targets.yaml"
     if sidecar.exists():
         import yaml
@@ -275,14 +275,10 @@ def _load_targets(path: Path, template: Template) -> tuple:
             targets.append(Target(id=tid, capacity=cap, attributes=dict(t.get("attributes", {}))))
         return tuple(targets)
 
-    # Fallback：使用模板的 default_targets
-    if template.default_targets:
-        return template.default_targets
-
     raise RosterColumnMismatch(
-        f"找不到對象（targets）來源：旁檔 {sidecar.name} 不存在、模板 `{template.id}` 也未宣告 default_targets。\n"
-        f"細節：CSV/Excel 路徑下，targets 須由旁檔提供，或由模板 default_targets 自含。\n"
-        f"建議：建立 {sidecar.name}、或讓模板宣告 default_targets、或改用 --roster <yaml>。"
+        f"找不到對象（targets）來源：旁檔 {sidecar.name} 不存在。\n"
+        f"細節：CSV/Excel 路徑下，targets 須由旁檔提供（同目錄、檔名 <stem>.targets.yaml）。\n"
+        f"建議：建立 {sidecar.name}，或改用 Web UI 的「直接填名單」功能、或改用 --roster <yaml>。"
     )
 
 

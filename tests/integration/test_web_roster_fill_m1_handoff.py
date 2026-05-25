@@ -33,6 +33,18 @@ def _study_form(mech: str = "M1") -> dict:
         form[f"role_{i}_id"] = rid
         form[f"role_{i}_name"] = name
         form[f"role_{i}_grade"] = grade
+    # Feature 013：對象一律由 UI 填
+    groups = [
+        ("G1", "程式組", "program", "4", "3"),
+        ("G2", "自然組", "science", "4", "3"),
+        ("G3", "人文組", "humanities", "4", "3"),
+    ]
+    for j, (tid, name, topic, min_grade, cap) in enumerate(groups):
+        form[f"target_{j}_id"] = tid
+        form[f"target_{j}_capacity"] = cap
+        form[f"target_{j}_name"] = name
+        form[f"target_{j}_topic"] = topic
+        form[f"target_{j}_min_grade"] = min_grade
     return form
 
 
@@ -55,7 +67,9 @@ def test_m2_with_prefs_template_renders_preferences_form(client: TestClient):
 def test_m1_without_prefs_template_falls_back_to_failed_record(client: TestClient):
     """T042：無 prefs schema 範本 + M1 → 直接走 pipeline → failed record。"""
     form = {"template_id": "teacher-class", "seed": "2026", "mechanism": "M1",
-            "role_0_id": "T01", "role_0_name": "王", "role_0_speciality": "國文", "role_0_seniority": "8"}
+            "role_0_id": "T01", "role_0_name": "王", "role_0_speciality": "國文", "role_0_seniority": "8",
+            "target_0_id": "C01", "target_0_capacity": "2", "target_0_name": "甲班",
+            "target_0_required_subjects": "國文;數學", "target_0_feature": "bilingual"}
     r = client.post("/match/run-from-form", data=form)
     # follow redirect → match detail with failed record
     assert r.status_code == 200
@@ -79,6 +93,7 @@ def test_handed_off_form_can_submit_preferences_and_run_match(client: TestClient
         "seed": extract("seed"),
         "roster_bytes_b64": extract("roster_bytes_b64"),
         "roster_filename": extract("roster_filename"),
+        "targets_bytes_b64": extract("targets_bytes_b64"),
         "_action": "submit",
     }
     # 為每位學生填志願（study-group 預設對象通常 G1/G2/G3）

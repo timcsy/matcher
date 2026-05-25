@@ -27,7 +27,7 @@ def test_baseline_runs_successfully(tmp_path: Path):
     assert "稽核紀錄已寫入" in result.output
     assert audit.exists()
     data = json.loads(audit.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.3"
+    assert data["schema_version"] == "1.4"
     assert data["mechanism"] == "M0"
     assert data["seed"] == 123456
     assert "assignment" in data

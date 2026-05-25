@@ -20,7 +20,7 @@ FORBIDDEN_TOKENS = (
 
 
 def test_assemble_simple_form_to_yaml_dict():
-    """T017：5 attrs + 2 rules + 3 default_targets 表單 → parse_template 通過。"""
+    """T017：5 attrs + 2 rules → parse_template 通過。"""
     form = {
         "template_id": "my-test",
         "template_name": "測試",
@@ -33,18 +33,15 @@ def test_assemble_simple_form_to_yaml_dict():
         "target_attr_0_description": "對象名",
         "rule_0_id": "R001", "rule_0_type": "ge",
         "rule_0_field": "role.grade", "rule_0_value": "4",
-        "target_0_id": "T01", "target_0_capacity": "3", "target_0_name": "甲組",
-        "target_1_id": "T02", "target_1_capacity": "3", "target_1_name": "乙組",
-        "target_2_id": "T03", "target_2_capacity": "3", "target_2_name": "丙組",
     }
     tpl_dict = assemble_template_yaml(form)
-    # parse_template 不應 raise
+    # Feature 013：不再寫 default_targets
+    assert "default_targets" not in tpl_dict
     tpl = parse_template(tpl_dict)
     assert tpl.id == "my-test"
     assert tpl.name == "測試"
     assert len(tpl.attributes.roles) == 2
     assert len(tpl.ruleset.rules) == 1
-    assert len(tpl.default_targets) == 3
 
 
 def test_auto_description_for_each_rule_type():

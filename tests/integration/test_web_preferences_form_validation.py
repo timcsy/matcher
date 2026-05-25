@@ -98,12 +98,8 @@ def test_preferences_form_shows_target_summary_with_capacity(tmp_path: Path):
     assert "人文組（容量 3 人）" in r.text
 
 
-def test_template_without_default_targets_renders_friendly_error_block():
-    """T034：直接測 _render_preferences_form 的「無 default_targets」分支。
-
-    完整整合測試需建立無 default_targets 但能讓 data_import 通過的模板（需 sidecar
-    targets 檔），工程量過大；本測試以單元層級驗證 helper 行為。
-    """
+def test_render_preferences_form_with_empty_targets_renders_friendly_error_block():
+    """Feature 013 後：targets 為空 tuple → 樣板顯示友善錯誤段。"""
     from unittest.mock import MagicMock
     from matcher.web.routes.match import _render_preferences_form
 
@@ -119,7 +115,7 @@ def test_template_without_default_targets_renders_friendly_error_block():
         template_id="x", template_name="X",
         mechanism="M1", seed=1,
         roster_bytes=b"", roster_filename="x.csv",
-        roles=[_FakeRole()], default_targets=tuple(),
+        roles=[_FakeRole()], targets=tuple(),
         max_choices=3,
     )
     # 驗證 TemplateResponse 被呼叫且 targets_for_options 為 None

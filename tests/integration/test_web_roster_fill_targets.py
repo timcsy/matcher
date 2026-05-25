@@ -58,11 +58,11 @@ def client(tmp_path: Path):
     return c
 
 
-def test_fill_page_hides_targets_section_when_default_targets_exists(client: TestClient):
-    """T030：有 default_targets → 不顯示「對象清單」段。"""
+def test_fill_page_always_shows_targets_section(client: TestClient):
+    """Feature 013：對象段永遠顯示（移除 default_targets 概念後）。"""
     r = client.get("/match/new/fill?template_id=teacher-class")
     assert r.status_code == 200
-    assert "對象清單" not in r.text
+    assert "對象清單" in r.text
 
 
 def test_fill_page_shows_targets_section_for_custom_template_without_default_targets(client: TestClient):

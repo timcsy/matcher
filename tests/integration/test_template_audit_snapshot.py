@@ -49,4 +49,4 @@ def test_audit_schema_version_is_1_3(tmp_path: Path):
     out = tmp_path / "audit.json"
     _run(out)
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.3"
+    assert data["schema_version"] == "1.4"

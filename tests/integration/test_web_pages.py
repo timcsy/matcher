@@ -32,8 +32,7 @@ def test_template_detail_teacher_class():
     assert "R001" in r.text
     assert "R002" in r.text
     assert "R003" in r.text
-    assert "預設對象" in r.text  # default_targets 區段
-    assert "三年甲班" in r.text
+    # Feature 013：移除預設對象區段
 
 
 def test_template_detail_study_group_has_preferences():

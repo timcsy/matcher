@@ -24,7 +24,7 @@ def test_m0_audit_has_null_processing_order(tmp_path: Path):
     ])
     assert r.exit_code == 0
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.3"
+    assert data["schema_version"] == "1.4"
     assert data["mechanism"] == "M0"
     assert data["processing_order"] is None
 

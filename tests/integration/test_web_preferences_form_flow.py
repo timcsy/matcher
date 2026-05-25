@@ -139,6 +139,19 @@ def test_web_csv_audit_bytewise_equal(tmp_path: Path):
         csv_lines.append(f"{rid_str},學生{i},5,{prefs_str}")
     csv_path = cli_dir / "with_prefs.csv"
     csv_path.write_text("\n".join(csv_lines) + "\n", encoding="utf-8")
+    # Feature 013：補 sidecar
+    (cli_dir / "with_prefs.targets.yaml").write_text(
+        """targets:
+  - id: G1
+    capacity: 3
+    attributes: {name: "程式組", topic: "program", min_grade: 4}
+  - id: G2
+    capacity: 3
+    attributes: {name: "自然組", topic: "science", min_grade: 4}
+  - id: G3
+    capacity: 3
+    attributes: {name: "人文組", topic: "humanities", min_grade: 4}
+""", encoding="utf-8")
     out = cli_dir / "cli.json"
     runner = CliRunner()
     r = runner.invoke(cli_app, [

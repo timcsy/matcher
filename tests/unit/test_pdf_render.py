@@ -19,7 +19,7 @@ pytestmark = pytest.mark.skipif(
 
 def _minimal_audit() -> dict:
     return {
-        "schema_version": "1.3",
+        "schema_version": "1.4",
         "mechanism": "M0",
         "seed": 1,
         "assignment": {"S01": "G1", "S02": "G2"},
