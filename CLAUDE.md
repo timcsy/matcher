@@ -15,6 +15,8 @@ Auto-generated from all feature plans. Last updated: 2026-05-24
 - `data/matches/` 純 JSON（沿用）；無資料庫 (008-web-mechanism-prefs)
 - Python 3.11+（沿用） + 沿用（fastapi、uvicorn[standard]、jinja2、python-multipart、PyYAML、openpyxl、Typer、pytest、httpx[dev]）——**無新增** (009-web-preferences-form)
 - `data/matches/` 純 JSON（沿用）；無資料庫；**填志願頁中介狀態不持久化**（hidden inputs 攜帶） (009-web-preferences-form)
+- Python 3.11+（沿用） + 沿用 + **新增 weasyprint ≥ 60.0**（含 cssselect2、tinycss2、Pyphen 等遞移依賴皆純 Python；系統需 libpango-1.0、libcairo、harfbuzz） (010-audit-pdf-export)
+- 沿用 `data/matches/` 純 JSON；字體檔靜態於 `src/matcher/web/static/fonts/`（OFL 授權） (010-audit-pdf-export)
 
 - Python 3.11+ + Typer（CLI）、PyYAML（YAML 解析）、pytest（測試）；不額外引入 schema / validation 套件，所有結構化驗證在 `rules.py` / `roster.py` 內以純 Python 完成 (001-core-allocator)
 
@@ -34,9 +36,9 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3.11+: Follow standard conventions
 
 ## Recent Changes
+- 010-audit-pdf-export: Added Python 3.11+（沿用） + 沿用 + **新增 weasyprint ≥ 60.0**（含 cssselect2、tinycss2、Pyphen 等遞移依賴皆純 Python；系統需 libpango-1.0、libcairo、harfbuzz）
 - 009-web-preferences-form: Added Python 3.11+（沿用） + 沿用（fastapi、uvicorn[standard]、jinja2、python-multipart、PyYAML、openpyxl、Typer、pytest、httpx[dev]）——**無新增**
 - 008-web-mechanism-prefs: Added Python 3.11+（沿用） + 沿用（fastapi、uvicorn[standard]、jinja2、python-multipart、PyYAML、openpyxl、Typer、pytest、httpx[dev]）——**無新增**
-- 007-m2-boston-mechanism: Added Python 3.11+（沿用） + 沿用（無新增）
 
 
 <!-- MANUAL ADDITIONS START -->

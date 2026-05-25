@@ -83,6 +83,16 @@ uv run matcher serve
 
 媒合紀錄持久化於 `data/matches/<id>.json`（已加入 `.gitignore`）。
 
+#### PDF 報告匯出
+
+結果頁與個別查詢頁皆提供「下載 PDF 報告」按鈕；CLI 亦可用 `matcher report --audit <file> --output <pdf> [--role-id <id>]` 從 audit JSON 產出。
+
+需安裝 WeasyPrint 系統依賴：
+- macOS：`brew install pango glib`（並設 `export DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib`）
+- Debian/Ubuntu：`apt install libpango-1.0-0 libcairo2 libgobject-2.0-0 libharfbuzz0b`
+
+未安裝時 Web PDF 端點回 503、CLI report 指令 exit 50；既有功能（媒合、結果頁、audit JSON 下載）不受影響。
+
 #### 個別查詢視圖
 
 媒合完成後，admin 結果頁底部「個別查詢連結」區段列出每位被媒合者的專屬 URL（`/match/<record_id>/role/<role_id>`）。行政可將這些連結個別發送給對應的當事人；當事人開啟後可獨立查看：
