@@ -27,6 +27,10 @@ template_app = typer.Typer(
 )
 app.add_typer(template_app, name="template")
 
+# Feature 010：PDF 報告指令（實作於 cli_report.py，此處僅註冊）
+from matcher.cli_report import report as _report_fn  # noqa: E402
+app.command(name="report")(_report_fn)
+
 
 def _print_summary(audit: dict) -> None:
     if audit.get("template_snapshot"):

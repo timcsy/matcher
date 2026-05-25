@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>您的媒合結果 — {{ role_id }}</title>
+<style>
+  @page { size: A4; margin: 2cm; }
+  body { font-family: sans-serif; font-size: 11pt; line-height: 1.5; }
+  h1 { font-size: 18pt; margin: 0 0 1em; border-bottom: 2px solid #000; padding-bottom: 0.3em; }
+  h2 { font-size: 13pt; margin: 1.2em 0 0.4em; }
+  .meta th { text-align: left; padding: 0.2em 0.8em 0.2em 0; vertical-align: top; width: 6em; }
+  .meta td { padding: 0.2em 0; }
+  table.attrs { width: 100%; border-collapse: collapse; }
+  table.attrs th, table.attrs td { border: 1px solid #aaa; padding: 0.3em 0.6em; text-align: left; }
+  table.attrs th { background: #f5f5f5; width: 35%; }
+  .result-box { border: 1px solid #888; padding: 0.8em 1em; margin: 0.6em 0; background: #f9f9f9; }
+  footer { margin-top: 2em; font-size: 9pt; color: #666; border-top: 1px solid #ccc; padding-top: 0.5em; }
+</style>
+</head>
+<body>
+
+<h1>您的媒合結果</h1>
+
+<table class="meta">
+  <tr><th>紀錄編號</th><td>{{ record_id }}</td></tr>
+  <tr><th>時間</th><td>{{ created_at }}</td></tr>
+  <tr><th>模板</th><td>{{ template_name }}</td></tr>
+  <tr><th>機制</th><td>{{ mechanism_label }}</td></tr>
+  <tr><th>角色編號</th><td>{{ role_id }}</td></tr>
+  <tr><th>姓名</th><td>{{ role_name }}</td></tr>
+</table>
+
+<h2>您的基本資訊</h2>
+<table class="attrs">
+  <tbody>
+    {% for label, value in role_attrs_display %}
+    <tr><th>{{ label }}</th><td>{{ value }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>您的分配結果</h2>
+<div class="result-box">
+{% if assigned_target_id %}
+  {% if mechanism in ('M1', 'M2') %}
+    {% if preference_rank is not none %}
+      <p><strong>您被分到第 {{ preference_rank }} 志願：{{ assigned_target_name }}</strong></p>
+    {% elif preferred_count > 0 %}
+      <p><strong>您原本的志願已被分配給其他人，由公平抽籤分到 {{ assigned_target_name }}。</strong></p>
+    {% else %}
+      <p><strong>您未在志願清單中，由公平抽籤分到 {{ assigned_target_name }}。</strong></p>
+    {% endif %}
+  {% else %}
+    <p><strong>您被分到：{{ assigned_target_name }}</strong></p>
+  {% endif %}
+{% else %}
+  <p><strong>您未被分配。</strong>依規則判定，您不符合任何對象的條件，或容量已被分配給其他人。</p>
+{% endif %}
+</div>
+
+<footer>
+  本報告由 matcher 系統自動產生；如對結果有疑問，請洽承辦行政人員。
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>媒合報告 {{ record_id }}</title>
+<style>
+  @page { size: A4; margin: 2cm; }
+  body { font-family: sans-serif; font-size: 11pt; line-height: 1.5; }
+  h1 { font-size: 18pt; margin: 0 0 1em; border-bottom: 2px solid #000; padding-bottom: 0.3em; }
+  h2 { font-size: 13pt; margin: 1.2em 0 0.4em; }
+  .meta { margin: 0.5em 0; }
+  .meta th { text-align: left; padding: 0.2em 0.8em 0.2em 0; vertical-align: top; width: 6em; }
+  .meta td { padding: 0.2em 0; }
+  table.allocation { width: 100%; border-collapse: collapse; margin: 0.5em 0; }
+  table.allocation th, table.allocation td { border: 1px solid #888; padding: 0.4em 0.6em; text-align: left; }
+  table.allocation th { background: #eee; }
+  .failed { color: #a00; font-weight: bold; }
+  .proc-order code { background: #f0f0f0; padding: 0.1em 0.3em; }
+  footer { margin-top: 2em; font-size: 9pt; color: #666; border-top: 1px solid #ccc; padding-top: 0.5em; }
+</style>
+</head>
+<body>
+
+{% if status == 'failed' %}
+<h1>媒合報告（失敗）</h1>
+<table class="meta">
+  <tr><th>紀錄編號</th><td>{{ record_id }}</td></tr>
+  <tr><th>時間</th><td>{{ created_at }}</td></tr>
+  <tr><th>模板</th><td>{{ template_name }}（{{ template_id }}）</td></tr>
+</table>
+<h2 class="failed">執行失敗：{{ error_type }}</h2>
+<p>{{ error_message }}</p>
+{% else %}
+
+<h1>媒合報告</h1>
+
+<table class="meta">
+  <tr><th>紀錄編號</th><td>{{ record_id }}</td></tr>
+  <tr><th>時間</th><td>{{ created_at }}</td></tr>
+  <tr><th>模板</th><td>{{ template_name }}（{{ template_id }}）</td></tr>
+  <tr><th>輸入檔</th><td>{{ input_file }}</td></tr>
+  <tr><th>機制</th><td>{{ mechanism_label }}</td></tr>
+  <tr><th>隨機種子</th><td>{{ seed }}</td></tr>
+</table>
+
+{% if processing_order_display %}
+<h2>處理順序</h2>
+<p class="proc-order">
+{% for rid, name in processing_order_display %}<code>{{ rid }}</code>（{{ name }}）{% if not loop.last %} → {% endif %}{% endfor %}
+</p>
+{% endif %}
+
+<h2>分配結果</h2>
+<table class="allocation">
+  <thead>
+    <tr>
+      <th>角色</th>
+      <th>對象</th>
+      {% if mechanism != 'M0' %}<th>志願排名</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in allocation_rows %}
+    <tr>
+      <td><code>{{ row.role_id }}</code>（{{ row.role_name }}）</td>
+      <td>
+        {% if row.target_id %}<code>{{ row.target_id }}</code>（{{ row.target_name }}）
+        {% else %}<em>未分配</em>{% endif %}
+      </td>
+      {% if mechanism != 'M0' %}<td>{{ row.rank_display }}</td>{% endif %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<footer>
+  本報告由 matcher 系統自動產生；分配過程之完整稽核紀錄請參閱對應 audit JSON。
+</footer>
+
+{% endif %}
+
+</body>
+</html>

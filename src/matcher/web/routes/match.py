@@ -21,6 +21,7 @@ from matcher.template_loader import TemplateRegistry
 from matcher.web.errors import MatchRecordNotFound, UploadInvalidMime, UploadTooLarge
 from matcher.web.humanize import mechanism_label, preference_rank_display, target_summary
 from matcher.web.individual import build_individual_audit_subset
+from matcher.web.pdf import PdfRenderUnavailable, render_match_report_pdf
 from matcher.web.store import MatchRecord, MatchStore, SCHEMA_VERSION
 
 router = APIRouter()
@@ -516,4 +517,76 @@ async def download_audit(request: Request, record_id: str):
         content=body,
         media_type="application/json; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{record_id}.audit.json"'},
+    )
+
+
+# ── Feature 010：PDF 報告匯出 ───────────────────────────────────
+
+def _record_meta_for_pdf(record) -> dict:
+    return {
+        "id": record.id,
+        "created_at": record.created_at,
+        "input_file": record.input_file,
+        "status": record.status,
+        "error": record.error,
+    }
+
+
+@router.get("/match/{record_id}/report.pdf")
+async def download_report_pdf(record_id: str):
+    store = MatchStore()
+    try:
+        record = store.get(record_id)
+    except MatchRecordNotFound:
+        raise HTTPException(status_code=404, detail="找不到該次媒合的紀錄")
+
+    # 失敗 record 也能出失敗版 PDF；audit 為 None 時樣板會走 failed 分支
+    audit_for_pdf = record.audit if record.audit is not None else {
+        "assignment": {}, "roster_snapshot": {"roles": [], "targets": []}, "mechanism": "M0",
+    }
+    try:
+        pdf_bytes = render_match_report_pdf(audit_for_pdf, record_meta=_record_meta_for_pdf(record))
+    except PdfRenderUnavailable as e:
+        return Response(
+            content=f"PDF 渲染功能不可用——{str(e)}（請見 README 安裝指引）",
+            status_code=503, media_type="text/plain; charset=utf-8",
+        )
+    return Response(
+        content=pdf_bytes, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{record_id}.report.pdf"'},
+    )
+
+
+@router.get("/match/{record_id}/role/{role_id}/report.pdf")
+async def download_individual_report_pdf(record_id: str, role_id: str):
+    store = MatchStore()
+    try:
+        record = store.get(record_id)
+    except MatchRecordNotFound:
+        raise HTTPException(status_code=404, detail="找不到該次媒合的紀錄")
+    if record.status != "success" or record.audit is None:
+        raise HTTPException(status_code=404, detail="該次媒合執行失敗，無個別查詢資料")
+    role_exists = any(
+        r["id"] == role_id for r in record.audit.get("roster_snapshot", {}).get("roles", [])
+    )
+    if not role_exists:
+        raise HTTPException(status_code=404, detail="您不在這次媒合的名單中")
+
+    try:
+        tpl = TemplateRegistry().get(record.template_id)
+    except TemplateNotFound:
+        tpl = None
+    try:
+        pdf_bytes = render_match_report_pdf(
+            record.audit, record_meta=_record_meta_for_pdf(record),
+            role_id=role_id, template=tpl,
+        )
+    except PdfRenderUnavailable as e:
+        return Response(
+            content=f"PDF 渲染功能不可用——{str(e)}（請見 README 安裝指引）",
+            status_code=503, media_type="text/plain; charset=utf-8",
+        )
+    return Response(
+        content=pdf_bytes, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{record_id}-{role_id}.report.pdf"'},
     )
