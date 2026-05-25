@@ -185,3 +185,31 @@
   contracts 階段把隱藏複雜度先浮現出來。
 - **來源**：specs/013-remove-default-targets；對比 specs/012-web-roster-form 的核心 0
   改動成績；commit `b25af35` 49 檔變動（含 audit schema v1.4 升版）。
+
+### 觀察工具的回報 ≠ 真實狀況，視覺 bug 判斷要回到 raw HTML / 截圖
+
+- **理論說**：用 mcp browser 工具的 `read_page`（accessibility tree）抓頁面結構，
+  就能可靠判斷 UI 是否有視覺 bug。
+- **實際發生**：對 matcher 做一輪 UI/UX 批評時（commit `601955d`），用 accessibility tree
+  讀結果頁與個別查詢頁，回報「**4 個真實 bug**」：(a) 結果頁「使用範本：教師-班級配對（）」括號
+  內 id 跑版、(b)「建立時間」標籤遺漏、(c) 過去紀錄表頭只有 2 欄、(d) 個別查詢基本資訊
+  欄位值對不上 label。動手修時 grep 樣板原碼才發現**全部都是正確的**——accessibility tree
+  把 `<strong>`、`<code>` 等 inline 元素拆成獨立 children 後，父段落文字看起來缺一塊
+  （例：`<p><strong>使用範本</strong>：教師-班級配對（<code>teacher-class</code>）</p>`
+  被 tree 拆成 `generic "：教師-班級配對（）"` + `generic "使用範本"` + `generic "teacher-class"`，
+  容易誤判成括號是空的）。視覺上原本就沒問題。
+- **解決方式**：判斷視覺 bug 前先用以下其一交叉驗證：
+  - `javascript_tool` 直接讀 `document.querySelector(...).innerText` 抓真實文字
+  - 截圖（直接看視覺輸出）
+  - 直接 grep / read 樣板原碼，從 source-of-truth 倒推
+  四個誤判中三個 commit 前已自我修正，但仍浪費了一輪「找 bug → 發現不是 bug」的精力。
+- **教訓**：**工具給的「狀態回報」是工具的視角，不是真實狀況**。
+  - accessibility tree 為輔助技術設計，會把 inline 元素扁平化——適合判斷「有沒有可達」
+    但不適合判斷「視覺上長什麼樣」
+  - 同 pattern 適用：log 輸出 ≠ 程式實際行為（log 可能遺漏關鍵路徑）、
+    test 報告 ≠ 功能正確（測試只覆蓋斷言到的部分）、靜態分析 ≠ runtime 真實
+  - 規則：對「視覺 / 主觀品質」議題，**回到最原始的呈現層**（截圖、innerText、原始碼）
+    才能判斷；對「結構 / 邏輯」議題，工具回報可採信
+- **來源**：commit `601955d` UI/UX 批評輪；最初列了 4 個「視覺 bug」事後發現全是
+  accessibility tree 解讀問題。與教訓 8（主觀品質需對照標的）互補：教訓 8 講「無對照
+  會放大噪音」，本則講「**錯誤的對照（誤把工具回報當真實）也會放大噪音**」。
