@@ -88,6 +88,141 @@ async def new_match(
     )
 
 
+# ── Feature 012：UI 直接填名單 ───────────────────────────────────
+
+@router.get("/match/new/fill")
+async def new_match_fill(request: Request, template_id: str):
+    """填寫頁：依範本宣告動態渲染欄位。"""
+    from matcher.web.routes.pages import _reg as _shared_reg
+    reg = _shared_reg()
+    try:
+        tpl = reg.get(template_id)
+    except TemplateNotFound as e:
+        return _error_page(request, "TemplateNotFound", str(e), status_code=404)
+
+    role_attrs = [
+        {"key": a.key, "type": a.type, "required": a.required,
+         "label": a.description or a.key}
+        for a in tpl.attributes.roles
+    ]
+    target_attrs = [
+        {"key": a.key, "type": a.type, "required": a.required,
+         "label": a.description or a.key}
+        for a in tpl.attributes.targets
+    ]
+
+    return _templates(request).TemplateResponse(
+        request, "roster_form_fill.html",
+        {
+            "template": tpl,
+            "role_attrs": role_attrs,
+            "target_attrs": target_attrs,
+            "requires_targets": not tpl.default_targets,
+            "has_prefs_schema": tpl.preferences_schema is not None,
+            "mechanisms": MECHANISMS,
+            "default_mechanism": "M0",
+        },
+    )
+
+
+@router.post("/match/run-from-form")
+async def run_from_form(request: Request):
+    """UI 填名單 → CSV bytes → 既有 pipeline。
+
+    M1/M2 路徑沿用 feature 009：偵測志願缺 → 跳 preferences_form。
+    """
+    from matcher.web.roster_form import (
+        assemble_roster_csv_bytes,
+        assemble_targets_yaml_bytes,
+    )
+    from matcher.web.routes.pages import _reg as _shared_reg
+
+    form_raw = await request.form()
+    form: dict = {k: v for k, v in form_raw.items() if isinstance(v, str)}
+
+    template_id = form.get("template_id", "").strip()
+    if not template_id:
+        return _error_page(request, "BadForm", "缺少範本選擇。")
+    try:
+        seed = int(form.get("seed", "0"))
+    except ValueError:
+        return _error_page(request, "BadForm", "亂數種子必須是整數。")
+    mechanism = (form.get("mechanism") or "M0").strip().upper()
+    if mechanism not in VALID_MECHANISMS:
+        return _error_page(request, "InvalidMechanism", f"不支援的抽籤方式 `{mechanism}`。")
+
+    try:
+        tpl = _shared_reg().get(template_id)
+    except TemplateNotFound as e:
+        return _error_page(request, "TemplateNotFound", str(e), status_code=404)
+
+    csv_bytes = assemble_roster_csv_bytes(form, tpl)
+    # 檢查空白：CSV 只有 header 列 → 沒有任何角色
+    if csv_bytes.decode("utf-8-sig").strip().count("\n") < 1:
+        return _error_page(request, "EmptyRoster", "請至少填一位角色名單。")
+
+    targets_yaml = assemble_targets_yaml_bytes(form, tpl) if not tpl.default_targets else None
+    if not tpl.default_targets and targets_yaml is None:
+        return _error_page(request, "EmptyTargets", "請至少填一個對象（這個範本沒有預設對象清單）。")
+
+    # 寫到 tmp、走 CSV path
+    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
+        tmp.write(csv_bytes)
+        csv_path = Path(tmp.name)
+    sidecar_path = None
+    if targets_yaml is not None:
+        sidecar_path = csv_path.with_suffix(".targets.yaml")
+        sidecar_path.write_bytes(targets_yaml)
+
+    store = MatchStore()
+    record_id = MatchRecord.new_id()
+    now = datetime.now(timezone.utc).isoformat()
+    roster_filename = "ui-form.csv"
+    common = dict(
+        schema_version=SCHEMA_VERSION,
+        id=record_id, created_at=now,
+        template_id=template_id, seed=seed,
+        input_file=roster_filename, mechanism=mechanism,
+    )
+
+    try:
+        try:
+            ro, import_meta = load_roster_csv(csv_path, tpl)
+            import_meta["file_basename"] = roster_filename
+
+            # M1/M2 + 範本有 schema + 全無 prefs → 跳 preferences_form
+            if (
+                tpl.preferences_schema is not None
+                and mechanism in ("M1", "M2")
+                and all(not role.preferences for role in ro.roles)
+            ):
+                return _render_preferences_form(
+                    request, template_id=template_id, template_name=tpl.name,
+                    mechanism=mechanism, seed=seed,
+                    roster_bytes=csv_bytes, roster_filename=roster_filename,
+                    roles=ro.roles, default_targets=tpl.default_targets,
+                    max_choices=tpl.preferences_schema.max_choices,
+                )
+
+            result = run_match(MatcherInput(
+                ruleset=tpl.ruleset, roster=ro, seed=seed, preferences=None,
+                mechanism=mechanism, template=tpl, import_metadata=import_meta,
+            ))
+            record = MatchRecord(**common, status="success", audit=result.audit, error=None)
+        except MatcherError as e:
+            record = MatchRecord(
+                **common, status="failed", audit=None,
+                error={"type": type(e).__name__, "exit_code": e.exit_code, "message": str(e)},
+            )
+    finally:
+        csv_path.unlink(missing_ok=True)
+        if sidecar_path is not None:
+            sidecar_path.unlink(missing_ok=True)
+
+    store.save(record)
+    return RedirectResponse(url=f"/match/{record.id}", status_code=303)
+
+
 @router.post("/match/run")
 async def run(
     request: Request,
