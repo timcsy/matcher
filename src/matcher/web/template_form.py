@@ -144,23 +144,7 @@ def assemble_template_yaml(form: dict) -> dict:
             "description": (form.get("prefs_description") or "").strip(),
         }
 
-    # 5. default_targets
-    target_rows = _collect_indexed_rows(
-        form, "target", ["id", "capacity"] + [d["key"] for d in attributes["targets"]]
-    )
-    if target_rows:
-        default_targets = []
-        for t in target_rows:
-            entry = {
-                "id": t["id"].strip(),
-                "capacity": int(t["capacity"]),
-                "attributes": {
-                    d["key"]: _coerce_value(t.get(d["key"], ""), d["type"])
-                    for d in attributes["targets"]
-                },
-            }
-            default_targets.append(entry)
-        tpl["default_targets"] = default_targets
+    # Feature 013：不再寫 default_targets（範本不內嵌對象資料）
 
     return tpl
 

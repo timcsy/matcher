@@ -53,4 +53,4 @@ def test_schema_version_unchanged(tmp_path: Path):
         "--output", str(out),
     ])
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.3"
+    assert data["schema_version"] == "1.4"

@@ -121,11 +121,6 @@ def _template_to_form_dict(tpl) -> dict:
         out[f"target_attr_{i}_required"] = "on" if attr.required else ""
         out[f"target_attr_{i}_description"] = attr.description or ""
         out[f"target_attr_{i}_aliases"] = ", ".join(attr.aliases or [])
-    for i, t in enumerate(tpl.default_targets or []):
-        out[f"target_{i}_id"] = t.id
-        out[f"target_{i}_capacity"] = str(t.capacity)
-        for k, v in (t.attributes or {}).items():
-            out[f"target_{i}_{k}"] = v if isinstance(v, str) else ";".join(v) if isinstance(v, list) else str(v)
     if tpl.preferences_schema:
         out["prefs_enabled"] = "on"
         out["prefs_max_choices"] = str(tpl.preferences_schema.max_choices)
@@ -173,7 +168,6 @@ async def template_validate(request: Request):
         },
         "rule_count": len(tpl.ruleset.rules),
         "has_preferences_schema": tpl.preferences_schema is not None,
-        "default_target_count": len(tpl.default_targets or []),
     }
     return JSONResponse({"ok": True, "summary": summary})
 

@@ -56,19 +56,6 @@
   </tbody>
 </table>
 
-{% if tpl.default_targets %}
-<h3>預設對象清單</h3>
-<p><small>這個範本附帶的對象，使用時不必另外提供。</small></p>
-<table>
-  <thead><tr><th>代號</th><th>名稱</th><th>容量（最多幾人）</th></tr></thead>
-  <tbody>
-    {% for t in tpl.default_targets %}
-    <tr><td><code>{{ t.id }}</code></td><td>{{ t.attributes.get('name', '') }}</td><td>{{ t.capacity }}</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% endif %}
-
 {% if tpl.preferences_schema %}
 <h3>填志願功能</h3>
 <p>本範本允許每位最多填 <strong>{{ tpl.preferences_schema.max_choices }}</strong> 個志願。</p>

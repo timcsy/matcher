@@ -74,14 +74,11 @@ def assemble_roster_csv_bytes(form: dict, template: Template) -> bytes:
 def assemble_targets_yaml_bytes(form: dict, template: Template) -> bytes | None:
     """UI 表單對象段 → sidecar YAML bytes。
 
-    - 範本有 default_targets → 回 None（UI 不要求填對象）
-    - 範本無 default_targets → 蒐集 target_<j>_<key> 欄位，組成
-      {targets: [{id, capacity, attributes: {...}}, ...]}
+    Feature 013：range 一律由 UI 填或旁檔提供。
+    - 未填任何對象 → 回 None（呼叫方依此判斷 400）
+    - 有對象資料 → 組成 {targets: [{id, capacity, attributes: {...}}, ...]} bytes
     - 對象空白列自動過濾
     """
-    if template.default_targets:
-        return None
-
     target_keys = [a.key for a in template.attributes.targets]
     fields = ["id", "capacity"] + target_keys
     rows = _collect_indexed_rows(form, "target", fields)

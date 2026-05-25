@@ -24,7 +24,7 @@ def test_legacy_rules_roster_still_works(tmp_path: Path):
     ])
     assert r.exit_code == 0
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.3"
+    assert data["schema_version"] == "1.4"
     assert data["template_snapshot"] is None
     assert data["import_metadata"] is None
 

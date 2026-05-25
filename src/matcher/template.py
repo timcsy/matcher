@@ -62,4 +62,3 @@ class Template:
     ui_fields: tuple = ()
     report_fields: tuple = ()
     preferences_schema: Optional[PreferencesSchema] = None
-    default_targets: tuple = ()  # tuple[Target, ...]；模板可內嵌預設對象資料

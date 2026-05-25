@@ -25,7 +25,7 @@ def test_run_with_template_id(tmp_path: Path):
     assert r.exit_code == 0, r.output
     assert "teacher-class" in r.output
     data = json.loads(audit.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.3"
+    assert data["schema_version"] == "1.4"
     assert data["template_snapshot"] is not None
     assert data["template_snapshot"]["id"] == "teacher-class"
 

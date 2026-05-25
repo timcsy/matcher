@@ -123,21 +123,7 @@ def parse_template(data: dict) -> Template:
             f"目前支援：{list(SUPPORTED_SCHEMA_VERSIONS)}"
         )
 
-    default_targets_raw = data.get("default_targets") or []
-    if not isinstance(default_targets_raw, list):
-        raise TemplateMissingField("default_targets 必須為 list")
-    default_targets = []
-    for t in default_targets_raw:
-        if "id" not in t:
-            raise TemplateMissingField("default_targets[] 缺欄位 `id`")
-        cap = int(t.get("capacity", 1))
-        if cap < 1:
-            raise TemplateMissingField(f"default_targets[{t['id']}] 容量必須 ≥ 1")
-        default_targets.append(Target(
-            id=str(t["id"]),
-            capacity=cap,
-            attributes=dict(t.get("attributes", {})),
-        ))
+    # Feature 013：data.get("default_targets") 靜默忽略（漸進遷移；舊 YAML 不報錯）
 
     return Template(
         schema_version=str(schema_version),
@@ -149,7 +135,6 @@ def parse_template(data: dict) -> Template:
         ui_fields=tuple(_parse_ui_field(f) for f in data.get("ui_fields", [])),
         report_fields=tuple(_parse_report_field(f) for f in data.get("report_fields", [])),
         preferences_schema=_parse_preferences_schema(data.get("preferences_schema")),
-        default_targets=tuple(default_targets),
     )
 
 
@@ -323,11 +308,7 @@ def dump_template_yaml(tpl: Template, path: str | Path) -> None:
             "required": ps.required,
             "description": ps.description,
         }
-    if tpl.default_targets:
-        out["default_targets"] = [
-            {"id": t.id, "capacity": t.capacity, "attributes": dict(t.attributes)}
-            for t in tpl.default_targets
-        ]
+    # Feature 013：不再輸出 default_targets
 
     s = yaml.safe_dump(out, allow_unicode=True, sort_keys=False)
     Path(path).write_text(s, encoding="utf-8")

@@ -43,7 +43,7 @@ def test_audit_record_required_fields():
         "template_snapshot", "import_metadata", "processing_order",
     ]:
         assert f in record, f"稽核紀錄缺欄位 {f}"
-    assert record["schema_version"] == "1.3"
+    assert record["schema_version"] == "1.4"
     assert record["mechanism"] == "M0"
     assert record["generated_at"] is None
 

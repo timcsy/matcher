@@ -117,7 +117,7 @@ async def new_match_fill(request: Request, template_id: str):
             "template": tpl,
             "role_attrs": role_attrs,
             "target_attrs": target_attrs,
-            "requires_targets": not tpl.default_targets,
+            # Feature 013：對象段一律顯示
             "has_prefs_schema": tpl.preferences_schema is not None,
             "mechanisms": MECHANISMS,
             "default_mechanism": "M0",
@@ -161,9 +161,9 @@ async def run_from_form(request: Request):
     if csv_bytes.decode("utf-8-sig").strip().count("\n") < 1:
         return _error_page(request, "EmptyRoster", "請至少填一位角色名單。")
 
-    targets_yaml = assemble_targets_yaml_bytes(form, tpl) if not tpl.default_targets else None
-    if not tpl.default_targets and targets_yaml is None:
-        return _error_page(request, "EmptyTargets", "請至少填一個對象（這個範本沒有預設對象清單）。")
+    targets_yaml = assemble_targets_yaml_bytes(form, tpl)
+    if targets_yaml is None:
+        return _error_page(request, "EmptyTargets", "請至少填一個對象。")
 
     # 寫到 tmp、走 CSV path
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
@@ -200,7 +200,7 @@ async def run_from_form(request: Request):
                     request, template_id=template_id, template_name=tpl.name,
                     mechanism=mechanism, seed=seed,
                     roster_bytes=csv_bytes, roster_filename=roster_filename,
-                    roles=ro.roles, default_targets=tpl.default_targets,
+                    roles=ro.roles, targets=ro.targets, targets_bytes=targets_yaml,
                     max_choices=tpl.preferences_schema.max_choices,
                 )
 
@@ -229,6 +229,7 @@ async def run(
     template_id: str = Form(...),
     seed: int = Form(...),
     roster: UploadFile = File(...),
+    targets_yaml: Optional[UploadFile] = File(None),
     mechanism: str = Form("M0"),
 ):
     # 驗證機制
@@ -292,6 +293,16 @@ async def run(
         tmp.write(data)
         tmp_path = Path(tmp.name)
 
+    # Feature 013：對象一律由旁檔或內嵌（內嵌：yaml roster）提供
+    # 若使用者也上傳了 targets_yaml，寫到 <tmp>.targets.yaml 讓 data_import 自動取用
+    sidecar_tmp = None
+    sidecar_data: bytes = b""
+    if targets_yaml is not None and targets_yaml.filename:
+        sidecar_data = await targets_yaml.read()
+        if sidecar_data:
+            sidecar_tmp = tmp_path.with_suffix(".targets.yaml")
+            sidecar_tmp.write_bytes(sidecar_data)
+
     try:
         try:
             if is_xlsx:
@@ -313,7 +324,7 @@ async def run(
                     request, template_id=template_id, template_name=tpl.name,
                     mechanism=mechanism, seed=seed,
                     roster_bytes=data, roster_filename=roster.filename or "roster.csv",
-                    roles=ro.roles, default_targets=tpl.default_targets,
+                    roles=ro.roles, targets=ro.targets, targets_bytes=sidecar_data,
                     max_choices=tpl.preferences_schema.max_choices,
                 )
 
@@ -334,6 +345,8 @@ async def run(
             )
     finally:
         tmp_path.unlink(missing_ok=True)
+        if sidecar_tmp is not None:
+            sidecar_tmp.unlink(missing_ok=True)
 
     store.save(record)
     return RedirectResponse(url=f"/match/{record.id}", status_code=303)
@@ -351,15 +364,16 @@ def _render_preferences_form(
     roster_bytes: bytes,
     roster_filename: str,
     roles,
-    default_targets,
+    targets,
+    targets_bytes: bytes = b"",
     max_choices: int,
     form_errors: Optional[list] = None,
     previous_form_values: Optional[dict] = None,
     status_code: int = 200,
 ):
-    """渲染填志願中介頁面。default_targets 為空 tuple → 樣板顯示錯誤段。"""
+    """渲染填志願中介頁面。targets 為本次配對的對象（從 sidecar 或 UI form 載入）。"""
     targets_for_options = None
-    if default_targets:
+    if targets:
         targets_for_options = [
             {
                 "id": t.id,
@@ -371,7 +385,7 @@ def _render_preferences_form(
                     "capacity": t.capacity,
                 }),
             }
-            for t in default_targets
+            for t in targets
         ]
     roles_for_form = [
         {"id": r.id, "display_name": (r.attributes or {}).get("name", r.id)}
@@ -387,6 +401,7 @@ def _render_preferences_form(
             "seed": seed,
             "roster_bytes_b64": base64.b64encode(roster_bytes).decode("ascii"),
             "roster_filename": roster_filename,
+            "targets_bytes_b64": base64.b64encode(targets_bytes).decode("ascii"),
             "roles_for_form": roles_for_form,
             "targets_for_options": targets_for_options,
             "max_choices": max_choices,
@@ -420,6 +435,8 @@ async def submit_preferences(request: Request):
 
     try:
         roster_bytes = base64.b64decode(roster_bytes_b64)
+        targets_bytes_b64 = form.get("targets_bytes_b64", "")
+        targets_bytes = base64.b64decode(targets_bytes_b64) if targets_bytes_b64 else b""
     except Exception:
         return _error_page(request, "PreferencesFormCorrupt", "填志願表單資料異常，請回到上一步重新上傳。")
 
@@ -435,6 +452,11 @@ async def submit_preferences(request: Request):
     with tempfile.NamedTemporaryFile(suffix=suffix or ".csv", delete=False) as tmp:
         tmp.write(roster_bytes)
         tmp_path = Path(tmp.name)
+    # Feature 013：sidecar 從 hidden input 還原
+    sidecar_tmp_pref = None
+    if targets_bytes:
+        sidecar_tmp_pref = tmp_path.with_suffix(".targets.yaml")
+        sidecar_tmp_pref.write_bytes(targets_bytes)
 
     try:
         try:
@@ -447,9 +469,11 @@ async def submit_preferences(request: Request):
             return _error_page(request, type(e).__name__, str(e))
     finally:
         tmp_path.unlink(missing_ok=True)
+        if sidecar_tmp_pref is not None:
+            sidecar_tmp_pref.unlink(missing_ok=True)
 
     max_choices = tpl.preferences_schema.max_choices if tpl.preferences_schema else 0
-    valid_target_ids = {t.id for t in tpl.default_targets}
+    valid_target_ids = {t.id for t in ro.targets}
 
     # _action == "submit"：驗證 + 組裝；"skip"：保留空 prefs 直接跑
     form_errors: list[str] = []
@@ -480,7 +504,7 @@ async def submit_preferences(request: Request):
                 template_id=template_id, template_name=tpl.name,
                 mechanism=mechanism, seed=seed,
                 roster_bytes=roster_bytes, roster_filename=roster_filename,
-                roles=ro.roles, default_targets=tpl.default_targets,
+                roles=ro.roles, targets=ro.targets, targets_bytes=targets_bytes,
                 max_choices=max_choices,
                 form_errors=form_errors,
                 previous_form_values=previous_form_values,
@@ -493,7 +517,7 @@ async def submit_preferences(request: Request):
                 template_id=template_id, template_name=tpl.name,
                 mechanism=mechanism, seed=seed,
                 roster_bytes=roster_bytes, roster_filename=roster_filename,
-                roles=ro.roles, default_targets=tpl.default_targets,
+                roles=ro.roles, targets=ro.targets, targets_bytes=targets_bytes,
                 max_choices=max_choices,
                 form_errors=form_errors,
                 previous_form_values=previous_form_values,

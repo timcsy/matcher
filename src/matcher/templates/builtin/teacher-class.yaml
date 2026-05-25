@@ -81,34 +81,3 @@ report_fields:
     label: "分配到的班級"
     source: assignment.{role_id}
 
-default_targets:
-  - id: C01
-    capacity: 2
-    attributes:
-      name: "三年甲班"
-      required_subjects: ["國文", "數學"]
-      feature: "bilingual"
-  - id: C02
-    capacity: 2
-    attributes:
-      name: "三年乙班"
-      required_subjects: ["國文", "英文", "自然"]
-      feature: "stem"
-  - id: C03
-    capacity: 2
-    attributes:
-      name: "三年丙班"
-      required_subjects: ["數學", "自然"]
-      feature: "stem"
-  - id: C04
-    capacity: 2
-    attributes:
-      name: "三年丁班"
-      required_subjects: ["國文", "英文"]
-      feature: "arts"
-  - id: C05
-    capacity: 2
-    attributes:
-      name: "三年戊班"
-      required_subjects: ["國文", "社會", "自然"]
-      feature: "arts"
