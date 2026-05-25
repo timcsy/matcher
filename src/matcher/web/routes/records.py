@@ -24,7 +24,9 @@ async def records_list(request: Request):
     template_names: dict = {}
     for tid in reg.list_ids():
         template_names[tid] = reg.get(tid).name
+    mechanism_labels = {"M0": "純抽籤", "M1": "輪流挑", "M2": "依志願先後填滿"}
     return _templates(request).TemplateResponse(
         request, "records_list.html",
-        {"records": records, "template_names": template_names},
+        {"records": records, "template_names": template_names,
+         "mechanism_labels": mechanism_labels},
     )

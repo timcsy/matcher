@@ -15,7 +15,7 @@
 </div>
 {% endif %}
 
-<div x-data="{ mode: 'upload', templateId: '{{ selected_id or (templates[0].id if templates else '') }}' }">
+<div x-data="{ mode: 'upload', templateId: '{{ selected_id or (templates[0].id if templates else '') }}' }" x-cloak>
 
   <div class="card">
     <h3>1. 選擇範本</h3>

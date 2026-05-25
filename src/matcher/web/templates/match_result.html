@@ -1,15 +1,20 @@
 {% extends "base.html" %}
-{% block title %}媒合結果{% endblock %}
+{% block title %}配對結果{% endblock %}
 {% block content %}
 
 {% if record.status == "success" %}
 <h2>✅ 配對完成</h2>
 <div class="card">
   <p><strong>紀錄編號</strong>：<code>{{ record.id }}</code></p>
-  <p><strong>時間</strong>：{{ record.created_at }}</p>
+  <p><strong>建立時間</strong>：<span title="{{ record.created_at }}">{{ record.created_at | local_time }}</span></p>
   <p><strong>使用範本</strong>：{{ record.audit.template_snapshot.name }}（<code>{{ record.template_id }}</code>）</p>
   <p><strong>亂數種子</strong>：<code>{{ record.seed }}</code> <small>（事後想重現結果就用這個數字）</small></p>
-  <p><strong>抽籤方式</strong>：{{ mechanism_label }}</p>
+  <p><strong>抽籤方式</strong>：{{ mechanism_label }}
+    {% if mechanism == 'M0' %}<small>（從合資格的對象中公平隨機抽出。同樣種子重跑必出相同結果）</small>
+    {% elif mechanism == 'M1' %}<small>（依隨機順序輪流挑最高未滿志願）</small>
+    {% elif mechanism == 'M2' %}<small>（依志願先後逐層填滿，同層超額抽籤）</small>
+    {% endif %}
+  </p>
 </div>
 
 {% if processing_order_display %}
@@ -59,13 +64,18 @@
   <summary>給每位當事人的個別連結（共 {{ roles_for_links | length }} 位）</summary>
   <p><small>把以下連結各自寄給對應的當事人（家長、老師），他們可以獨立查看自己的配對結果和判定理由，不會看到別人的資料。</small></p>
   <table>
-    <thead><tr><th>姓名</th><th>編號</th><th>個別查詢連結</th></tr></thead>
+    <thead><tr><th>姓名</th><th><small>編號</small></th><th>個別查詢連結</th></tr></thead>
     <tbody>
       {% for r in roles_for_links %}
       <tr>
         <td>{{ r.name }}</td>
-        <td><code>{{ r.id }}</code></td>
-        <td><a href="/match/{{ record.id }}/role/{{ r.id }}">/match/{{ record.id }}/role/{{ r.id }}</a></td>
+        <td><small><code>{{ r.id }}</code></small></td>
+        <td>
+          <a href="/match/{{ record.id }}/role/{{ r.id }}">開啟 →</a>
+          <button type="button" class="btn-link"
+            onclick="navigator.clipboard.writeText(window.location.origin + '/match/{{ record.id }}/role/{{ r.id }}').then(()=>{ this.textContent='✓ 已複製'; setTimeout(()=>{ this.textContent='📋 複製連結'; }, 1500); })"
+            style="background:none;border:1px solid #888;border-radius:3px;padding:2px 8px;cursor:pointer;margin-left:0.5em;font-size:0.85em">📋 複製連結</button>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -76,7 +86,7 @@
 <h2>❌ 配對失敗</h2>
 <div class="card">
   <p><strong>紀錄編號</strong>：<code>{{ record.id }}</code></p>
-  <p><strong>時間</strong>：{{ record.created_at }}</p>
+  <p><strong>建立時間</strong>：<span title="{{ record.created_at }}">{{ record.created_at | local_time }}</span></p>
   <p><strong>使用範本</strong>：<code>{{ record.template_id }}</code></p>
   <p><strong>上傳檔</strong>：{{ record.input_file or '（無）' }}</p>
 </div>

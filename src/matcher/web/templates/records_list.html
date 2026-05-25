@@ -6,13 +6,14 @@
 {% if records %}
 <table>
   <thead>
-    <tr><th>時間</th><th>使用範本</th><th>亂數種子</th><th>狀態</th><th>操作</th></tr>
+    <tr><th>時間</th><th>使用範本</th><th>抽籤方式</th><th>亂數種子</th><th>狀態</th><th>操作</th></tr>
   </thead>
   <tbody>
     {% for r in records %}
     <tr>
-      <td>{{ r.created_at }}</td>
+      <td><span title="{{ r.created_at }}">{{ r.created_at | local_time }}</span></td>
       <td>{{ template_names.get(r.template_id, r.template_id) }}</td>
+      <td>{{ mechanism_labels.get(r.mechanism or 'M0', r.mechanism or '') }}</td>
       <td><code>{{ r.seed }}</code></td>
       <td>
         {% if r.status == "success" %}

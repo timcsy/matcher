@@ -69,7 +69,8 @@
         <ul>
           {% for rule_id in entry.matched_rules %}
             {% set desc = rules_lookup.get(rule_id, rule_id) %}
-            <li>{{ rule_id }}：{{ desc | humanize_rule(template) if template else desc }}</li>
+            <li>{{ desc | humanize_rule(template) if template else desc }}
+              <small>（<code>{{ rule_id }}</code>）</small></li>
           {% endfor %}
         </ul>
       {% endif %}
@@ -77,8 +78,8 @@
       <p class="status-failed">❌ 您不符合此對象的條件。</p>
       {% if entry.failed_rule %}
         {% set desc = rules_lookup.get(entry.failed_rule, entry.failed_rule) %}
-        <p>未通過的規則：<strong>{{ entry.failed_rule }}</strong>——
-          {{ desc | humanize_rule(template) if template else desc }}</p>
+        <p>未通過的規則：{{ desc | humanize_rule(template) if template else desc }}
+          <small>（規則編號 <code>{{ entry.failed_rule }}</code>）</small></p>
       {% endif %}
     {% endif %}
   {% endfor %}

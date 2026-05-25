@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<title>媒合報告 {{ record_id }}</title>
+<title>配對報告 {{ record_id }}</title>
 <style>
   @page { size: A4; margin: 2cm; }
   body { font-family: sans-serif; font-size: 11pt; line-height: 1.5; }
@@ -22,7 +22,7 @@
 <body>
 
 {% if status == 'failed' %}
-<h1>媒合報告（失敗）</h1>
+<h1>配對報告（失敗）</h1>
 <table class="meta">
   <tr><th>紀錄編號</th><td>{{ record_id }}</td></tr>
   <tr><th>時間</th><td>{{ created_at }}</td></tr>
@@ -32,7 +32,7 @@
 <p>{{ error_message }}</p>
 {% else %}
 
-<h1>媒合報告</h1>
+<h1>配對報告</h1>
 
 <table class="meta">
   <tr><th>紀錄編號</th><td>{{ record_id }}</td></tr>

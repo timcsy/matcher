@@ -24,11 +24,11 @@
 <h3>「角色」資料欄位</h3>
 <p><small>要被配對的人或單位（例：學生、老師）有哪些資料。</small></p>
 <table>
-  <thead><tr><th>欄位代號（英文）</th><th>類型</th><th>顯示名稱</th></tr></thead>
+  <thead><tr><th>顯示名稱</th><th>類型</th><th><small>英文代號</small></th></tr></thead>
   {% set type_label = {'str': '文字', 'int': '數字', 'list_str': '多筆文字'} %}
   <tbody>
     {% for a in tpl.attributes.roles %}
-    <tr><td><code>{{ a.key }}</code></td><td>{{ type_label.get(a.type, a.type) }}</td><td>{{ a.description }}</td></tr>
+    <tr><td>{{ a.description or a.key }}</td><td>{{ type_label.get(a.type, a.type) }}</td><td><small><code>{{ a.key }}</code></small></td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -36,11 +36,11 @@
 <h3>「對象」資料欄位</h3>
 <p><small>被分配進去的位置或群組（例：班級、社團）有哪些資料。</small></p>
 <table>
-  <thead><tr><th>欄位代號（英文）</th><th>類型</th><th>顯示名稱</th></tr></thead>
+  <thead><tr><th>顯示名稱</th><th>類型</th><th><small>英文代號</small></th></tr></thead>
   {% set type_label = {'str': '文字', 'int': '數字', 'list_str': '多筆文字'} %}
   <tbody>
     {% for a in tpl.attributes.targets %}
-    <tr><td><code>{{ a.key }}</code></td><td>{{ type_label.get(a.type, a.type) }}</td><td>{{ a.description }}</td></tr>
+    <tr><td>{{ a.description or a.key }}</td><td>{{ type_label.get(a.type, a.type) }}</td><td><small><code>{{ a.key }}</code></small></td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -48,10 +48,10 @@
 <h3>配對條件</h3>
 <p><small>角色要符合什麼條件，才能被分到對象。所有條件都會同時檢查。</small></p>
 <table>
-  <thead><tr><th>編號</th><th>條件說明</th></tr></thead>
+  <thead><tr><th>條件說明</th><th><small>編號</small></th></tr></thead>
   <tbody>
     {% for r in tpl.ruleset.rules %}
-    <tr><td><code>{{ r.id }}</code></td><td>{{ r.description }}</td></tr>
+    <tr><td>{{ r.description }}</td><td><small><code>{{ r.id }}</code></small></td></tr>
     {% endfor %}
   </tbody>
 </table>

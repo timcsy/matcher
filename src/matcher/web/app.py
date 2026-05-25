@@ -31,6 +31,16 @@ def create_app() -> FastAPI:
     from matcher.web.humanize import humanize_rule_description
     templates.env.filters["humanize_rule"] = humanize_rule_description
 
+    # Jinja2 filter：ISO timestamp → 「YYYY-MM-DD HH:MM」本地時區
+    from datetime import datetime
+    def _format_local(iso_str: str) -> str:
+        try:
+            dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+            return dt.astimezone().strftime("%Y-%m-%d %H:%M")
+        except (ValueError, TypeError):
+            return iso_str
+    templates.env.filters["local_time"] = _format_local
+
     app.state.templates = templates
 
     # Routes — 延遲匯入以避免循環

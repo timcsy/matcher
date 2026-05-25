@@ -10,11 +10,13 @@
   [x-data="templateAuthor()"] input,
   [x-data="templateAuthor()"] select,
   [x-data="templateAuthor()"] textarea { min-width: 0 !important; }
+  /* 防 FOUC：Alpine 初始化前隱藏 x-cloak 元素 */
+  [x-cloak] { display: none !important; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div x-data="templateAuthor()" class="max-w-3xl mx-auto py-6 px-4 text-gray-800">
+<div x-data="templateAuthor()" x-cloak class="max-w-3xl mx-auto py-6 px-4 text-gray-800">
 
   {# 頁首 #}
   <div class="mb-8">

@@ -10,6 +10,7 @@
 <p><small><a href="/match/new">← 回上一步（換模式或範本）</a></small></p>
 
 <form method="post" action="/match/run-from-form"
+      x-cloak
       x-data='{
         roles: [{}, {}, {}],
         targets: [{}, {}, {}]
@@ -22,9 +23,11 @@
     <table style="width:100%; border-collapse:collapse">
       <thead><tr>
         <th style="text-align:left; padding:0.3em">#</th>
-        <th style="text-align:left; padding:0.3em">代號 (id)</th>
+        <th style="text-align:left; padding:0.3em"><small>編號</small></th>
         {% for a in role_attrs %}
-        <th style="text-align:left; padding:0.3em">{{ a.label }}{% if a.required %} *{% endif %}</th>
+        <th style="text-align:left; padding:0.3em" title="{{ a.key }}">
+          {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %} <small>（多筆用 ; 分隔）</small>{% endif %}
+        </th>
         {% endfor %}
         {% if has_prefs_schema %}
         <th style="text-align:left; padding:0.3em">志願（以 ; 分隔）</th>
@@ -72,10 +75,12 @@
     <table style="width:100%; border-collapse:collapse">
       <thead><tr>
         <th style="text-align:left; padding:0.3em">#</th>
-        <th style="text-align:left; padding:0.3em">代號 (id) *</th>
+        <th style="text-align:left; padding:0.3em"><small>編號</small> *</th>
         <th style="text-align:left; padding:0.3em">容量 *</th>
         {% for a in target_attrs %}
-        <th style="text-align:left; padding:0.3em">{{ a.label }}{% if a.required %} *{% endif %}</th>
+        <th style="text-align:left; padding:0.3em" title="{{ a.key }}">
+          {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %} <small>（多筆用 ; 分隔）</small>{% endif %}
+        </th>
         {% endfor %}
         <th></th>
       </tr></thead>
@@ -83,7 +88,7 @@
         <template x-for="(row, j) in targets" :key="j">
           <tr>
             <td style="padding:0.3em" x-text="j + 1"></td>
-            <td style="padding:0.3em"><input type="text" :name="`target_${j}_id`" style="width:6em"></td>
+            <td style="padding:0.3em"><input type="text" :name="`target_${j}_id`" placeholder="如 G1" style="width:6em"></td>
             <td style="padding:0.3em"><input type="number" :name="`target_${j}_capacity`" style="width:5em" min="0"></td>
             {% for a in target_attrs %}
             <td style="padding:0.3em">
