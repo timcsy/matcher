@@ -81,6 +81,18 @@ def _print_summary(audit: dict) -> None:
 
 def _die(err: MatcherError) -> None:
     typer.echo(f"錯誤：{err}", err=True)
+    # Feature 015：資格集合為空時，多印「哪條規則刷掉幾組」診斷
+    from matcher.errors import QualifiedSetEmpty
+    if isinstance(err, QualifiedSetEmpty) and err.rule_stats:
+        total = err.total_pairs
+        if err.culprit:
+            desc = err.rule_descriptions.get(err.culprit, err.culprit)
+            n = err.rule_stats.get(err.culprit, 0)
+            typer.echo(f"最可能原因：{desc}（卡住 {n}/{total} 組）", err=True)
+        typer.echo("各條件淘汰組數：", err=True)
+        for rid, cnt in err.rule_stats.items():
+            desc = err.rule_descriptions.get(rid, rid)
+            typer.echo(f"  - {desc}：{cnt}/{total} 組", err=True)
     raise typer.Exit(code=err.exit_code)
 
 

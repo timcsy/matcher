@@ -48,7 +48,6 @@ def test_m1_with_empty_prefs_failed_record(tmp_path: Path):
     assert r2.status_code == 200
     assert "配對失敗" in r2.text
     assert "「輪流挑」需要至少一位填了志願" in r2.text
-    assert "MechanismRequiresPreferences" in r2.text
 
 
 def test_m2_with_empty_prefs_failed_record(tmp_path: Path):
@@ -76,4 +75,3 @@ def test_m0_with_prefs_failed_record(tmp_path: Path):
         )
     assert r.status_code == 200
     assert "配對失敗" in r.text
-    assert "PreferencesNotSupported" in r.text

@@ -5,7 +5,7 @@ targets:
     attributes:
       name: "三年甲班"
       required_subjects: ["國文", "數學"]
-      feature: "bilingual"
+      feature: "雙語"
   - id: C02
     capacity: 2
     attributes:
@@ -23,10 +23,10 @@ targets:
     attributes:
       name: "三年丁班"
       required_subjects: ["國文", "英文"]
-      feature: "arts"
+      feature: "藝術"
   - id: C05
     capacity: 2
     attributes:
       name: "三年戊班"
       required_subjects: ["國文", "社會", "自然"]
-      feature: "arts"
+      feature: "藝術"

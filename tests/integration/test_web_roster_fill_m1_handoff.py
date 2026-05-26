@@ -69,7 +69,7 @@ def test_m1_without_prefs_template_falls_back_to_failed_record(client: TestClien
     form = {"template_id": "teacher-class", "seed": "2026", "mechanism": "M1",
             "role_0_id": "T01", "role_0_name": "王", "role_0_speciality": "國文", "role_0_seniority": "8",
             "target_0_id": "C01", "target_0_capacity": "2", "target_0_name": "甲班",
-            "target_0_required_subjects": "國文;數學", "target_0_feature": "bilingual"}
+            "target_0_required_subjects": "國文;數學", "target_0_feature": "雙語"}
     r = client.post("/match/run-from-form", data=form)
     # follow redirect → match detail with failed record
     assert r.status_code == 200

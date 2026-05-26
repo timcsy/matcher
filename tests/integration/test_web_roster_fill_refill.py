@@ -56,7 +56,7 @@ def test_non_integer_seed_refills_keeps_data(client: TestClient):
         "template_id": "teacher-class", "seed": "abc", "mechanism": "M0",
         "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
         "target_0_id": "C01", "target_0_capacity": "2", "target_0_name": "甲班",
-        "target_0_required_subjects": "國文;數學", "target_0_feature": "bilingual",
+        "target_0_required_subjects": "國文;數學", "target_0_feature": "雙語",
     }
     r = client.post("/match/run-from-form", data=form)
     assert r.status_code == 400
@@ -72,7 +72,7 @@ def test_separator_tolerance_chinese_punctuation(client: TestClient):
         "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
         # 用頓號與全形分號混搭
         "target_0_id": "C01", "target_0_capacity": "2", "target_0_name": "甲班",
-        "target_0_required_subjects": "國文、數學", "target_0_feature": "bilingual",
+        "target_0_required_subjects": "國文、數學", "target_0_feature": "雙語",
     }
     r = client.post("/match/run-from-form", data=form)
     assert r.status_code == 200

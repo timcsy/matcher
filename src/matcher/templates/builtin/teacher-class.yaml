@@ -55,7 +55,7 @@ rules:
     expr:
       in:
         field: target.feature
-        set: ["bilingual", "stem", "arts"]
+        set: ["雙語", "stem", "藝術"]
 
 ui_fields:
   - key: name
