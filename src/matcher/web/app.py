@@ -18,7 +18,32 @@ def _resources_dir(name: str) -> Path:
     return Path(str(resources.files("matcher.web") / name))
 
 
+def load_dotenv() -> None:
+    """從 cwd 往上找 .env，注入環境變數（純標準庫；setdefault 不覆蓋已存在者）。
+
+    setdefault 語意確保：已由 shell / 測試 conftest 設好的變數不會被 .env 蓋掉。
+    """
+    import os
+
+    cur = Path.cwd()
+    for d in [cur, *cur.parents][:5]:
+        env_path = d / ".env"
+        if not env_path.is_file():
+            continue
+        for raw in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.strip()
+            val = val.strip().strip('"').strip("'")
+            if key:
+                os.environ.setdefault(key, val)
+        return
+
+
 def create_app() -> FastAPI:
+    load_dotenv()
     app = FastAPI(title="matcher", openapi_url=None)
 
     static_dir = _resources_dir("static")
