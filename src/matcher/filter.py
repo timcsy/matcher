@@ -33,8 +33,35 @@ def filter_qualified(ruleset: Ruleset, roster: Roster) -> tuple[dict, list[dict]
                 qualified_set[role.id].append(target.id)
 
     if not any(qualified_set.values()):
+        summary = rejection_summary(trace, ruleset)
         raise QualifiedSetEmpty(
-            "資格集合為空：依目前規則，所有 (角色, 對象) 組合皆未通過。"
+            "資格集合為空：依目前規則，所有 (角色, 對象) 組合皆未通過。",
+            trace=trace,
+            rule_stats=summary["rule_stats"],
+            culprit=summary["culprit"],
+            total_pairs=summary["total_pairs"],
+            rule_descriptions={r.id: r.description for r in ruleset.rules},
         )
 
     return qualified_set, trace
+
+
+def rejection_summary(trace: list[dict], ruleset: Ruleset) -> dict:
+    """從 filter_trace 算出「每條規則刷掉幾組」與元兇規則（純函式，無副作用）。
+
+    某組「沒過的規則」= 全部規則 − matched_rules（比只看首敗更完整）。
+    culprit = 失敗組數最大的規則；並列時取規則順序第一；全過 → None。
+    """
+    rule_stats: dict[str, int] = {r.id: 0 for r in ruleset.rules}
+    for entry in trace:
+        matched = set(entry.get("matched_rules", []))
+        for r in ruleset.rules:
+            if r.id not in matched:
+                rule_stats[r.id] += 1
+    culprit = None
+    best = 0
+    for r in ruleset.rules:  # 依規則順序 → 並列取第一
+        if rule_stats[r.id] > best:
+            best = rule_stats[r.id]
+            culprit = r.id
+    return {"total_pairs": len(trace), "rule_stats": rule_stats, "culprit": culprit}

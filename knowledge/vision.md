@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）、階段 7（配對失敗可解釋）已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -204,6 +204,18 @@
 - 決議：開放任何 Google 帳號登入 / 純個人私有 / 升級清空舊資料
 - **核心 0 改動**：所有變更限於 `src/matcher/web/`；`src/matcher/*` 核心與 CLI 不動
 - 自動化測試：380 passed, 2 skipped（新增 security token/csrf、auth flow、ownership、token link、template visibility、dotenv 等）
+
+階段 7 配對失敗可解釋（branch `015-explain-empty-set`，無新依賴）：
+
+- 「資格集合為空」不再只說「全部沒過」——`filter_qualified` 把已算好的 filter_trace
+  與「每條規則刷掉幾組」統計**帶進 QualifiedSetEmpty 例外**（原本被丟棄），算出「元兇規則」
+- CLI exit 10 多印「最可能原因：<元兇規則描述>（卡住 N/M 組）」+ 各規則淘汰數
+- Web：UI 填名單空集合 → 回填名單頁 + 診斷紅字（保留輸入）；CSV 上傳 → 失敗頁渲染診斷
+- 失敗頁移除英文錯誤類別名（技術 token），只留白話訊息 + 診斷
+- 修內建 teacher-class R003：接受值由英文 `bilingual/arts` 改中文 `雙語/藝術`（與說明一致，
+  使用者照說明填就過）；examples sidecar 同步
+- **核心變動只碰 filter/errors/cli**（可解釋性職責，教訓 7）；成功 audit schema 不變
+- 自動化測試：393 passed, 2 skipped（新增 rejection_summary、空集合攜帶診斷、CLI/Web 診斷等）
 
 尚未開始：K8s 部署（階段 5）、實際學校場景試行（UI 白話化已就緒，等真人來試）。
 

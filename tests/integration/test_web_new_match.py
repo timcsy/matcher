@@ -104,5 +104,4 @@ def test_failed_match_writes_record(tmp_path: Path):
         )
     assert r.status_code == 200
     assert "配對失敗" in r.text
-    assert "RosterColumnMismatch" in r.text
     assert "speciality" in r.text

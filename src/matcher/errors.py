@@ -12,6 +12,16 @@ class MatcherError(Exception):
 class QualifiedSetEmpty(MatcherError):
     exit_code = 10
 
+    def __init__(self, message: str, *, trace=None, rule_stats=None,
+                 culprit=None, total_pairs: int = 0, rule_descriptions=None) -> None:
+        super().__init__(message)
+        # Feature 015：攜帶診斷，讓上層（CLI/Web）能解釋「哪條規則刷掉幾組」
+        self.trace = trace or []
+        self.rule_stats: dict = rule_stats or {}
+        self.culprit = culprit
+        self.total_pairs = total_pairs
+        self.rule_descriptions: dict = rule_descriptions or {}
+
 
 class CapacityShortage(MatcherError):
     exit_code = 11

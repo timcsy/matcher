@@ -15,7 +15,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from matcher.data_import import load_roster_csv, load_roster_xlsx
-from matcher.errors import MatcherError, SeedMissing, TemplateNotFound
+from matcher.errors import MatcherError, QualifiedSetEmpty, SeedMissing, TemplateNotFound
 from matcher.pipeline import MatcherInput, run_match
 from matcher.template_loader import TemplateRegistry
 from matcher.web.auth import current_email, require_login
@@ -39,6 +39,30 @@ def _owner_or_403(request: Request, record) -> None:
     email = current_email(request)
     if record.owner is not None and record.owner != email:
         raise HTTPException(status_code=403, detail="這筆配對不屬於你，無法查看。")
+
+
+def _empty_set_message(e: QualifiedSetEmpty) -> str:
+    """把空集合診斷組成一句白話、給填名單頁的紅字 banner（feature 015）。"""
+    base = "沒有任何人符合資格——名單與對象的所有組合都沒通過條件。"
+    if getattr(e, "culprit", None):
+        desc = e.rule_descriptions.get(e.culprit, e.culprit)
+        n = e.rule_stats.get(e.culprit, 0)
+        return f"{base}最可能的原因：「{desc}」把 {n}／{e.total_pairs} 組都刷掉了——請檢查名單裡這項的值是否符合。"
+    return base
+
+
+def _error_dict(e: MatcherError) -> dict:
+    """建失敗 record 的 error；資格集合為空時附診斷（feature 015）。"""
+    d = {"type": type(e).__name__, "exit_code": e.exit_code, "message": str(e)}
+    from matcher.errors import QualifiedSetEmpty
+    if isinstance(e, QualifiedSetEmpty) and getattr(e, "rule_stats", None):
+        d["diagnostic"] = {
+            "total_pairs": e.total_pairs,
+            "rule_stats": e.rule_stats,
+            "culprit": e.culprit,
+            "rules": e.rule_descriptions,
+        }
+    return d
 
 router = APIRouter()
 
@@ -263,6 +287,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
         owner=email,
     )
 
+    qse = None  # Feature 015：捕捉空集合，於 finally 後回填名單頁
     try:
         try:
             ro, import_meta = load_roster_csv(csv_path, tpl)
@@ -287,16 +312,28 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
                 mechanism=mechanism, template=tpl, import_metadata=import_meta,
             ))
             record = MatchRecord(**common, status="success", audit=result.audit, error=None)
+        except QualifiedSetEmpty as e:
+            # Feature 015：UI 填名單觸發空集合 → 回填名單頁 + 診斷，保留使用者輸入
+            qse = e
+            record = None
         except MatcherError as e:
             record = MatchRecord(
                 **common, status="failed", audit=None,
-                error={"type": type(e).__name__, "exit_code": e.exit_code, "message": str(e)},
+                error=_error_dict(e),
             )
     finally:
         csv_path.unlink(missing_ok=True)
         if sidecar_path is not None:
             sidecar_path.unlink(missing_ok=True)
 
+    if qse is not None:
+        return _render_fill_form(
+            request, tpl,
+            prefill_roles=filled_roles or None,
+            prefill_targets=filled_targets or None,
+            form_error=_empty_set_message(qse),
+            seed=seed_raw, mechanism=mechanism, status_code=400,
+        )
     store.save(record)
     return RedirectResponse(url=f"/match/{record.id}", status_code=303)
 
@@ -425,7 +462,7 @@ async def run(
         except MatcherError as e:
             record = MatchRecord(
                 **common, status="failed", audit=None,
-                error={"type": type(e).__name__, "exit_code": e.exit_code, "message": str(e)},
+                error=_error_dict(e),
             )
     finally:
         tmp_path.unlink(missing_ok=True)

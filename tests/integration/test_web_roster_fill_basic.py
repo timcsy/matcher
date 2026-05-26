@@ -74,11 +74,11 @@ def _fill_form(n: int = 3, seed: str = "2026"):
         form[f"role_{i}_seniority"] = sen
     # Feature 013：對象一律由 UI 填或旁檔，不再有 default_targets
     classes = [
-        ("C01", "三年甲班", "國文;數學", "bilingual", "2"),
+        ("C01", "三年甲班", "國文;數學", "雙語", "2"),
         ("C02", "三年乙班", "國文;英文;自然", "stem", "2"),
         ("C03", "三年丙班", "數學;自然", "stem", "2"),
-        ("C04", "三年丁班", "國文;英文", "arts", "2"),
-        ("C05", "三年戊班", "國文;社會;自然", "arts", "2"),
+        ("C04", "三年丁班", "國文;英文", "藝術", "2"),
+        ("C05", "三年戊班", "國文;社會;自然", "藝術", "2"),
     ]
     for j, (tid, name, subjects, feature, cap) in enumerate(classes):
         form[f"target_{j}_id"] = tid
@@ -118,7 +118,7 @@ def test_post_run_from_form_audit_bytewise_equals_csv_path(client: TestClient, t
     sidecar.write_text("""targets:
   - id: C01
     capacity: 2
-    attributes: {name: "三年甲班", required_subjects: ["國文", "數學"], feature: "bilingual"}
+    attributes: {name: "三年甲班", required_subjects: ["國文", "數學"], feature: "雙語"}
   - id: C02
     capacity: 2
     attributes: {name: "三年乙班", required_subjects: ["國文", "英文", "自然"], feature: "stem"}
@@ -127,10 +127,10 @@ def test_post_run_from_form_audit_bytewise_equals_csv_path(client: TestClient, t
     attributes: {name: "三年丙班", required_subjects: ["數學", "自然"], feature: "stem"}
   - id: C04
     capacity: 2
-    attributes: {name: "三年丁班", required_subjects: ["國文", "英文"], feature: "arts"}
+    attributes: {name: "三年丁班", required_subjects: ["國文", "英文"], feature: "藝術"}
   - id: C05
     capacity: 2
-    attributes: {name: "三年戊班", required_subjects: ["國文", "社會", "自然"], feature: "arts"}
+    attributes: {name: "三年戊班", required_subjects: ["國文", "社會", "自然"], feature: "藝術"}
 """, encoding="utf-8")
     audit_path = tmp_path / "cli.json"
     runner = CliRunner()
@@ -161,7 +161,7 @@ def test_post_run_from_form_filters_empty_rows(client: TestClient):
         "role_4_id": "T03", "role_4_name": "陳老師", "role_4_speciality": "英文", "role_4_seniority": "3",
         # Feature 013：必須填對象
         "target_0_id": "C01", "target_0_capacity": "3",
-        "target_0_name": "三年甲班", "target_0_required_subjects": "國文;數學", "target_0_feature": "bilingual",
+        "target_0_name": "三年甲班", "target_0_required_subjects": "國文;數學", "target_0_feature": "雙語",
     }
     r = client.post("/match/run-from-form", data=form)
     assert r.status_code == 200
