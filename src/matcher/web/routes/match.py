@@ -23,6 +23,7 @@ from matcher.web.errors import MatchRecordNotFound, UploadInvalidMime, UploadToo
 from matcher.web.humanize import mechanism_label, preference_rank_display, target_summary
 from matcher.web.individual import build_individual_audit_subset
 from matcher.web.pdf import PdfRenderUnavailable, render_match_report_pdf
+from matcher.web.ratelimit import rate_limit
 from matcher.web.security import sign_role_token, validate_csrf, verify_role_token
 from matcher.web.store import MatchRecord, MatchStore, SCHEMA_VERSION
 
@@ -180,7 +181,8 @@ async def new_match_fill(request: Request, template_id: str, email: str = Depend
 
 
 @router.post("/match/run-from-form")
-async def run_from_form(request: Request, email: str = Depends(require_login)):
+async def run_from_form(request: Request, email: str = Depends(require_login),
+                        _rl=Depends(rate_limit("run", 120, 60))):
     """UI 填名單 → CSV bytes → 既有 pipeline。
 
     M1/M2 路徑沿用 feature 009：偵測志願缺 → 跳 preferences_form。
@@ -309,6 +311,7 @@ async def run(
     mechanism: str = Form("M0"),
     csrf_token: str = Form(""),
     email: str = Depends(require_login),
+    _rl=Depends(rate_limit("run", 120, 60)),
 ):
     if not validate_csrf(request.session.get("csrf_token"), csrf_token):
         raise HTTPException(status_code=403, detail="CSRF 驗證失敗，請重新整理頁面再試。")

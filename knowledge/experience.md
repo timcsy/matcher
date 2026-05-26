@@ -213,3 +213,22 @@
 - **來源**：commit `601955d` UI/UX 批評輪；最初列了 4 個「視覺 bug」事後發現全是
   accessibility tree 解讀問題。與教訓 8（主觀品質需對照標的）互補：教訓 8 講「無對照
   會放大噪音」，本則講「**錯誤的對照（誤把工具回報當真實）也會放大噪音**」。
+
+### 簽章 token 取代索引檔，是「無狀態鑑權 + 不破壞無 DB 架構」的廉價解
+
+- **理論說**：要做「不可猜、不可枚舉的個別查詢連結」，直覺是產一個隨機 token，
+  存一張 `token → (資源 id, 角色 id)` 對應表，查詢時去表裡找。
+- **實際發生**：feature 014 要在「不引入 DB」的約束下做這件事。隨機 token + 對應表
+  會逼出一個新的持久化結構（索引檔），帶來並發寫入、清理、跨副本同步的麻煩——等於
+  偷渡一個迷你資料庫。改用 **itsdangerous 簽章**把 `(match_id, role_id)` 直接簽進 token
+  後：驗章成功就「解出」目標，**完全不需要儲存**。安全性來自 server secret（簽不出 =
+  進不來），不靠保密 payload。一個函式對（sign/verify）取代整套索引機制。
+- **解決方式**：`URLSafeSerializer(SECRET, salt).dumps([match_id, role_id])` → `/r/{token}`；
+  開啟時 `loads` 驗章還原目標。session 也用同手法（簽章 cookie，無伺服器端 session）。
+- **教訓**：當你需要「可驗證但不可偽造的識別碼」時，先問「能不能用**簽章**取代**儲存**」。
+  簽章（HMAC / itsdangerous / JWT）把「狀態」編碼進 token 本身，換來無狀態、免索引、
+  免並發處理、天然跨副本——尤其在「不想引入 DB」的約束下，這幾乎總是更輕的解。
+  反模式檢查：發現自己要「為了查 token 而建一張表」時，停下來想簽章。
+- **來源**：specs/014-auth-ownership；`src/matcher/web/security.py` sign/verify_role_token；
+  research.md D3；對比「隨機 token + 索引檔」被否決。同案另一收穫：auth 作為周邊整合，
+  全程 `src/matcher/*` 核心 0 改動（再次印證教訓 7）。

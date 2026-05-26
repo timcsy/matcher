@@ -31,6 +31,14 @@ _REAL_AUTH_MODULES = {
 
 
 @pytest.fixture(autouse=True)
+def _reset_ratelimit():
+    """每個測試前清空 rate-limit 計數，避免跨測試累積誤觸 429。"""
+    from matcher.web.ratelimit import reset
+    reset()
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _auto_login(request, monkeypatch):
     """Feature 014：既有 web 測試未登入，加 require_login 後會 302。
 
@@ -43,9 +51,12 @@ def _auto_login(request, monkeypatch):
         return
     import matcher.web.auth as auth_mod
     import matcher.web.routes.match as match_mod
+    import matcher.web.routes.pages as pages_mod
     monkeypatch.setattr(auth_mod, "current_email", lambda request: "test@example.com")
     monkeypatch.setattr(match_mod, "current_email", lambda request: "test@example.com")
     monkeypatch.setattr(match_mod, "validate_csrf", lambda a, b: True)
+    monkeypatch.setattr(pages_mod, "current_email", lambda request: "test@example.com")
+    monkeypatch.setattr(pages_mod, "validate_csrf", lambda a, b: True)
     yield
 
 

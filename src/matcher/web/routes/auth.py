@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from matcher.web.auth import current_email, get_oauth, login_user, logout_user
+from matcher.web.ratelimit import rate_limit
 from matcher.web.security import validate_csrf
 
 router = APIRouter()
@@ -26,7 +27,8 @@ async def login_page(request: Request, next: str = "/"):
 
 
 @router.get("/auth/login")
-async def auth_login(request: Request, next: str = "/"):
+async def auth_login(request: Request, next: str = "/",
+                     _rl=Depends(rate_limit("auth", 30, 60))):
     """啟動 Google OAuth。"""
     request.session["oauth_next"] = next
     redirect_uri = request.url_for("auth_callback")

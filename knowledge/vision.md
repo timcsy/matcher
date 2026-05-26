@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -193,7 +193,21 @@
 - 自動化測試：348 個（既有 342 + 6 新增 + 既有 15+ 調整），全綠
 - 動機：「公平公開」原則——使用者在 UI 填名單時就該透明知道對象有哪些
 
+階段 6 登入與資源歸屬（commit 待補，branch `014-auth-ownership`，**新增 authlib、itsdangerous**）：
+
+- Google OAuth 登入（Authlib）+ 簽章 cookie session（Starlette SessionMiddleware，無伺服器端 session、無 DB）
+- 管理頁強制登入；配對紀錄/範本綁 `owner`（email）；列表只列自己的；跨使用者存取 403
+- **個別連結改 itsdangerous 簽章 token**（`/r/{token}`）：無狀態、不可偽造、不可枚舉；當事人免登入可看自己結果；修掉舊 role_id 枚舉漏洞
+- 範本私有/公開兩段可見性（meta sidecar `data/templates/<id>/meta.json`，不動核心 template_loader）；公開範本他人可見可複製不可編輯
+- 公開網路加固：所有 POST 表單 CSRF token、session cookie Secure/HttpOnly/SameSite、`/auth/login` 與配對執行端點記憶體 rate-limit
+- `.env` 自動載入（純標準庫，setdefault 不覆蓋已設變數）+ `.env.example` 範本
+- 決議：開放任何 Google 帳號登入 / 純個人私有 / 升級清空舊資料
+- **核心 0 改動**：所有變更限於 `src/matcher/web/`；`src/matcher/*` 核心與 CLI 不動
+- 自動化測試：380 passed, 2 skipped（新增 security token/csrf、auth flow、ownership、token link、template visibility、dotenv 等）
+
 尚未開始：K8s 部署（階段 5）、實際學校場景試行（UI 白話化已就緒，等真人來試）。
+
+> 註：登入是公開網路部署的前置（階段 5）；目前憑 Google OAuth + 個人私有，尚未做組織/網域層級的共享。
 
 ## 架構
 

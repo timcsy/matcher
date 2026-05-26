@@ -94,30 +94,30 @@
 
 ### Tests（先紅）
 
-- [ ] T060 [P] [US3] 撰寫 `tests/integration/test_web_template_visibility.py::test_private_template_hidden_from_others`
-- [ ] T061 [P] [US3] `::test_public_template_visible_and_forkable`
-- [ ] T062 [P] [US3] `::test_non_owner_cannot_edit_public_template`（→ 403，但可 fork）
-- [ ] T063 [P] [US3] `::test_builtin_visible_to_all_logged_in`
+- [x] T060 [P] [US3] 撰寫 `tests/integration/test_web_template_visibility.py::test_private_template_hidden_from_others`
+- [x] T061 [P] [US3] `::test_public_template_visible_and_forkable`
+- [x] T062 [P] [US3] `::test_non_owner_cannot_edit_public_template`（→ 403，但可 fork）
+- [x] T063 [P] [US3] `::test_builtin_visible_to_all_logged_in`
 
 ### 實作（綠）
 
-- [ ] T064 [US3] 範本版本 YAML 加 `owner` + `visibility`（`src/matcher/web/routes/pages.py` save 時寫入；預設 private）
-- [ ] T065 [US3] 範本載入/列表加可見性過濾：`owner==me ∪ public ∪ 內建`（pages.py + TemplateRegistry 包裝層，注意不動核心 template_loader）
-- [ ] T066 [US3] `/templates/{id}` 詳細頁 + `/edit` + `/save`（既有 id）加 owner 檢查；非 owner 403
-- [ ] T067 [US3] 範本詳細頁（owner）加「設為公開 / 設為私有」切換（POST + CSRF）
-- [ ] T068 [US3] 執行 `uv run pytest tests/integration/test_web_template_visibility.py -q` 確認綠
+- [x] T064 [US3] 範本版本 YAML 加 `owner` + `visibility`（`src/matcher/web/routes/pages.py` save 時寫入；預設 private）
+- [x] T065 [US3] 範本載入/列表加可見性過濾：`owner==me ∪ public ∪ 內建`（pages.py + TemplateRegistry 包裝層，注意不動核心 template_loader）
+- [x] T066 [US3] `/templates/{id}` 詳細頁 + `/edit` + `/save`（既有 id）加 owner 檢查；非 owner 403
+- [x] T067 [US3] 範本詳細頁（owner）加「設為公開 / 設為私有」切換（POST + CSRF）
+- [x] T068 [US3] 執行 `uv run pytest tests/integration/test_web_template_visibility.py -q` 確認綠
 
 ---
 
 ## Phase 6：Polish & Cross-cutting
 
-- [ ] T070 [P] rate-limit（FR-016）：對 `/auth/*` 與 `/match/run*` 加簡易記憶體限流；若引入 slowapi 記入 plan Complexity Tracking
+- [x] T070 [P] rate-limit（FR-016）：對 `/auth/*` 與 `/match/run*` 加簡易記憶體限流；若引入 slowapi 記入 plan Complexity Tracking
 - [x] T071 [P] 修補既有測試：現有 web 整合測試大量未帶 session → 加 autouse fixture 注入「已登入」session（類似 feature 013 的 conftest 攔截手法），或為各測試補登入步驟
 - [x] T072 確認 cookie flags（Secure/HttpOnly/SameSite）於 app.py 設定正確（SC-007）
 - [x] T073 執行 quickstart SC-006：`git diff main --name-only -- 'src/matcher/*.py' ':!src/matcher/web' ':!src/matcher/templates'` 為空（核心 0 改動守門）
 - [x] T074 執行 `uv run pytest -q` 全綠
-- [ ] T075 更新 `knowledge/vision.md`：新增階段 6「登入與資源歸屬」完成紀錄 + tech stack 加 authlib/itsdangerous
-- [ ] T076 評估 `knowledge/experience.md` 是否新增 lesson（如「簽章 token 取代索引檔達成無狀態鑑權」「auth 作為周邊整合維持核心 0 改動」）
+- [x] T075 更新 `knowledge/vision.md`：新增階段 6「登入與資源歸屬」完成紀錄 + tech stack 加 authlib/itsdangerous
+- [x] T076 評估 `knowledge/experience.md` 是否新增 lesson（如「簽章 token 取代索引檔達成無狀態鑑權」「auth 作為周邊整合維持核心 0 改動」）
 
 ---
 

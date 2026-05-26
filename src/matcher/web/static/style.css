@@ -33,7 +33,7 @@ header {
 header h1 { margin: 0; font-size: 1.5rem; }
 header h1 a { color: white; text-decoration: none; }
 
-nav { display: flex; gap: 1.5rem; }
+nav { display: flex; gap: 1.5rem; flex: 1; align-items: center; }
 nav a { color: white; text-decoration: none; opacity: 0.85; }
 nav a:hover { opacity: 1; text-decoration: underline; }
 
