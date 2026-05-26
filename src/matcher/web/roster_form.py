@@ -102,14 +102,23 @@ def assemble_targets_yaml_bytes(form: dict, template: Template) -> bytes | None:
     fields = ["id", "capacity"] + target_keys
     rows = _collect_indexed_rows(form, "target", fields)
 
+    # 一筆對象成立的條件：有填容量。編號留空 → 自動產生（T001…，避開已填的）。
+    qualifying = [r for r in rows if (r.get("capacity") or "").strip()]
+    used_ids = {(r.get("id") or "").strip() for r in qualifying if (r.get("id") or "").strip()}
+    _auto = [0]
+
+    def _next_auto_id() -> str:
+        while True:
+            _auto[0] += 1
+            cand = f"T{_auto[0]:03d}"
+            if cand not in used_ids:
+                used_ids.add(cand)
+                return cand
+
     targets_list = []
-    for row in rows:
-        tid = (row.get("id") or "").strip()
-        if not tid:
-            continue
+    for row in qualifying:
+        tid = (row.get("id") or "").strip() or _next_auto_id()
         cap_str = (row.get("capacity") or "").strip()
-        if not cap_str:
-            continue
         attrs: dict[str, Any] = {}
         for decl in template.attributes.targets:
             raw = (row.get(decl.key) or "").strip()

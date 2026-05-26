@@ -123,3 +123,32 @@ def test_assemble_targets_yaml_basic():
         "id": "G1", "capacity": 3,
         "attributes": {"name": "程式組", "topic": "program", "min_grade": 4},
     }
+
+
+def test_target_id_auto_generated_when_blank():
+    """對象編號留空 → 自動產生 T001…（feature: 對象自動編號）。"""
+    tpl = REG.get("study-group")
+    form = {
+        "target_0_id": "", "target_0_capacity": "3",
+        "target_0_name": "程式組", "target_0_topic": "program", "target_0_min_grade": "4",
+        "target_1_id": "", "target_1_capacity": "3",
+        "target_1_name": "自然組", "target_1_topic": "science", "target_1_min_grade": "4",
+    }
+    data = yaml.safe_load(assemble_targets_yaml_bytes(form, tpl))
+    ids = [t["id"] for t in data["targets"]]
+    assert ids == ["T001", "T002"]
+
+
+def test_target_auto_id_avoids_user_ids():
+    """混填：使用者填了 T001，留空者自動跳過 → 不撞號。"""
+    tpl = REG.get("study-group")
+    form = {
+        "target_0_id": "T001", "target_0_capacity": "3", "target_0_name": "甲",
+        "target_0_topic": "program", "target_0_min_grade": "4",
+        "target_1_id": "", "target_1_capacity": "3", "target_1_name": "乙",
+        "target_1_topic": "science", "target_1_min_grade": "4",
+    }
+    data = yaml.safe_load(assemble_targets_yaml_bytes(form, tpl))
+    ids = [t["id"] for t in data["targets"]]
+    assert ids == ["T001", "T002"]  # 自動編號避開已填的 T001 → 給 T002
+    assert len(set(ids)) == 2

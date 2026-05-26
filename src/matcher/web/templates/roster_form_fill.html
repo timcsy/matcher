@@ -99,7 +99,7 @@
     <table class="roster-fill-table">
       <thead><tr>
         <th style="text-align:left">#</th>
-        <th style="text-align:left"><small>編號</small> *</th>
+        <th style="text-align:left"><small>編號</small></th>
         <th style="text-align:left">容量 *</th>
         {% for a in target_attrs %}
         <th style="text-align:left" title="{{ a.key }}">
@@ -112,7 +112,7 @@
         <template x-for="(row, j) in targets" :key="j">
           <tr>
             <td x-text="j + 1"></td>
-            <td><input type="text" :name="`target_${j}_id`" x-model="row.id" placeholder="如 G1" style="width:6em"></td>
+            <td><input type="text" :name="`target_${j}_id`" x-model="row.id" placeholder="自動產生" style="width:7em"></td>
             <td><input type="number" :name="`target_${j}_capacity`" x-model="row.capacity" style="width:5em" min="0"></td>
             {% for a in target_attrs %}
             <td>
