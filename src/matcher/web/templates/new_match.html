@@ -48,14 +48,23 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
         <input type="hidden" name="template_id" :value="templateId">
         <label>
-          名單檔（CSV 或 Excel，最大 5 MB）：
+          ① 角色名單檔（要被配對的人，CSV 或 Excel，最大 5 MB）：
           <input type="file" name="roster" accept=".csv,.xlsx" required>
         </label>
-        <small>檔案第一列需是欄位名稱；可用中文也可用英文（依範本設定的顯示名稱）。</small>
-        <p><small>不會做名單？下載範例：
-          <a href="https://github.com/timcsy/matcher/raw/main/examples/teacher-class/roster.csv">教師-班級範例（CSV）</a> ·
-          <a href="https://github.com/timcsy/matcher/raw/main/examples/study-group/roster.xlsx">研習分組範例（Excel）</a>
-        </small></p>
+        <small>不會做？下載範例（依目前範本）：
+          <a :href="`/templates/${templateId}/example/roles.csv`">角色範例 CSV</a> ·
+          <a :href="`/templates/${templateId}/example/roles.xlsx`">Excel</a>
+        </small>
+
+        <label style="margin-top:1.2rem">
+          ② 對象名單檔（要被分進去的位置/群組，CSV 或 Excel）：
+          <input type="file" name="targets_yaml" accept=".csv,.xlsx,.yaml,.yml" required>
+        </label>
+        <small>下載範例（依目前範本）：
+          <a :href="`/templates/${templateId}/example/targets.csv`">對象範例 CSV</a> ·
+          <a :href="`/templates/${templateId}/example/targets.xlsx`">Excel</a>
+          。下載後照欄位填你的資料再上傳即可。
+        </small>
 
         <h4 style="margin-top:1.5rem">抽籤方式</h4>
         <select name="mechanism">

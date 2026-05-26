@@ -234,6 +234,29 @@ async def template_authoring_guide():
     return Response(content=guide.read_text(encoding="utf-8"), media_type="text/plain; charset=utf-8")
 
 
+@router.get("/templates/{template_id}/example/{kind}.{fmt}")
+async def template_example(request: Request, template_id: str, kind: str, fmt: str,
+                           email: str = Depends(require_login)):
+    """依範本動態產生角色/對象範例試算表（feature 016）。kind: roles|targets；fmt: csv|xlsx。"""
+    from matcher.web.example_gen import role_example_bytes, target_example_bytes
+    reg = _reg()
+    if not reg.has(template_id):
+        raise HTTPException(404, "找不到範本")
+    if not can_view(reg, template_id, email):
+        raise HTTPException(403, "這個範本不屬於你，無法下載範例。")
+    if kind not in ("roles", "targets") or fmt not in ("csv", "xlsx"):
+        raise HTTPException(404, "不支援的範例類型")
+    tpl = reg.get(template_id)
+    data = (role_example_bytes if kind == "roles" else target_example_bytes)(tpl, fmt)
+    media = ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+             if fmt == "xlsx" else "text/csv; charset=utf-8")
+    # 檔名用 ASCII（HTTP header 限 latin-1）；kind = roles|targets
+    return Response(
+        content=data, media_type=media,
+        headers={"Content-Disposition": f'attachment; filename="{template_id}-example-{kind}.{fmt}"'},
+    )
+
+
 @router.get("/templates/{template_id}/versions/{version}")
 async def template_get_version(request: Request, template_id: str, version: int,
                                email: str = Depends(require_login)):

@@ -18,7 +18,7 @@ from matcher.errors import (
     RosterSheetAmbiguous,
     RosterTypeError,
 )
-from matcher.roster import Role, Roster
+from matcher.roster import Role, Roster, Target
 from matcher.template import AttributeDecl, Template
 
 ENCODINGS_TO_TRY = ("utf-8", "utf-8-sig", "cp950")
@@ -282,11 +282,136 @@ def _load_targets(path: Path, template: Template) -> tuple:
     )
 
 
+# ── 對象（targets）試算表載入（feature 016）─────────────────────────
+
+
+def _find_capacity_header(headers: list) -> Optional[str]:
+    """找出容量欄（不分大小寫，接受 capacity / 容量）。"""
+    for h in headers:
+        if h is None:
+            continue
+        n = str(h).strip()
+        if n.lower() == "capacity" or n == "容量":
+            return h
+    return None
+
+
+def _build_targets(rows: list[dict], headers: list, template: Template) -> tuple:
+    """共用：對象列 + 表頭 → tuple[Target]。id 欄可省略 → 自動 T001…（避開已填）。"""
+    cap_header = _find_capacity_header(headers)
+    if cap_header is None:
+        raise RosterColumnMismatch(
+            "對象名單缺少「容量」欄。\n"
+            "細節：每個對象需要一個容量（最多容納幾位）。\n"
+            "建議：在對象試算表加一欄「容量」。"
+        )
+    id_header = _find_id_header(headers)
+    # 表頭 → 對象屬性 AttributeDecl
+    header_map: dict = {}
+    for h in headers:
+        decl = resolve_header(str(h).strip(), template.attributes.targets) if h else None
+        if decl is not None:
+            header_map[h] = decl
+
+    # 先蒐集已填 id（避開自動編號撞號）
+    used_ids = set()
+    for row in rows:
+        if id_header and (str(row.get(id_header) or "").strip()):
+            used_ids.add(str(row.get(id_header)).strip())
+    _auto = [0]
+
+    def _next_auto_id() -> str:
+        while True:
+            _auto[0] += 1
+            cand = f"T{_auto[0]:03d}"
+            if cand not in used_ids:
+                used_ids.add(cand)
+                return cand
+
+    targets = []
+    seen: set = set()
+    for i, row in enumerate(rows, start=2):
+        cap_raw = row.get(cap_header)
+        cap_str = "" if cap_raw is None else str(cap_raw).strip()
+        if not cap_str:
+            continue  # 容量空白 → 視為空列，略過
+        tid = str(row.get(id_header) or "").strip() if id_header else ""
+        if not tid:
+            tid = _next_auto_id()
+        if tid in seen:
+            from matcher.errors import DuplicateIdentity
+            raise DuplicateIdentity(f"對象 id `{tid}` 出現多次")
+        seen.add(tid)
+        try:
+            cap = int(cap_str)
+        except (ValueError, TypeError):
+            raise RosterColumnMismatch(f"第 {i} 列容量「{cap_str}」不是整數。")
+        if cap < 1:
+            raise ValueError(f"對象 `{tid}` 的容量 {cap} 無效；容量必須 ≥ 1")
+        attrs: dict = {}
+        for h, decl in header_map.items():
+            raw = row.get(h)
+            if decl.type == "list_str" and isinstance(raw, str):
+                # 容錯分隔符：、，；統一成 ;（coerce_value 以 ; 切）
+                for sep in ("、", "，", "；"):
+                    raw = raw.replace(sep, ";")
+            attrs[decl.key] = coerce_value(raw, decl, row_num=i)
+        targets.append(Target(id=tid, capacity=cap, attributes=attrs))
+    return tuple(targets)
+
+
+def load_targets_csv(path: str | Path, template: Template) -> tuple:
+    """從 CSV 載入對象名單 → tuple[Target]（feature 016）。"""
+    import csv
+    import io
+
+    raw_bytes = Path(path).read_bytes()
+    _, text = detect_csv_encoding(raw_bytes)
+    reader = csv.DictReader(io.StringIO(text))
+    headers = list(reader.fieldnames or [])
+    return _build_targets(list(reader), headers, template)
+
+
+def load_targets_xlsx(path: str | Path, template: Template, sheet: Optional[str] = None) -> tuple:
+    """從 .xlsx 載入對象名單 → tuple[Target]（feature 016）。"""
+    from openpyxl import load_workbook
+
+    wb = load_workbook(Path(path), read_only=True, data_only=True)
+    names = wb.sheetnames
+    if sheet is None:
+        if len(names) > 1:
+            wb.close()
+            raise RosterSheetAmbiguous(
+                f"Excel 檔含多張工作表，未指定工作表。可用：{'、'.join(repr(s) for s in names)}。"
+            )
+        chosen = names[0]
+    else:
+        if sheet not in names:
+            wb.close()
+            raise RosterSheetAmbiguous(f"指定的工作表 `{sheet}` 不存在。可用：{'、'.join(repr(s) for s in names)}。")
+        chosen = sheet
+    ws = wb[chosen]
+    rows_iter = ws.iter_rows(values_only=True)
+    try:
+        header_row = next(rows_iter)
+    except StopIteration:
+        wb.close()
+        raise EmptyRoster("對象名單為空：Excel 工作表沒有任何列")
+    headers = [str(h) if h is not None else "" for h in header_row]
+    row_dicts = []
+    for row in rows_iter:
+        if all(v is None or (isinstance(v, str) and not v.strip()) for v in row):
+            continue
+        row_dicts.append({headers[i]: (row[i] if i < len(row) else None) for i in range(len(headers))})
+    wb.close()
+    return _build_targets(row_dicts, headers, template)
+
+
 # ── CSV 匯入 ─────────────────────────────────────────────────────────
 
 
-def load_roster_csv(path: str | Path, template: Template) -> tuple[Roster, dict]:
-    """從 CSV 載入 Roster；targets 由旁檔提供。"""
+def load_roster_csv(path: str | Path, template: Template, targets=None) -> tuple[Roster, dict]:
+    """從 CSV 載入 Roster。targets 給定則用之；None → 由旁檔 `<stem>.targets.yaml` 提供。"""
     import csv
     import io
 
@@ -301,7 +426,7 @@ def load_roster_csv(path: str | Path, template: Template) -> tuple[Roster, dict]
 
     rows = list(reader)
     roles = _build_roles(rows, header_resolved, pref_headers, id_header=id_header)
-    targets = _load_targets(p, template)
+    targets = tuple(targets) if targets is not None else _load_targets(p, template)
 
     metadata = {
         "source_type": "csv",
@@ -320,8 +445,9 @@ def load_roster_xlsx(
     path: str | Path,
     template: Template,
     sheet: Optional[str] = None,
+    targets=None,
 ) -> tuple[Roster, dict]:
-    """從 .xlsx 載入 Roster；targets 由旁檔提供。"""
+    """從 .xlsx 載入 Roster。targets 給定則用之；None → 由旁檔提供。"""
     from openpyxl import load_workbook
 
     p = Path(path)
@@ -375,7 +501,7 @@ def load_roster_xlsx(
     wb.close()
 
     roles = _build_roles(row_dicts, header_resolved, pref_headers, id_header=id_header)
-    targets = _load_targets(p, template)
+    targets = tuple(targets) if targets is not None else _load_targets(p, template)
 
     metadata = {
         "source_type": "xlsx",

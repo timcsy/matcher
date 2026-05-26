@@ -41,6 +41,16 @@ def _owner_or_403(request: Request, record) -> None:
         raise HTTPException(status_code=403, detail="這筆配對不屬於你，無法查看。")
 
 
+def _targets_to_yaml_bytes(targets) -> bytes:
+    """Target tuple → targets YAML bytes（供志願頁 handoff 重建旁檔用）。"""
+    import yaml as _yaml
+    data = {"targets": [
+        {"id": t.id, "capacity": t.capacity, "attributes": dict(t.attributes)}
+        for t in targets
+    ]}
+    return _yaml.safe_dump(data, allow_unicode=True, sort_keys=False).encode("utf-8")
+
+
 def _empty_set_message(e: QualifiedSetEmpty) -> str:
     """把空集合診斷組成一句白話、給填名單頁的紅字 banner（feature 015）。"""
     base = "沒有任何人符合資格——名單與對象的所有組合都沒通過條件。"
@@ -414,22 +424,42 @@ async def run(
         tmp.write(data)
         tmp_path = Path(tmp.name)
 
-    # Feature 013：對象一律由旁檔或內嵌（內嵌：yaml roster）提供
-    # 若使用者也上傳了 targets_yaml，寫到 <tmp>.targets.yaml 讓 data_import 自動取用
+    # Feature 016：對象名單可為 CSV/Excel（試算表）或 YAML（依副檔名分派）
+    # - .csv/.xlsx → 解析成 targets tuple，以 targets= 注入 load_roster
+    # - .yaml/.yml → 寫旁檔，由 data_import 自動取用（向後相容）
     sidecar_tmp = None
-    sidecar_data: bytes = b""
+    targets_tmp = None
+    sidecar_data: bytes = b""          # 志願頁 handoff 用的 targets YAML bytes
+    injected_targets = None            # csv/xlsx 解析出的 targets tuple
     if targets_yaml is not None and targets_yaml.filename:
-        sidecar_data = await targets_yaml.read()
-        if sidecar_data:
-            sidecar_tmp = tmp_path.with_suffix(".targets.yaml")
-            sidecar_tmp.write_bytes(sidecar_data)
+        tname = targets_yaml.filename.lower()
+        traw = await targets_yaml.read()
+        if traw:
+            if tname.endswith(".csv") or tname.endswith(".xlsx"):
+                from matcher.data_import import load_targets_csv, load_targets_xlsx
+                tsuffix = ".xlsx" if tname.endswith(".xlsx") else ".csv"
+                with tempfile.NamedTemporaryFile(suffix=tsuffix, delete=False) as ttmp:
+                    ttmp.write(traw)
+                    targets_tmp = Path(ttmp.name)
+                # 解析延後到 try 內，讓錯誤變成失敗 record / 診斷
+            else:
+                sidecar_data = traw
+                sidecar_tmp = tmp_path.with_suffix(".targets.yaml")
+                sidecar_tmp.write_bytes(traw)
 
     try:
         try:
+            if targets_tmp is not None:
+                from matcher.data_import import load_targets_csv, load_targets_xlsx
+                injected_targets = (
+                    load_targets_xlsx(targets_tmp, tpl) if targets_tmp.suffix == ".xlsx"
+                    else load_targets_csv(targets_tmp, tpl)
+                )
+                sidecar_data = _targets_to_yaml_bytes(injected_targets)
             if is_xlsx:
-                ro, import_meta = load_roster_xlsx(tmp_path, tpl)
+                ro, import_meta = load_roster_xlsx(tmp_path, tpl, targets=injected_targets)
             else:
-                ro, import_meta = load_roster_csv(tmp_path, tpl)
+                ro, import_meta = load_roster_csv(tmp_path, tpl, targets=injected_targets)
 
             # 修正 import_metadata 中的 basename 為原檔名（避免暴露 tmp 路徑）
             import_meta["file_basename"] = roster.filename or import_meta["file_basename"]
@@ -468,6 +498,8 @@ async def run(
         tmp_path.unlink(missing_ok=True)
         if sidecar_tmp is not None:
             sidecar_tmp.unlink(missing_ok=True)
+        if targets_tmp is not None:
+            targets_tmp.unlink(missing_ok=True)
 
     store.save(record)
     return RedirectResponse(url=f"/match/{record.id}", status_code=303)
