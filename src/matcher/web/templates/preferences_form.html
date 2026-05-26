@@ -40,6 +40,7 @@
 {% endif %}
 
 <form method="post" action="/match/preferences">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
   <input type="hidden" name="template_id" value="{{ template_id }}">
   <input type="hidden" name="mechanism" value="{{ mechanism }}">
   <input type="hidden" name="seed" value="{{ seed }}">

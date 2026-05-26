@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.templating import Jinja2Templates
 
 from matcher.template_loader import TemplateRegistry
+from matcher.web.auth import require_login
 from matcher.web.store import MatchStore
 
 router = APIRouter()
@@ -16,9 +17,9 @@ def _templates(request: Request) -> Jinja2Templates:
 
 
 @router.get("/matches")
-async def records_list(request: Request):
+async def records_list(request: Request, email: str = Depends(require_login)):
     store = MatchStore()
-    records = store.list(limit=50)
+    records = store.list(limit=50, owner=email)
     # 取得模板名稱以顯示
     reg = TemplateRegistry()
     template_names: dict = {}

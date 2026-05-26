@@ -71,9 +71,9 @@
         <td>{{ r.name }}</td>
         <td><small><code>{{ r.id }}</code></small></td>
         <td>
-          <a href="/match/{{ record.id }}/role/{{ r.id }}">開啟 →</a>
+          <a href="/r/{{ r.token }}">開啟 →</a>
           <button type="button" class="btn-link"
-            onclick="navigator.clipboard.writeText(window.location.origin + '/match/{{ record.id }}/role/{{ r.id }}').then(()=>{ this.textContent='✓ 已複製'; setTimeout(()=>{ this.textContent='📋 複製連結'; }, 1500); })"
+            onclick="navigator.clipboard.writeText(window.location.origin + '/r/{{ r.token }}').then(()=>{ this.textContent='✓ 已複製'; setTimeout(()=>{ this.textContent='📋 複製連結'; }, 1500); })"
             style="background:none;border:1px solid #888;border-radius:3px;padding:2px 8px;cursor:pointer;margin-left:0.5em;font-size:0.85em">📋 複製連結</button>
         </td>
       </tr>

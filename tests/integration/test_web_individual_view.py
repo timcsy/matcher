@@ -127,8 +127,8 @@ def test_admin_result_has_individual_links_section(tmp_path: Path):
     r = c.get(f"/match/{rid}")
     assert r.status_code == 200
     assert "個別查詢連結" in r.text
-    # 應有 10 個 role 連結
-    links = re.findall(rf"/match/{rid}/role/T\d+", r.text)
+    # Feature 014：個別連結改用不可猜 token（/r/{token}），應有 ≥10 條
+    links = re.findall(r"/r/[A-Za-z0-9_.\-]+", r.text)
     assert len(links) >= 10
 
 
@@ -147,7 +147,7 @@ def test_individual_view_record_not_found(tmp_path: Path):
     c = _client(tmp_path)
     r = c.get("/match/no-such-record/role/T01")
     assert r.status_code == 404
-    assert "找不到該次媒合的紀錄" in r.text
+    assert "找不到該次配對的紀錄" in r.text
 
 
 def test_individual_view_role_not_in_record(tmp_path: Path):
@@ -155,7 +155,7 @@ def test_individual_view_role_not_in_record(tmp_path: Path):
     rid = _make_success_record(c)
     r = c.get(f"/match/{rid}/role/T999")
     assert r.status_code == 404
-    assert "您不在這次媒合的名單中" in r.text
+    assert "您不在這次配對的名單中" in r.text
 
 
 def test_individual_view_failed_record(tmp_path: Path):

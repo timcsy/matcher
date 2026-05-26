@@ -21,6 +21,33 @@ SIDECARS = {
     "study-group": (ROOT / "examples" / "study-group" / "roster.targets.yaml").read_bytes(),
 }
 
+# Feature 014：auth 行為由這些測試檔自己驗證，不套用「自動登入」bypass
+_REAL_AUTH_MODULES = {
+    "test_web_auth_flow",
+    "test_web_auth_ownership",
+    "test_web_token_link",
+    "test_web_template_visibility",
+}
+
+
+@pytest.fixture(autouse=True)
+def _auto_login(request, monkeypatch):
+    """Feature 014：既有 web 測試未登入，加 require_login 後會 302。
+
+    autouse 把 current_email 與 CSRF 驗證 patch 成「已登入的測試使用者 + CSRF 永過」，
+    讓既有測試沿用。auth 專屬測試檔（_REAL_AUTH_MODULES）opt-out 以驗真實行為。
+    """
+    mod = request.module.__name__.rsplit(".", 1)[-1]
+    if mod in _REAL_AUTH_MODULES:
+        yield
+        return
+    import matcher.web.auth as auth_mod
+    import matcher.web.routes.match as match_mod
+    monkeypatch.setattr(auth_mod, "current_email", lambda request: "test@example.com")
+    monkeypatch.setattr(match_mod, "current_email", lambda request: "test@example.com")
+    monkeypatch.setattr(match_mod, "validate_csrf", lambda a, b: True)
+    yield
+
 
 @pytest.fixture(autouse=True)
 def _auto_inject_sidecar(monkeypatch):

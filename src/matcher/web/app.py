@@ -48,11 +48,21 @@ def create_app() -> FastAPI:
         return Markup(_escape(_json.dumps(obj, ensure_ascii=False)))
     templates.env.filters["tojson_attr"] = _tojson_attr
 
+    # Jinja2 全域：登入者 email + CSRF token（樣板可直接用 current_email(request) / csrf_token(request)）
+    from matcher.web.auth import current_email, csrf_token
+    templates.env.globals["current_email"] = current_email
+    templates.env.globals["csrf_token"] = csrf_token
+
     app.state.templates = templates
 
-    # Routes — 延遲匯入以避免循環
-    from matcher.web.routes import match, pages, records
+    # session middleware（簽章 cookie，Secure/HttpOnly/SameSite）
+    from matcher.web.auth import add_session_middleware
+    add_session_middleware(app)
 
+    # Routes — 延遲匯入以避免循環
+    from matcher.web.routes import auth, match, pages, records
+
+    app.include_router(auth.router)
     app.include_router(pages.router)
     app.include_router(match.router)
     app.include_router(records.router)

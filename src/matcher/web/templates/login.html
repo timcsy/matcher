@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}登入{% endblock %}
+{% block content %}
+<h2>登入 matcher</h2>
+
+{% if error %}
+<div class="error-box"><p>{{ error }}</p></div>
+{% endif %}
+
+<div class="card">
+  <p>請用學校或個人的 Google 帳號登入，登入後才能建立配對、查看自己的紀錄。</p>
+  <p style="margin-top:1rem">
+    <a class="btn btn-success" href="/auth/login?next={{ next }}">用 Google 登入</a>
+  </p>
+  <p><small>當事人（家長、老師）查看自己的配對結果不需要登入——用收到的個別連結即可。</small></p>
+</div>
+{% endblock %}

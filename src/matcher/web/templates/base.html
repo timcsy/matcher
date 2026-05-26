@@ -16,6 +16,16 @@
       <a href="/templates">範本</a>
       <a href="/match/new">新增一次配對</a>
       <a href="/matches">過去紀錄</a>
+      {% set _email = current_email(request) %}
+      {% if _email %}
+      <span style="margin-left:auto; color:#ccc; font-size:0.85em">{{ _email }}</span>
+      <form method="post" action="/logout" style="display:inline; margin:0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+        <button type="submit" style="background:none; border:none; color:#ccc; cursor:pointer; text-decoration:underline; font-size:0.85em">登出</button>
+      </form>
+      {% else %}
+      <a href="/login" style="margin-left:auto">登入</a>
+      {% endif %}
     </nav>
   </header>
   <main>{% block content %}{% endblock %}</main>
