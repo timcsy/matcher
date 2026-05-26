@@ -11,6 +11,10 @@
   .roster-fill-table { width: 100%; border-collapse: collapse; min-width: max-content; }
   .roster-fill-table th, .roster-fill-table td { padding: 0.3em; white-space: nowrap; }
   .roster-fill-table th small { font-weight: normal; color: #666; }
+  .form-error-banner {
+    background: #fdecea; border: 1px solid #f5c2c0; border-left: 4px solid #c0392b;
+    border-radius: 6px; padding: 0.8em 1em; margin-bottom: 1rem; color: #7a1f1a;
+  }
 </style>
 {% endblock %}
 
@@ -18,17 +22,24 @@
 <h2>填名單 — {{ template.name }}</h2>
 <p><small><a href="/match/new">← 回上一步（換模式或範本）</a></small></p>
 
+{% if form_error %}
+<div class="form-error-banner">
+  <strong>⚠️ 還差一步：</strong>{{ form_error }}
+  <br><small>你剛剛填的內容都還在下面，補好再按一次「執行配對」就好。</small>
+</div>
+{% endif %}
+
 <form method="post" action="/match/run-from-form"
       x-cloak
       x-data='{
-        roles: [{}, {}, {}],
-        targets: [{}, {}, {}]
+        roles: {{ prefill_roles | tojson_attr }},
+        targets: {{ prefill_targets | tojson_attr }}
       }'>
   <input type="hidden" name="template_id" value="{{ template.id }}">
 
   <div class="card">
-    <h3>1. 角色名單</h3>
-    <p><small>每位角色一列。空白列會自動忽略，不用刪。</small></p>
+    <h3>1. 角色名單<small style="font-weight:normal; color:#666">（要被配對的人或單位，例如老師、學生）</small></h3>
+    <p><small>每位一列。空白列會自動忽略，不用刪。</small></p>
     <div class="roster-fill-scroll">
     <table class="roster-fill-table">
       <thead><tr>
@@ -36,11 +47,11 @@
         <th style="text-align:left"><small>編號</small></th>
         {% for a in role_attrs %}
         <th style="text-align:left" title="{{ a.key }}">
-          {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %}<br><small>（多筆用 ; 分隔）</small>{% endif %}
+          {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %}<br><small>（多個用分號、頓號或逗號隔開）</small>{% endif %}
         </th>
         {% endfor %}
         {% if has_prefs_schema %}
-        <th style="text-align:left">志願<br><small>（多筆用 ; 分隔）</small></th>
+        <th style="text-align:left">志願<br><small>（多個用分號、頓號或逗號隔開）</small></th>
         {% endif %}
         <th></th>
       </tr></thead>
@@ -49,17 +60,17 @@
           <tr>
             <td x-text="i + 1"></td>
             <td>
-              <input type="text" :name="`role_${i}_id`" placeholder="自動產生" style="width:7em">
+              <input type="text" :name="`role_${i}_id`" x-model="row.id" placeholder="自動產生" style="width:7em">
             </td>
             {% for a in role_attrs %}
             <td>
               <input type="{{ 'number' if a.type == 'int' else 'text' }}"
-                :name="`role_${i}_{{ a.key }}`" style="width:11em">
+                :name="`role_${i}_{{ a.key }}`" x-model="row['{{ a.key }}']" style="width:11em">
             </td>
             {% endfor %}
             {% if has_prefs_schema %}
             <td>
-              <input type="text" :name="`role_${i}_preferences`"
+              <input type="text" :name="`role_${i}_preferences`" x-model="row.preferences"
                 placeholder="G1;G2;G3" style="width:11em">
             </td>
             {% endif %}
@@ -81,8 +92,8 @@
   </div>
 
   <div class="card">
-    <h3>2. 對象清單</h3>
-    <p><small>填寫這次配對的對象（如班級、組別）。每個對象一列。</small></p>
+    <h3>2. 對象清單<small style="font-weight:normal; color:#666">（要被分進去的位置或群組，例如班級、組別）</small></h3>
+    <p><small>每個對象一列。</small></p>
     <div class="roster-fill-scroll">
     <table class="roster-fill-table">
       <thead><tr>
@@ -91,7 +102,7 @@
         <th style="text-align:left">容量 *</th>
         {% for a in target_attrs %}
         <th style="text-align:left" title="{{ a.key }}">
-          {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %}<br><small>（多筆用 ; 分隔）</small>{% endif %}
+          {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %}<br><small>（多個用分號、頓號或逗號隔開）</small>{% endif %}
         </th>
         {% endfor %}
         <th></th>
@@ -100,12 +111,12 @@
         <template x-for="(row, j) in targets" :key="j">
           <tr>
             <td x-text="j + 1"></td>
-            <td><input type="text" :name="`target_${j}_id`" placeholder="如 G1" style="width:6em"></td>
-            <td><input type="number" :name="`target_${j}_capacity`" style="width:5em" min="0"></td>
+            <td><input type="text" :name="`target_${j}_id`" x-model="row.id" placeholder="如 G1" style="width:6em"></td>
+            <td><input type="number" :name="`target_${j}_capacity`" x-model="row.capacity" style="width:5em" min="0"></td>
             {% for a in target_attrs %}
             <td>
               <input type="{{ 'number' if a.type == 'int' else 'text' }}"
-                :name="`target_${j}_{{ a.key }}`" style="width:11em">
+                :name="`target_${j}_{{ a.key }}`" x-model="row['{{ a.key }}']" style="width:11em">
             </td>
             {% endfor %}
             <td>
@@ -126,20 +137,24 @@
   </div>
 
   <div class="card">
-    <h3>3. 設定亂數種子</h3>
-    <label>
-      亂數種子（請填一個整數）：
-      <input type="number" name="seed" required value="123456" step="1">
-    </label>
-  </div>
-
-  <div class="card">
-    <h3>4. 抽籤方式</h3>
+    <h3>3. 抽籤方式</h3>
     <select name="mechanism">
       {% for value, label in mechanisms %}
-      <option value="{{ value }}" {% if value == default_mechanism %}selected{% endif %}>{{ label }}</option>
+      <option value="{{ value }}" {% if value == (prefill_mechanism or default_mechanism) %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
+
+    <details style="margin-top:1rem">
+      <summary style="cursor:pointer; color:#555">進階：自訂抽籤亂數（一般不用改）</summary>
+      <div style="margin-top:0.6rem">
+        <label>
+          亂數種子：
+          <input type="number" name="seed" required value="{{ prefill_seed or 123456 }}" step="1">
+        </label>
+        <small>抽籤需要一個亂數起點。<strong>同一份名單 + 同一個數字 → 永遠抽出一樣的結果</strong>，方便事後重現給家長 / 委員看。想當眾決定可用擲骰、彩券號碼當這個數字。</small>
+      </div>
+    </details>
+
     <p style="margin-top:1rem">
       <button class="btn btn-success" type="submit">執行配對</button>
     </p>

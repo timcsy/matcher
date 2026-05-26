@@ -90,16 +90,18 @@ async def new_match(
 
 # ── Feature 012：UI 直接填名單 ───────────────────────────────────
 
-@router.get("/match/new/fill")
-async def new_match_fill(request: Request, template_id: str):
-    """填寫頁：依範本宣告動態渲染欄位。"""
-    from matcher.web.routes.pages import _reg as _shared_reg
-    reg = _shared_reg()
-    try:
-        tpl = reg.get(template_id)
-    except TemplateNotFound as e:
-        return _error_page(request, "TemplateNotFound", str(e), status_code=404)
-
+def _render_fill_form(
+    request: Request,
+    tpl,
+    *,
+    prefill_roles=None,
+    prefill_targets=None,
+    form_error: Optional[str] = None,
+    seed=None,
+    mechanism: str = "M0",
+    status_code: int = 200,
+):
+    """渲染填名單頁。錯誤時帶 prefill 與 form_error 回填，避免使用者重打名單。"""
     role_attrs = [
         {"key": a.key, "type": a.type, "required": a.required,
          "label": a.description or a.key}
@@ -110,6 +112,11 @@ async def new_match_fill(request: Request, template_id: str):
          "label": a.description or a.key}
         for a in tpl.attributes.targets
     ]
+    # 預設給三列空白；錯誤回填時用使用者送來的內容
+    if prefill_roles is None:
+        prefill_roles = [{}, {}, {}]
+    if prefill_targets is None:
+        prefill_targets = [{}, {}, {}]
 
     return _templates(request).TemplateResponse(
         request, "roster_form_fill.html",
@@ -121,8 +128,39 @@ async def new_match_fill(request: Request, template_id: str):
             "has_prefs_schema": tpl.preferences_schema is not None,
             "mechanisms": MECHANISMS,
             "default_mechanism": "M0",
+            "prefill_roles": prefill_roles,
+            "prefill_targets": prefill_targets,
+            "form_error": form_error,
+            "prefill_seed": seed,
+            "prefill_mechanism": mechanism,
         },
+        status_code=status_code,
     )
+
+
+def _extract_form_rows(form: dict, prefix: str, keys: list[str]) -> list[dict]:
+    """從 form dict 撈 `<prefix>_<i>_<key>` → list of row dicts（保留所有列，含空白）。"""
+    rows: dict[int, dict] = {}
+    for k, v in form.items():
+        for key in keys:
+            suffix = f"_{key}"
+            if k.startswith(f"{prefix}_") and k.endswith(suffix):
+                mid = k[len(prefix) + 1 : -len(suffix)]
+                if mid.isdigit():
+                    rows.setdefault(int(mid), {})[key] = v
+    return [rows[i] for i in sorted(rows.keys())]
+
+
+@router.get("/match/new/fill")
+async def new_match_fill(request: Request, template_id: str):
+    """填寫頁：依範本宣告動態渲染欄位。"""
+    from matcher.web.routes.pages import _reg as _shared_reg
+    reg = _shared_reg()
+    try:
+        tpl = reg.get(template_id)
+    except TemplateNotFound as e:
+        return _error_page(request, "TemplateNotFound", str(e), status_code=404)
+    return _render_fill_form(request, tpl)
 
 
 @router.post("/match/run-from-form")
@@ -144,26 +182,46 @@ async def run_from_form(request: Request):
     if not template_id:
         return _error_page(request, "BadForm", "缺少範本選擇。")
     try:
-        seed = int(form.get("seed", "0"))
-    except ValueError:
-        return _error_page(request, "BadForm", "亂數種子必須是整數。")
-    mechanism = (form.get("mechanism") or "M0").strip().upper()
-    if mechanism not in VALID_MECHANISMS:
-        return _error_page(request, "InvalidMechanism", f"不支援的抽籤方式 `{mechanism}`。")
-
-    try:
         tpl = _shared_reg().get(template_id)
     except TemplateNotFound as e:
         return _error_page(request, "TemplateNotFound", str(e), status_code=404)
 
+    # 蒐集使用者填的列，供驗證失敗時回填（不讓他重打）
+    role_keys = ["id"] + [a.key for a in tpl.attributes.roles]
+    if tpl.preferences_schema is not None:
+        role_keys.append("preferences")
+    target_keys = ["id", "capacity"] + [a.key for a in tpl.attributes.targets]
+    filled_roles = _extract_form_rows(form, "role", role_keys)
+    filled_targets = _extract_form_rows(form, "target", target_keys)
+    mechanism = (form.get("mechanism") or "M0").strip().upper()
+    seed_raw = form.get("seed", "123456")
+
+    def _refill(msg: str):
+        return _render_fill_form(
+            request, tpl,
+            prefill_roles=filled_roles or None,
+            prefill_targets=filled_targets or None,
+            form_error=msg,
+            seed=seed_raw,
+            mechanism=mechanism if mechanism in VALID_MECHANISMS else "M0",
+            status_code=400,
+        )
+
+    try:
+        seed = int(seed_raw)
+    except ValueError:
+        return _refill("亂數種子必須是整數（只能填數字）。")
+    if mechanism not in VALID_MECHANISMS:
+        return _refill("請選一個抽籤方式。")
+
     csv_bytes = assemble_roster_csv_bytes(form, tpl)
     # 檢查空白：CSV 只有 header 列 → 沒有任何角色
     if csv_bytes.decode("utf-8-sig").strip().count("\n") < 1:
-        return _error_page(request, "EmptyRoster", "請至少填一位角色名單。")
+        return _refill("請至少填一位（第 1 步的名單還是空的）。")
 
     targets_yaml = assemble_targets_yaml_bytes(form, tpl)
     if targets_yaml is None:
-        return _error_page(request, "EmptyTargets", "請至少填一個對象。")
+        return _refill("請至少填一個對象，並記得每個對象都要有「編號」和「容量」（第 2 步）。")
 
     # 寫到 tmp、走 CSV path
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:

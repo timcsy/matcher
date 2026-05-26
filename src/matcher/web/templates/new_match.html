@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}新建一次配對{% endblock %}
+{% block title %}新增一次配對{% endblock %}
 
 {% block extra_head %}
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 {% endblock %}
 
 {% block content %}
-<h2>新建一次配對</h2>
+<h2>新增一次配對</h2>
 
 {% if snapshot_note %}
 <div class="card" style="background:#e3f2fd; border-left:4px solid #1976d2">
@@ -22,7 +22,7 @@
     <select x-model="templateId" required>
       {% for tpl in templates %}
       <option value="{{ tpl.id }}" {% if tpl.id == selected_id %}selected{% endif %}>
-        {{ tpl.name }}（{{ tpl.id }}）
+        {{ tpl.name }}
       </option>
       {% endfor %}
     </select>
@@ -56,17 +56,6 @@
           <a href="https://github.com/timcsy/matcher/raw/main/examples/study-group/roster.xlsx">研習分組範例（Excel）</a>
         </small></p>
 
-        <h4 style="margin-top:1.5rem">亂數種子</h4>
-        <label>
-          請填一個整數：
-          <input type="number" name="seed" required value="123456" step="1">
-        </label>
-        <small>
-          <strong>亂數種子是什麼？</strong>抽籤需要亂數，這個整數決定「這次的隨機順序」。
-          <strong>同一份名單 + 同一個種子 → 永遠抽出一樣的結果</strong>，方便事後重現給家長 / 委員看。
-          建議公開抽籤現場以擲骰、彩券號碼等公開方式決定種子。
-        </small>
-
         <h4 style="margin-top:1.5rem">抽籤方式</h4>
         <select name="mechanism">
           {% for value, label in mechanisms %}
@@ -80,6 +69,18 @@
             <li><strong>依志願先後填滿</strong>：先把每組的第一志願填滿，剩下的人再填第二志願⋯（適合：志願清楚分高低的場景）</li>
           </ul>
         </small>
+
+        <details style="margin-top:1.5rem">
+          <summary style="cursor:pointer; color:#555">進階：自訂抽籤亂數（一般不用改）</summary>
+          <div style="margin-top:0.6rem">
+            <label>
+              亂數種子：
+              <input type="number" name="seed" required value="123456" step="1">
+            </label>
+            <small>抽籤需要一個亂數起點。<strong>同一份名單 + 同一個數字 → 永遠抽出一樣的結果</strong>，方便事後重現給家長 / 委員看。想當眾決定可用擲骰、彩券號碼當這個數字。</small>
+          </div>
+        </details>
+
         <p style="margin-top:1rem"><button class="btn btn-success" type="submit">執行配對</button></p>
       </form>
     </div>

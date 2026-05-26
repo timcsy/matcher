@@ -28,7 +28,7 @@
 
 <h3>配對結果</h3>
 <table>
-  <thead><tr><th>角色</th><th>對象</th>{% if mechanism != 'M0' %}<th>志願排名</th>{% endif %}</tr></thead>
+  <thead><tr><th>誰</th><th>分到哪裡</th>{% if mechanism != 'M0' %}<th>志願排名</th>{% endif %}</tr></thead>
   <tbody>
     {% set role_attrs = {} %}
     {% for r in record.audit.roster_snapshot.roles %}{% if role_attrs.update({r.id: r.attributes}) %}{% endif %}{% endfor %}
@@ -36,10 +36,10 @@
     {% for t in record.audit.roster_snapshot.targets %}{% if target_attrs.update({t.id: t.attributes}) %}{% endif %}{% endfor %}
     {% for role_id, target_id in record.audit.assignment.items() | sort %}
     <tr>
-      <td><code>{{ role_id }}</code>（{{ role_attrs.get(role_id, {}).get('name', '') }}）</td>
+      <td>{{ role_attrs.get(role_id, {}).get('name', '') or role_id }} <small style="color:#888"><code>{{ role_id }}</code></small></td>
       <td>
         {% if target_id %}
-          <code>{{ target_id }}</code>（{{ target_attrs.get(target_id, {}).get('name', '') }}）
+          {{ target_attrs.get(target_id, {}).get('name', '') or target_id }} <small style="color:#888"><code>{{ target_id }}</code></small>
         {% else %}
           <em>未分配</em>
         {% endif %}

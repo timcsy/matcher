@@ -42,6 +42,17 @@ def _is_empty_row(row: dict, attribute_keys: list[str]) -> bool:
     return True
 
 
+import re
+
+_MULTI_SEP = re.compile(r"[;；、,，]+")
+
+
+def _normalize_multi(raw: str) -> str:
+    """把使用者可能用的分隔符（；、,，）統一成分號 ;，讓下游 data_import 正確切分。"""
+    parts = [p.strip() for p in _MULTI_SEP.split(raw) if p.strip()]
+    return ";".join(parts)
+
+
 def assemble_roster_csv_bytes(form: dict, template: Template) -> bytes:
     """UI 表單 → CSV bytes（與直接上傳 CSV 路徑 bytewise 等價）。
 
@@ -60,12 +71,20 @@ def assemble_roster_csv_bytes(form: dict, template: Template) -> bytes:
     rows = _collect_indexed_rows(form, "role", fields)
     non_empty = [r for r in rows if not _is_empty_row(r, role_keys)]
 
+    # 哪些欄位需要分隔符正規化：list_str 屬性 + preferences
+    multi_keys = {a.key for a in template.attributes.roles if a.type == "list_str"}
+    if has_prefs:
+        multi_keys.add("preferences")
+
     buf = io.StringIO()
     headers = ["id"] + role_keys + (["preferences"] if has_prefs else [])
     writer = csv.DictWriter(buf, fieldnames=headers)
     writer.writeheader()
     for row in non_empty:
-        out = {h: (row.get(h, "") or "").strip() for h in headers}
+        out = {}
+        for h in headers:
+            val = (row.get(h, "") or "").strip()
+            out[h] = _normalize_multi(val) if h in multi_keys else val
         writer.writerow(out)
     # utf-8-sig 加 BOM 與既有 CSV path 一致（避免 Excel 亂碼）
     return ("﻿" + buf.getvalue()).encode("utf-8")
@@ -99,7 +118,7 @@ def assemble_targets_yaml_bytes(form: dict, template: Template) -> bytes | None:
             if decl.type == "int":
                 attrs[decl.key] = int(raw)
             elif decl.type == "list_str":
-                attrs[decl.key] = [x.strip() for x in raw.split(";") if x.strip()]
+                attrs[decl.key] = [x.strip() for x in _MULTI_SEP.split(raw) if x.strip()]
             else:
                 attrs[decl.key] = raw
         targets_list.append({"id": tid, "capacity": int(cap_str), "attributes": attrs})

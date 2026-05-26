@@ -41,6 +41,13 @@ def create_app() -> FastAPI:
             return iso_str
     templates.env.filters["local_time"] = _format_local
 
+    # Jinja2 filter：物件 → JSON，保留中文可讀 + HTML 跳脫（可安全放進單引號屬性給 Alpine x-data）
+    import json as _json
+    from markupsafe import Markup, escape as _escape
+    def _tojson_attr(obj) -> Markup:
+        return Markup(_escape(_json.dumps(obj, ensure_ascii=False)))
+    templates.env.filters["tojson_attr"] = _tojson_attr
+
     app.state.templates = templates
 
     # Routes — 延遲匯入以避免循環
