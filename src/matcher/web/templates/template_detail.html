@@ -6,6 +6,11 @@
     <small style="background:#0070b8;color:white;padding:2px 8px;border-radius:3px;font-size:13px;vertical-align:middle">內建</small>
   {% else %}
     <small style="background:#5a8;color:white;padding:2px 8px;border-radius:3px;font-size:13px;vertical-align:middle">自訂{% if current_version %}（目前是 v{{ current_version }}）{% endif %}</small>
+    {% if visibility == 'public' %}
+      <small style="background:#e67e22;color:white;padding:2px 8px;border-radius:3px;font-size:13px;vertical-align:middle">公開</small>
+    {% else %}
+      <small style="background:#888;color:white;padding:2px 8px;border-radius:3px;font-size:13px;vertical-align:middle">私有</small>
+    {% endif %}
   {% endif %}
 </h2>
 <p><code>{{ tpl.id }}</code></p>
@@ -15,8 +20,25 @@
   <a class="btn btn-success" href="/match/new?template_id={{ tpl.id }}">用此範本配對</a>
   {% if is_builtin %}
     <a class="btn btn-secondary" href="/templates/new?fork={{ tpl.id }}">複製為自訂版本</a>
-  {% else %}
+  {% elif is_mine %}
     <a class="btn btn-secondary" href="/templates/{{ tpl.id }}/edit">編輯</a>
+    <form method="post" action="/templates/{{ tpl.id }}/visibility" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+      {% if visibility == 'public' %}
+        <input type="hidden" name="visibility" value="private">
+        <button type="submit" class="btn btn-secondary">改為私有</button>
+      {% else %}
+        <input type="hidden" name="visibility" value="public">
+        <button type="submit" class="btn btn-secondary">設為公開（讓其他人可複用）</button>
+      {% endif %}
+    </form>
+    <form method="post" action="/templates/{{ tpl.id }}/delete" style="display:inline"
+          onsubmit="return confirm('確定刪除範本「{{ tpl.name }}」？所有版本都會永久刪除、無法復原。（過去用此範本跑過的配對紀錄不受影響）');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+      <button type="submit" class="btn" style="background:#c0392b;color:white">刪除範本</button>
+    </form>
+  {% else %}
+    <a class="btn btn-secondary" href="/templates/new?fork={{ tpl.id }}">複製為自訂版本</a>
   {% endif %}
   <a href="/templates" style="margin-left:1rem">回所有範本</a>
 </p>

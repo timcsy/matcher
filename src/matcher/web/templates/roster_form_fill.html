@@ -35,6 +35,7 @@
         roles: {{ prefill_roles | tojson_attr }},
         targets: {{ prefill_targets | tojson_attr }}
       }'>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
   <input type="hidden" name="template_id" value="{{ template.id }}">
 
   <div class="card">

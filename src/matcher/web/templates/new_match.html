@@ -45,6 +45,7 @@
     {# ── 上傳檔模式 ── #}
     <div x-show="mode === 'upload'">
       <form method="post" action="/match/run" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
         <input type="hidden" name="template_id" :value="templateId">
         <label>
           名單檔（CSV 或 Excel，最大 5 MB）：

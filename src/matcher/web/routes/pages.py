@@ -6,7 +6,7 @@ import datetime as _dt
 from typing import Optional
 
 import yaml
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
@@ -16,7 +16,10 @@ from matcher.template_loader import (
     dump_template_yaml,
     parse_template,
 )
+from matcher.web.auth import current_email, require_login
+from matcher.web.security import validate_csrf
 from matcher.web.template_form import SCENARIO_TEMPLATES, assemble_template_yaml
+from matcher.web.template_meta import can_view, is_owner, read_meta, write_meta
 
 router = APIRouter()
 
@@ -39,12 +42,19 @@ async def index(request: Request):
 
 
 @router.get("/templates")
-async def templates_list(request: Request):
+async def templates_list(request: Request, email: str = Depends(require_login)):
     reg = _reg()
-    items = [
-        {"tpl": reg.get(tid), "is_builtin": reg.is_builtin(tid)}
-        for tid in reg.list_ids()
-    ]
+    items = []
+    for tid in reg.list_ids():
+        if not can_view(reg, tid, email):
+            continue
+        meta = read_meta(reg._custom_dir, tid) if not reg.is_builtin(tid) else {"visibility": None}
+        items.append({
+            "tpl": reg.get(tid),
+            "is_builtin": reg.is_builtin(tid),
+            "visibility": meta["visibility"],
+            "is_mine": is_owner(reg, tid, email),
+        })
     return _templates(request).TemplateResponse(
         request, "templates_list.html", {"templates": items}
     )
@@ -57,9 +67,13 @@ async def template_new(
     mode: str = "simple",
     fork: Optional[str] = None,
     edit_id: Optional[str] = None,
+    email: str = Depends(require_login),
 ):
     """新增模板頁；可預填場景樣板、fork 內建模板、或編輯既有模板的最新版本。"""
     reg = _reg()
+    # 編輯既有自訂範本須為擁有者
+    if edit_id and not reg.is_builtin(edit_id) and reg.has(edit_id) and not is_owner(reg, edit_id, email):
+        raise HTTPException(403, "這個範本不屬於你，無法編輯。")
     prefill: dict = {}
     if edit_id and not reg.is_builtin(edit_id):
         # 編輯模式：載入最新版本
@@ -173,8 +187,10 @@ async def template_validate(request: Request):
 
 
 @router.post("/templates/save")
-async def template_save(request: Request):
+async def template_save(request: Request, email: str = Depends(require_login)):
     form = dict(await request.form())
+    if not validate_csrf(request.session.get("csrf_token"), form.get("csrf_token")):
+        return JSONResponse({"ok": False, "errors": ["CSRF 驗證失敗，請重新整理頁面再試。"]}, status_code=403)
     try:
         tpl_dict = _build_tpl_dict_from_form(form)
     except yaml.YAMLError as e:
@@ -182,13 +198,26 @@ async def template_save(request: Request):
     except ValueError as e:
         return JSONResponse({"ok": False, "errors": [str(e)]}, status_code=400)
 
+    reg = _reg()
+    # 既有自訂範本：只有擁有者能存（覆寫成新版本）
+    pending_id = tpl_dict.get("id", "")
+    if pending_id and reg.has(pending_id) and not reg.is_builtin(pending_id):
+        if not is_owner(reg, pending_id, email):
+            return JSONResponse({"ok": False, "errors": ["這個範本不屬於你，無法儲存。"]}, status_code=403)
+
     try:
-        tpl_id, version = _reg().save_custom(tpl_dict)
+        tpl_id, version = reg.save_custom(tpl_dict)
     except ValueError as e:
         msg = str(e)
         if "內建模板" in msg:
             return JSONResponse({"ok": False, "errors": [msg]}, status_code=409)
         return JSONResponse({"ok": False, "errors": [msg]}, status_code=400)
+
+    # 寫 meta：owner 沿用既有（編輯）或設為當前使用者（新建）；visibility 沿用既有或預設 private
+    existing = read_meta(reg._custom_dir, tpl_id)
+    owner = existing["owner"] or email
+    write_meta(reg._custom_dir, tpl_id, owner, existing["visibility"])
+
     return JSONResponse({
         "ok": True, "id": tpl_id, "version": version,
         "redirect_to": f"/templates/{tpl_id}",
@@ -206,10 +235,13 @@ async def template_authoring_guide():
 
 
 @router.get("/templates/{template_id}/versions/{version}")
-async def template_get_version(template_id: str, version: int):
+async def template_get_version(request: Request, template_id: str, version: int,
+                               email: str = Depends(require_login)):
     reg = _reg()
     if reg.is_builtin(template_id):
         raise HTTPException(404, "內建模板沒有版本概念")
+    if not can_view(reg, template_id, email):
+        raise HTTPException(403, "這個範本不屬於你，無法查看。")
     try:
         tpl = reg.get_version(template_id, version)
     except TemplateNotFound as e:
@@ -237,7 +269,7 @@ def _template_to_yaml_dict(tpl) -> dict:
 
 
 @router.get("/templates/{template_id}")
-async def template_detail(request: Request, template_id: str):
+async def template_detail(request: Request, template_id: str, email: str = Depends(require_login)):
     reg = _reg()
     try:
         tpl = reg.get(template_id)
@@ -248,7 +280,11 @@ async def template_detail(request: Request, template_id: str):
             {"error_type": "TemplateNotFound", "error_message": str(e)},
             status_code=404,
         )
+    if not can_view(reg, template_id, email):
+        raise HTTPException(403, "這個範本不屬於你，無法查看。")
     is_builtin = reg.is_builtin(template_id)
+    mine = is_owner(reg, template_id, email)
+    visibility = read_meta(reg._custom_dir, template_id)["visibility"] if not is_builtin else None
     versions = []
     if not is_builtin:
         for v in reg.list_versions(template_id):
@@ -261,17 +297,65 @@ async def template_detail(request: Request, template_id: str):
         {
             "tpl": tpl,
             "is_builtin": is_builtin,
+            "is_mine": mine,
+            "visibility": visibility,
             "versions": versions,
             "current_version": current_version,
         },
     )
 
 
+@router.post("/templates/{template_id}/visibility")
+async def template_set_visibility(request: Request, template_id: str,
+                                  email: str = Depends(require_login)):
+    """擁有者切換範本私有/公開。"""
+    reg = _reg()
+    form = dict(await request.form())
+    if not validate_csrf(request.session.get("csrf_token"), form.get("csrf_token")):
+        raise HTTPException(403, "CSRF 驗證失敗，請重新整理頁面再試。")
+    if reg.is_builtin(template_id) or not reg.has(template_id):
+        raise HTTPException(404, "找不到自訂範本")
+    if not is_owner(reg, template_id, email):
+        raise HTTPException(403, "這個範本不屬於你，無法變更。")
+    visibility = "public" if form.get("visibility") == "public" else "private"
+    write_meta(reg._custom_dir, template_id, email, visibility)
+    return RedirectResponse(url=f"/templates/{template_id}", status_code=303)
+
+
+@router.post("/templates/{template_id}/delete")
+async def template_delete(request: Request, template_id: str,
+                          email: str = Depends(require_login)):
+    """擁有者刪除自己的自訂範本（硬刪除，含所有版本 + meta）。
+
+    過去的配對紀錄不受影響——audit 內嵌 template_snapshot，自包含。
+    """
+    import shutil
+
+    reg = _reg()
+    form = dict(await request.form())
+    if not validate_csrf(request.session.get("csrf_token"), form.get("csrf_token")):
+        raise HTTPException(403, "CSRF 驗證失敗，請重新整理頁面再試。")
+    if reg.is_builtin(template_id):
+        raise HTTPException(403, "內建範本不可刪除。")
+    if not reg.has(template_id):
+        raise HTTPException(404, "找不到自訂範本")
+    if not is_owner(reg, template_id, email):
+        raise HTTPException(403, "這個範本不屬於你，無法刪除。")
+
+    tpl_dir = reg._custom_dir / template_id
+    if tpl_dir.exists():
+        shutil.rmtree(tpl_dir)
+    reg.invalidate()
+    return RedirectResponse(url="/templates", status_code=303)
+
+
 @router.get("/templates/{template_id}/edit")
-async def template_edit(request: Request, template_id: str):
+async def template_edit(request: Request, template_id: str, email: str = Depends(require_login)):
     reg = _reg()
     if reg.is_builtin(template_id):
         raise HTTPException(403, "內建模板不可編輯；請使用 Fork 為自訂模板")
     if not reg.has(template_id):
         raise HTTPException(404, "找不到自訂模板")
-    return await template_new(request, edit_id=template_id)
+    if not is_owner(reg, template_id, email):
+        raise HTTPException(403, "這個範本不屬於你，無法編輯。")
+    return await template_new(request, edit_id=template_id, email=email)

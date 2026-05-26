@@ -22,12 +22,15 @@ build/
 # 環境
 .env
 .env.*
+!.env.example
 
 # 工作產出
 /tmp_audit.json
 
-# Web 媒合紀錄（persistent runtime data）
+# Web 執行期資料（runtime data）——不入 git
+# 註：feature 014（登入/擁有權/部署）後，自訂範本屬「伺服器端 per-user 資料」，
+# 存於部署資料卷（階段 5 PVC），不再透過 git 跨設備保存。只保留目錄佔位。
 /data/*
-# 例外：自訂模板可入 git（使用者建立的模板跨設備保存）
 !/data/templates/
-!/data/templates/**
+/data/templates/*
+!/data/templates/.gitkeep

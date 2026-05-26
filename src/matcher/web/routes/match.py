@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
@@ -18,11 +18,27 @@ from matcher.data_import import load_roster_csv, load_roster_xlsx
 from matcher.errors import MatcherError, SeedMissing, TemplateNotFound
 from matcher.pipeline import MatcherInput, run_match
 from matcher.template_loader import TemplateRegistry
+from matcher.web.auth import current_email, require_login
 from matcher.web.errors import MatchRecordNotFound, UploadInvalidMime, UploadTooLarge
 from matcher.web.humanize import mechanism_label, preference_rank_display, target_summary
 from matcher.web.individual import build_individual_audit_subset
 from matcher.web.pdf import PdfRenderUnavailable, render_match_report_pdf
+from matcher.web.ratelimit import rate_limit
+from matcher.web.security import sign_role_token, validate_csrf, verify_role_token
 from matcher.web.store import MatchRecord, MatchStore, SCHEMA_VERSION
+
+
+def _check_csrf(request: Request, form) -> None:
+    """驗證 CSRF token；不符拋 403。"""
+    if not validate_csrf(request.session.get("csrf_token"), form.get("csrf_token")):
+        raise HTTPException(status_code=403, detail="CSRF 驗證失敗，請重新整理頁面再試。")
+
+
+def _owner_or_403(request: Request, record) -> None:
+    """確認登入者是該紀錄擁有者；否則 403。"""
+    email = current_email(request)
+    if record.owner is not None and record.owner != email:
+        raise HTTPException(status_code=403, detail="這筆配對不屬於你，無法查看。")
 
 router = APIRouter()
 
@@ -50,6 +66,7 @@ async def new_match(
     request: Request,
     template_id: Optional[str] = None,
     template_snapshot: Optional[str] = None,
+    email: str = Depends(require_login),
 ):
     """新建配對表單。
 
@@ -152,7 +169,7 @@ def _extract_form_rows(form: dict, prefix: str, keys: list[str]) -> list[dict]:
 
 
 @router.get("/match/new/fill")
-async def new_match_fill(request: Request, template_id: str):
+async def new_match_fill(request: Request, template_id: str, email: str = Depends(require_login)):
     """填寫頁：依範本宣告動態渲染欄位。"""
     from matcher.web.routes.pages import _reg as _shared_reg
     reg = _shared_reg()
@@ -164,7 +181,8 @@ async def new_match_fill(request: Request, template_id: str):
 
 
 @router.post("/match/run-from-form")
-async def run_from_form(request: Request):
+async def run_from_form(request: Request, email: str = Depends(require_login),
+                        _rl=Depends(rate_limit("run", 120, 60))):
     """UI 填名單 → CSV bytes → 既有 pipeline。
 
     M1/M2 路徑沿用 feature 009：偵測志願缺 → 跳 preferences_form。
@@ -176,6 +194,7 @@ async def run_from_form(request: Request):
     from matcher.web.routes.pages import _reg as _shared_reg
 
     form_raw = await request.form()
+    _check_csrf(request, form_raw)
     form: dict = {k: v for k, v in form_raw.items() if isinstance(v, str)}
 
     template_id = form.get("template_id", "").strip()
@@ -241,6 +260,7 @@ async def run_from_form(request: Request):
         id=record_id, created_at=now,
         template_id=template_id, seed=seed,
         input_file=roster_filename, mechanism=mechanism,
+        owner=email,
     )
 
     try:
@@ -289,7 +309,12 @@ async def run(
     roster: UploadFile = File(...),
     targets_yaml: Optional[UploadFile] = File(None),
     mechanism: str = Form("M0"),
+    csrf_token: str = Form(""),
+    email: str = Depends(require_login),
+    _rl=Depends(rate_limit("run", 120, 60)),
 ):
+    if not validate_csrf(request.session.get("csrf_token"), csrf_token):
+        raise HTTPException(status_code=403, detail="CSRF 驗證失敗，請重新整理頁面再試。")
     # 驗證機制
     mechanism = (mechanism or "M0").strip().upper()
     if mechanism not in VALID_MECHANISMS:
@@ -345,6 +370,7 @@ async def run(
         seed=seed,
         input_file=roster.filename,
         mechanism=mechanism,
+        owner=email,
     )
 
     with tempfile.NamedTemporaryFile(suffix=suffix or (".xlsx" if is_xlsx else ".csv"), delete=False) as tmp:
@@ -479,8 +505,9 @@ def _error_page(request: Request, error_type: str, message: str, status_code: in
 
 
 @router.post("/match/preferences")
-async def submit_preferences(request: Request):
+async def submit_preferences(request: Request, email: str = Depends(require_login)):
     form = await request.form()
+    _check_csrf(request, form)
     try:
         template_id = form["template_id"]
         mechanism = (form["mechanism"] or "M0").strip().upper()
@@ -593,6 +620,7 @@ async def submit_preferences(request: Request):
         id=record_id, created_at=now,
         template_id=template_id, seed=seed,
         input_file=roster_filename, mechanism=mechanism,
+        owner=email,
     )
     try:
         result = run_match(MatcherInput(
@@ -610,9 +638,10 @@ async def submit_preferences(request: Request):
 
 
 @router.get("/match/{record_id}")
-async def match_detail(request: Request, record_id: str):
+async def match_detail(request: Request, record_id: str, email: str = Depends(require_login)):
     store = MatchStore()
     record = store.get(record_id)
+    _owner_or_403(request, record)
 
     roles_for_links: list = []
     mechanism = "M0"
@@ -620,7 +649,8 @@ async def match_detail(request: Request, record_id: str):
     rank_display_by_role: dict = {}
     if record.status == "success" and record.audit:
         roles_for_links = [
-            {"id": r["id"], "name": r.get("attributes", {}).get("name", r["id"])}
+            {"id": r["id"], "name": r.get("attributes", {}).get("name", r["id"]),
+             "token": sign_role_token(record.id, r["id"])}
             for r in record.audit.get("roster_snapshot", {}).get("roles", [])
         ]
         mechanism = record.audit.get("mechanism", "M0")
@@ -660,23 +690,17 @@ def _individual_error(request: Request, message: str) -> Response:
     )
 
 
-@router.get("/match/{record_id}/role/{role_id}")
-async def individual_view(request: Request, record_id: str, role_id: str):
-    store = MatchStore()
-    try:
-        record = store.get(record_id)
-    except MatchRecordNotFound:
-        return _individual_error(request, "找不到該次媒合的紀錄")
-
+def _render_individual(request: Request, record, role_id: str):
+    """渲染個別查詢頁（被舊 admin 路徑與 /r/{token} 共用）。"""
     if record.status == "failed" or record.audit is None:
-        return _individual_error(request, "該次媒合執行失敗，無個別查詢資料")
+        return _individual_error(request, "該次配對執行失敗，無個別查詢資料")
 
     role = next(
         (r for r in record.audit.get("roster_snapshot", {}).get("roles", []) if r["id"] == role_id),
         None,
     )
     if role is None:
-        return _individual_error(request, "您不在這次媒合的名單中")
+        return _individual_error(request, "您不在這次配對的名單中")
 
     # 載入模板（用於 humanize 規則描述）
     from matcher.web.routes.pages import _reg as _shared_reg  # feature 011：共用 singleton
@@ -725,41 +749,95 @@ async def individual_view(request: Request, record_id: str, role_id: str):
     )
 
 
-@router.get("/match/{record_id}/role/{role_id}/audit.json")
-async def individual_audit_download(request: Request, record_id: str, role_id: str):
+@router.get("/match/{record_id}/role/{role_id}")
+async def individual_view(request: Request, record_id: str, role_id: str,
+                          email: str = Depends(require_login)):
+    """舊個別路徑：Feature 014 改為僅擁有者（登入）可看（行政預覽用）。
+    匿名當事人請改用 /r/{token}。"""
     store = MatchStore()
     try:
         record = store.get(record_id)
     except MatchRecordNotFound:
-        raise HTTPException(status_code=404, detail="找不到該次媒合的紀錄")
+        return _individual_error(request, "找不到該次配對的紀錄")
+    _owner_or_403(request, record)
+    return _render_individual(request, record, role_id)
 
+
+@router.get("/r/{token}")
+async def individual_view_by_token(request: Request, token: str):
+    """Feature 014：當事人用不可猜 token 看自己結果，免登入。"""
+    verified = verify_role_token(token)
+    if verified is None:
+        return _individual_error(request, "連結無效或已失效")
+    record_id, role_id = verified
+    store = MatchStore()
+    try:
+        record = store.get(record_id)
+    except MatchRecordNotFound:
+        return _individual_error(request, "找不到該次配對的紀錄")
+    return _render_individual(request, record, role_id)
+
+
+def _individual_audit_payload(record, role_id: str) -> str:
+    subset = build_individual_audit_subset(record.audit, role_id)
+    return json.dumps(subset, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+
+
+@router.get("/match/{record_id}/role/{role_id}/audit.json")
+async def individual_audit_download(request: Request, record_id: str, role_id: str,
+                                    email: str = Depends(require_login)):
+    store = MatchStore()
+    try:
+        record = store.get(record_id)
+    except MatchRecordNotFound:
+        raise HTTPException(status_code=404, detail="找不到該次配對的紀錄")
+    _owner_or_403(request, record)
     if record.status != "success" or record.audit is None:
-        raise HTTPException(status_code=404, detail="該次媒合執行失敗，無個別查詢資料")
-
+        raise HTTPException(status_code=404, detail="該次配對執行失敗，無個別查詢資料")
     role_exists = any(
-        r["id"] == role_id
-        for r in record.audit.get("roster_snapshot", {}).get("roles", [])
+        r["id"] == role_id for r in record.audit.get("roster_snapshot", {}).get("roles", [])
     )
     if not role_exists:
-        raise HTTPException(status_code=404, detail="您不在這次媒合的名單中")
-
-    subset = build_individual_audit_subset(record.audit, role_id)
-    body = json.dumps(subset, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+        raise HTTPException(status_code=404, detail="您不在這次配對的名單中")
     return Response(
-        content=body,
+        content=_individual_audit_payload(record, role_id),
         media_type="application/json; charset=utf-8",
-        headers={
-            "Content-Disposition": f'attachment; filename="{record_id}-{role_id}.individual.json"'
-        },
+        headers={"Content-Disposition": f'attachment; filename="{record_id}-{role_id}.individual.json"'},
+    )
+
+
+@router.get("/r/{token}/audit.json")
+async def individual_audit_by_token(request: Request, token: str):
+    verified = verify_role_token(token)
+    if verified is None:
+        raise HTTPException(status_code=404, detail="連結無效")
+    record_id, role_id = verified
+    store = MatchStore()
+    try:
+        record = store.get(record_id)
+    except MatchRecordNotFound:
+        raise HTTPException(status_code=404, detail="找不到該次配對的紀錄")
+    if record.status != "success" or record.audit is None:
+        raise HTTPException(status_code=404, detail="無個別查詢資料")
+    role_exists = any(
+        r["id"] == role_id for r in record.audit.get("roster_snapshot", {}).get("roles", [])
+    )
+    if not role_exists:
+        raise HTTPException(status_code=404, detail="找不到對應角色")
+    return Response(
+        content=_individual_audit_payload(record, role_id),
+        media_type="application/json; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{record_id}-{role_id}.individual.json"'},
     )
 
 
 @router.get("/match/{record_id}/audit")
-async def download_audit(request: Request, record_id: str):
+async def download_audit(request: Request, record_id: str, email: str = Depends(require_login)):
     store = MatchStore()
     record = store.get(record_id)
+    _owner_or_403(request, record)
     if record.status != "success" or record.audit is None:
-        raise HTTPException(status_code=404, detail="該媒合執行失敗，無稽核紀錄可下載")
+        raise HTTPException(status_code=404, detail="該配對執行失敗，無稽核紀錄可下載")
     body = json.dumps(record.audit, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
     return Response(
         content=body,
@@ -781,12 +859,13 @@ def _record_meta_for_pdf(record) -> dict:
 
 
 @router.get("/match/{record_id}/report.pdf")
-async def download_report_pdf(record_id: str):
+async def download_report_pdf(request: Request, record_id: str, email: str = Depends(require_login)):
     store = MatchStore()
     try:
         record = store.get(record_id)
     except MatchRecordNotFound:
-        raise HTTPException(status_code=404, detail="找不到該次媒合的紀錄")
+        raise HTTPException(status_code=404, detail="找不到該次配對的紀錄")
+    _owner_or_403(request, record)
 
     # 失敗 record 也能出失敗版 PDF；audit 為 None 時樣板會走 failed 分支
     audit_for_pdf = record.audit if record.audit is not None else {
@@ -805,21 +884,14 @@ async def download_report_pdf(record_id: str):
     )
 
 
-@router.get("/match/{record_id}/role/{role_id}/report.pdf")
-async def download_individual_report_pdf(record_id: str, role_id: str):
-    store = MatchStore()
-    try:
-        record = store.get(record_id)
-    except MatchRecordNotFound:
-        raise HTTPException(status_code=404, detail="找不到該次媒合的紀錄")
+def _individual_pdf_response(record, role_id: str):
     if record.status != "success" or record.audit is None:
-        raise HTTPException(status_code=404, detail="該次媒合執行失敗，無個別查詢資料")
+        raise HTTPException(status_code=404, detail="該次配對執行失敗，無個別查詢資料")
     role_exists = any(
         r["id"] == role_id for r in record.audit.get("roster_snapshot", {}).get("roles", [])
     )
     if not role_exists:
-        raise HTTPException(status_code=404, detail="您不在這次媒合的名單中")
-
+        raise HTTPException(status_code=404, detail="您不在這次配對的名單中")
     try:
         tpl = TemplateRegistry().get(record.template_id)
     except TemplateNotFound:
@@ -836,5 +908,31 @@ async def download_individual_report_pdf(record_id: str, role_id: str):
         )
     return Response(
         content=pdf_bytes, media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{record_id}-{role_id}.report.pdf"'},
+        headers={"Content-Disposition": f'attachment; filename="{record.id}-{role_id}.report.pdf"'},
     )
+
+
+@router.get("/match/{record_id}/role/{role_id}/report.pdf")
+async def download_individual_report_pdf(request: Request, record_id: str, role_id: str,
+                                         email: str = Depends(require_login)):
+    store = MatchStore()
+    try:
+        record = store.get(record_id)
+    except MatchRecordNotFound:
+        raise HTTPException(status_code=404, detail="找不到該次配對的紀錄")
+    _owner_or_403(request, record)
+    return _individual_pdf_response(record, role_id)
+
+
+@router.get("/r/{token}/report.pdf")
+async def individual_report_pdf_by_token(request: Request, token: str):
+    verified = verify_role_token(token)
+    if verified is None:
+        raise HTTPException(status_code=404, detail="連結無效")
+    record_id, role_id = verified
+    store = MatchStore()
+    try:
+        record = store.get(record_id)
+    except MatchRecordNotFound:
+        raise HTTPException(status_code=404, detail="找不到該次配對的紀錄")
+    return _individual_pdf_response(record, role_id)

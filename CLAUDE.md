@@ -1,6 +1,6 @@
 # matcher Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-05-25
+Auto-generated from all feature plans. Last updated: 2026-05-26
 
 ## Active Technologies
 - Python 3.11+（沿用階段 1） + Typer、PyYAML、pytest（沿用，無新增） (002-template-system)
@@ -42,7 +42,6 @@ Python 3.11+: Follow standard conventions
 ## Recent Changes
 - 012-web-roster-form: Added Python 3.11+（沿用） + 沿用（fastapi、uvicorn、jinja2、python-multipart、PyYAML、openpyxl、Typer、pytest、httpx[dev]、weasyprint）+ Tailwind Play CDN + Alpine.js（CDN，無 build）——**無新增**
 - 011-template-author-ui: Added Python 3.11+（沿用） + 沿用（fastapi、uvicorn[standard]、jinja2、python-multipart、PyYAML、openpyxl、Typer、pytest、httpx[dev]、weasyprint）——**無新增**
-- 010-audit-pdf-export: Added Python 3.11+（沿用） + 沿用 + **新增 weasyprint ≥ 60.0**（含 cssselect2、tinycss2、Pyphen 等遞移依賴皆純 Python；系統需 libpango-1.0、libcairo、harfbuzz）
 
 
 <!-- MANUAL ADDITIONS START -->

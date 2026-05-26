@@ -18,3 +18,6 @@ def pytest_configure(config):
             os.environ["DYLD_FALLBACK_LIBRARY_PATH"] = (
                 f"{brew_lib}:{existing}" if existing else brew_lib
             )
+    # Feature 014：TestClient 走 http，session cookie 不能設 Secure，否則不會被保存
+    os.environ.setdefault("MATCHER_INSECURE_COOKIE", "1")
+    os.environ.setdefault("SESSION_SECRET", "test-secret-fixed")

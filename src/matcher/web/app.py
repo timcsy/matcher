@@ -18,7 +18,32 @@ def _resources_dir(name: str) -> Path:
     return Path(str(resources.files("matcher.web") / name))
 
 
+def load_dotenv() -> None:
+    """從 cwd 往上找 .env，注入環境變數（純標準庫；setdefault 不覆蓋已存在者）。
+
+    setdefault 語意確保：已由 shell / 測試 conftest 設好的變數不會被 .env 蓋掉。
+    """
+    import os
+
+    cur = Path.cwd()
+    for d in [cur, *cur.parents][:5]:
+        env_path = d / ".env"
+        if not env_path.is_file():
+            continue
+        for raw in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, val = line.partition("=")
+            key = key.strip()
+            val = val.strip().strip('"').strip("'")
+            if key:
+                os.environ.setdefault(key, val)
+        return
+
+
 def create_app() -> FastAPI:
+    load_dotenv()
     app = FastAPI(title="matcher", openapi_url=None)
 
     static_dir = _resources_dir("static")
@@ -48,11 +73,21 @@ def create_app() -> FastAPI:
         return Markup(_escape(_json.dumps(obj, ensure_ascii=False)))
     templates.env.filters["tojson_attr"] = _tojson_attr
 
+    # Jinja2 全域：登入者 email + CSRF token（樣板可直接用 current_email(request) / csrf_token(request)）
+    from matcher.web.auth import current_email, csrf_token
+    templates.env.globals["current_email"] = current_email
+    templates.env.globals["csrf_token"] = csrf_token
+
     app.state.templates = templates
 
-    # Routes — 延遲匯入以避免循環
-    from matcher.web.routes import match, pages, records
+    # session middleware（簽章 cookie，Secure/HttpOnly/SameSite）
+    from matcher.web.auth import add_session_middleware
+    add_session_middleware(app)
 
+    # Routes — 延遲匯入以避免循環
+    from matcher.web.routes import auth, match, pages, records
+
+    app.include_router(auth.router)
     app.include_router(pages.router)
     app.include_router(match.router)
     app.include_router(records.router)

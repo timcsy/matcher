@@ -27,6 +27,7 @@ class MatchRecord:
     status: str  # "success" | "failed"
     audit: Optional[dict]
     error: Optional[dict]
+    owner: Optional[str] = None  # Feature 014：建立者 email；舊資料 / 未登入為 None
 
     def to_dict(self) -> dict:
         return {
@@ -40,6 +41,7 @@ class MatchRecord:
             "status": self.status,
             "audit": self.audit,
             "error": self.error,
+            "owner": self.owner,
         }
 
     @classmethod
@@ -55,6 +57,7 @@ class MatchRecord:
             status=d["status"],
             audit=d.get("audit"),
             error=d.get("error"),
+            owner=d.get("owner"),
         )
 
     @classmethod
@@ -79,11 +82,14 @@ class MatchStore:
         os.replace(tmp, p)
         return record.id
 
-    def list(self, limit: int = 50) -> list[MatchRecord]:
+    def list(self, limit: int = 50, owner: Optional[str] = None) -> list[MatchRecord]:
         if not self.base_dir.exists():
             return []
-        files = sorted(self.base_dir.glob("*.json"), reverse=True)[:limit]
-        return [self.get(f.stem) for f in files]
+        files = sorted(self.base_dir.glob("*.json"), reverse=True)
+        records = [self.get(f.stem) for f in files]
+        if owner is not None:
+            records = [r for r in records if r.owner == owner]
+        return records[:limit]
 
     def get(self, record_id: str) -> MatchRecord:
         p = self._path(record_id)
