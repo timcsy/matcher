@@ -322,6 +322,33 @@ async def template_set_visibility(request: Request, template_id: str,
     return RedirectResponse(url=f"/templates/{template_id}", status_code=303)
 
 
+@router.post("/templates/{template_id}/delete")
+async def template_delete(request: Request, template_id: str,
+                          email: str = Depends(require_login)):
+    """擁有者刪除自己的自訂範本（硬刪除，含所有版本 + meta）。
+
+    過去的配對紀錄不受影響——audit 內嵌 template_snapshot，自包含。
+    """
+    import shutil
+
+    reg = _reg()
+    form = dict(await request.form())
+    if not validate_csrf(request.session.get("csrf_token"), form.get("csrf_token")):
+        raise HTTPException(403, "CSRF 驗證失敗，請重新整理頁面再試。")
+    if reg.is_builtin(template_id):
+        raise HTTPException(403, "內建範本不可刪除。")
+    if not reg.has(template_id):
+        raise HTTPException(404, "找不到自訂範本")
+    if not is_owner(reg, template_id, email):
+        raise HTTPException(403, "這個範本不屬於你，無法刪除。")
+
+    tpl_dir = reg._custom_dir / template_id
+    if tpl_dir.exists():
+        shutil.rmtree(tpl_dir)
+    reg.invalidate()
+    return RedirectResponse(url="/templates", status_code=303)
+
+
 @router.get("/templates/{template_id}/edit")
 async def template_edit(request: Request, template_id: str, email: str = Depends(require_login)):
     reg = _reg()

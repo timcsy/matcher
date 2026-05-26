@@ -27,6 +27,7 @@ _REAL_AUTH_MODULES = {
     "test_web_auth_ownership",
     "test_web_token_link",
     "test_web_template_visibility",
+    "test_web_template_delete",
 }
 
 

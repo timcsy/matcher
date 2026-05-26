@@ -32,6 +32,11 @@
         <button type="submit" class="btn btn-secondary">設為公開（讓其他人可複用）</button>
       {% endif %}
     </form>
+    <form method="post" action="/templates/{{ tpl.id }}/delete" style="display:inline"
+          onsubmit="return confirm('確定刪除範本「{{ tpl.name }}」？所有版本都會永久刪除、無法復原。（過去用此範本跑過的配對紀錄不受影響）');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+      <button type="submit" class="btn" style="background:#c0392b;color:white">刪除範本</button>
+    </form>
   {% else %}
     <a class="btn btn-secondary" href="/templates/new?fork={{ tpl.id }}">複製為自訂版本</a>
   {% endif %}
