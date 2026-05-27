@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: matcher-data
+  namespace: matcher
+  labels:
+    app: matcher
+spec:
+  accessModes:
+    - ReadWriteOnce          # 單節點 local-path：單 pod 掛載
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi

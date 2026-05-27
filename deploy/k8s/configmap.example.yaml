@@ -1,0 +1,17 @@
+# 可選：若想把「非機密設定」與機密分開管理，可用本 ConfigMap，
+# 並在 deployment.yaml 的 envFrom 加一筆 configMapRef（放在 secretRef 之前，
+# 讓 Secret 的值覆寫）。預設流程不需要——這些值已隨 .env 進了 matcher-secrets。
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: matcher-config
+  namespace: matcher
+  labels:
+    app: matcher
+data:
+  # 本機 port-forward（http localhost）：cookie 不要求 Secure
+  MATCHER_INSECURE_COOKIE: "1"
+  # 正式網域（https）時改為：移除上行、加下列兩行並重灌真實 SESSION_SECRET
+  # MATCHER_ENV: "production"
+  # ALLOWED_EMAIL_DOMAINS: "ccsh.tn.edu.tw"
+  PARTICIPANT_TOKEN_MAX_AGE: "15552000"

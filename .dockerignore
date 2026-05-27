@@ -1,0 +1,21 @@
+# 只把執行所需的程式與依賴宣告放進 build context
+.git/
+.github/
+data/
+.env
+.env.*
+!.env.example
+tests/
+specs/
+knowledge/
+docs/
+deploy/
+examples/
+**/__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.md
+!README.md
+.DS_Store

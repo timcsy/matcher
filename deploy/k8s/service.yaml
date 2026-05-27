@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: matcher
+  namespace: matcher
+  labels:
+    app: matcher
+spec:
+  type: ClusterIP            # 以 kubectl port-forward 對到本機 localhost:8765
+  selector:
+    app: matcher
+  ports:
+    - name: http
+      port: 8765
+      targetPort: 8765

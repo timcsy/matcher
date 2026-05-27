@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matcher
+  namespace: matcher
+  labels:
+    app: matcher
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate           # RWO PVC 不可同時掛兩 pod，故用 Recreate（非 RollingUpdate）
+  selector:
+    matchLabels:
+      app: matcher
+  template:
+    metadata:
+      labels:
+        app: matcher
+    spec:
+      containers:
+        - name: matcher
+          # 部署當下的具體 sha tag（可重現）；換版時更新此行
+          image: ghcr.io/timcsy/matcher:d0a6bfb
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8765
+          envFrom:
+            - secretRef:
+                name: matcher-secrets   # 由 `kubectl create secret --from-env-file=.env` 建立
+          volumeMounts:
+            - name: data
+              mountPath: /app/data       # 配對紀錄 / 自訂範本落在 PVC
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 8765
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 8765
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: matcher-data
