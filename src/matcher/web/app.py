@@ -149,11 +149,15 @@ def create_app() -> FastAPI:
     _install_security_headers(app)
 
     # Routes — 延遲匯入以避免循環
-    from matcher.web.routes import auth, match, pages, records
+    from matcher.web.routes import auth, match, match_exports, match_view, pages, records
 
     app.include_router(auth.router)
     app.include_router(pages.router)
+    # match（含 /match/new 等字面路徑）須在 match_view（/match/{record_id}）之前註冊，
+    # 否則 {record_id} 會把 "new" 等吃掉。
     app.include_router(match.router)
+    app.include_router(match_exports.router)
+    app.include_router(match_view.router)
     app.include_router(records.router)
 
     @app.exception_handler(MatchRecordNotFound)
