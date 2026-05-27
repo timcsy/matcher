@@ -33,10 +33,15 @@ def test_security_headers_present(client):
     assert r.headers["Referrer-Policy"] == "same-origin"
 
 
-def test_csp_blocks_inline_script_source():
-    # script-src 不含 'unsafe-inline'（擋注入的 inline <script>）
+def test_csp_restricts_script_sources_and_framing():
+    # CSP 主要保護：限制外部 script 來源主機 + 防點擊劫持
     from matcher.web.app import _CSP
-    assert "'unsafe-inline'" not in _CSP.split("script-src")[1].split(";")[0]
+    script_src = _CSP.split("script-src")[1].split(";")[0]
+    # 只允許本專案實際用到的 CDN，未知主機被擋
+    assert "https://cdn.jsdelivr.net" in script_src
+    assert "https://evil.example" not in script_src
+    assert "frame-ancestors 'none'" in _CSP
+    assert "object-src 'none'" in _CSP
 
 
 def _make_record(rid: str, owner) -> MatchRecord:

@@ -43,14 +43,15 @@ def load_dotenv() -> None:
 
 
 # 內容安全政策（CSP）：
-#   - script 不允許 inline（擋反射型 XSS 注入的 <script>）；保留 'unsafe-eval'
-#     因 Alpine.js / Tailwind Play CDN 在瀏覽器端需要 Function 求值。
-#   - 允許的外部 script 來源限於本專案實際使用的三個 CDN。
+#   - 外部 script 來源限於本專案實際使用的三個 CDN；'unsafe-eval' 因 Alpine.js /
+#     Tailwind Play CDN 需要 Function 求值；'unsafe-inline' 因多個樣板仍用原生
+#     onclick/onsubmit 行內處理器（反射型 XSS 已在來源端修掉，見 new_match.html）。
+#     CSP 在此的主要價值＝限制 script 來源主機 + frame-ancestors 防點擊劫持。
 #   - style 允許 'unsafe-inline'（樣板大量 inline style= 與 Tailwind 動態注入）。
 #   - frame-ancestors 'none' + X-Frame-Options DENY：防點擊劫持。
 _CSP = (
     "default-src 'self'; "
-    "script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdn.tailwindcss.com; "
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdn.tailwindcss.com; "
     "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; "
     "font-src 'self' https://fonts.gstatic.com data:; "
     "img-src 'self' data:; "
