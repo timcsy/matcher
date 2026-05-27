@@ -90,8 +90,7 @@ function showResult(elemId, ok, summary, errors) {
     el.innerHTML = `<div style="padding:0.8em;background:#e8f5e9;border:1px solid #4caf50;color:#1b5e20;border-radius:6px">
       ✅ 檢查通過：範本 <code>${summary.id}</code>（${summary.name}）<br>
       參與者欄位 ${summary.attribute_count.participants} 個、對象欄位 ${summary.attribute_count.targets} 個、
-      條件 ${summary.rule_count} 條、預設對象 ${summary.default_target_count} 個、
-      ${summary.has_preferences_schema ? "有" : "未啟用"}志願功能。
+      條件 ${summary.rule_count} 條、${summary.has_preferences_schema ? "有" : "未啟用"}志願功能。
     </div>`;
   } else {
     el.innerHTML = `<div style="padding:0.8em;background:#ffebee;border:1px solid #f44336;color:#b71c1c;border-radius:6px">
