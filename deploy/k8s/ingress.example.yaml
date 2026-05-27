@@ -1,0 +1,31 @@
+# 範例：對外網域 + TLS。**預設不套用**——網域 / DNS / 憑證由使用者自理。
+# 用法：填好 host 與 TLS secret 後 `kubectl apply -f ingress.example.yaml`。
+# app 已帶 --proxy-headers，Traefik 終結 TLS 後會自動產生 https://<host>/auth/callback。
+# 別忘了到 Google OAuth client 把該回呼網址加進「已授權的重新導向 URI」。
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: matcher
+  labels:
+    app: matcher
+  annotations:
+    # 若用 cert-manager 自動簽 Let's Encrypt 憑證，取消下行註解並設好 ClusterIssuer：
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+    {}
+spec:
+  ingressClassName: traefik       # k3s 內建
+  rules:
+    - host: match.tew.tw          # ← 換成你的網域
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: matcher
+                port:
+                  number: 8765
+  tls:
+    - hosts:
+        - match.tew.tw            # ← 換成你的網域
+      secretName: matcher-tls     # ← 你的 TLS 憑證 Secret（cert-manager 或手動建立）
