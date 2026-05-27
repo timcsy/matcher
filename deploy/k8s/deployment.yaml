@@ -20,7 +20,7 @@ spec:
       containers:
         - name: matcher
           # 部署當下的具體 sha tag（可重現）；換版時更新此行
-          image: ghcr.io/timcsy/matcher:d0a6bfb
+          image: ghcr.io/timcsy/matcher:7516d22
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8765
