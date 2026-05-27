@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）、階段 7（配對失敗可解釋）、階段 8（對象試算表匯入 + 動態範例 + 過去紀錄重用）已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）、階段 7（配對失敗可解釋）、階段 8（對象試算表匯入 + 動態範例 + 過去紀錄重用）、階段 9（用詞統一「參與者」+ role→participant 全面更名、audit schema v1.5）已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -79,7 +79,7 @@
 階段 3b 個別查詢視圖（commit `f8ac328`，無新依賴）：
 
 - `src/matcher/web/{humanize,individual}.py` 兩個純函式（規則代名詞替換、audit 子集萃取）
-- 端點 `GET /match/{rid}/role/{role_id}` 個別查詢頁 + `/audit.json` 個別子集下載
+- 端點 `GET /match/{rid}/participant/{participant_id}` 個別查詢頁 + `/audit.json` 個別子集下載
 - 個別查詢頁四大段：基本資訊、分配結果、媒合過程說明、下載我的稽核紀錄
 - admin 結果頁加入「個別查詢連結」可摺疊區段（無 JS，原生 `<details>`）
 - 個別錯誤頁（`individual_error.html`）用語面向一般教師，無技術 token
@@ -128,7 +128,7 @@
 階段 4d Web UI 動態填志願表單（commit `6087ffb`，無新依賴）：
 
 - `/match/run` 偵測「模板含 `preferences_schema` + roster 全空 + M1/M2」→ 跳到填志願中介頁面
-- 新增 `POST /match/preferences` 端點：hidden inputs 攜帶 base64(roster bytes) + `pref_<role_id>_<rank>` 動態欄位 + `_action=submit/skip`
+- 新增 `POST /match/preferences` 端點：hidden inputs 攜帶 base64(roster bytes) + `pref_<participant_id>_<rank>` 動態欄位 + `_action=submit/skip`
 - 新增 `preferences_form.html` 樣板：候選對象段、N 列 × max_choices 個 `<select>` 表格、「確認執行」與「跳過此步驟」兩按鈕
 - 新增 `humanize.target_summary` 純函式（「程式組（容量 3 人）」格式）
 - 表單驗證：同列重複、未知 target id、全空 submit → 回填志願頁 + 友善繁中訊息
@@ -143,8 +143,8 @@
 階段 3c 稽核報告 PDF 匯出（commit `76c9689`，新增 weasyprint 依賴）：
 
 - `src/matcher/web/pdf.py` 新檔：`render_match_report_pdf` 純函式（Web + CLI 共用，教訓 5 第 4 次驗證）；`PdfRenderUnavailable` 例外
-- Web 端點：`GET /match/{rid}/report.pdf`（admin 版）+ `GET /match/{rid}/role/{role_id}/report.pdf`（individual 版）
-- CLI：`matcher report --audit X --output Y [--role-id Z]` 子指令；`cli.py` 僅 1 行新增（cli_report.py 兄弟檔，**核心 0 改動第 4 次**）
+- Web 端點：`GET /match/{rid}/report.pdf`（admin 版）+ `GET /match/{rid}/participant/{participant_id}/report.pdf`（individual 版）
+- CLI：`matcher report --audit X --output Y [--participant-id Z]` 子指令；`cli.py` 僅 1 行新增（cli_report.py 兄弟檔，**核心 0 改動第 4 次**）
 - 2 個新樣板 `templates/pdf/{match,individual}_report.html`（A4 列印版，與螢幕樣板分離）
 - **graceful degrade**：WeasyPrint 系統依賴不可用 → Web 503 + CLI exit 50 + 友善安裝指引；既有 256 測試不受影響
 - 技術詞零容忍延伸至 PDF（pdftotext 驗證）；中文用系統字體渲染 + 可搜尋
@@ -197,7 +197,7 @@
 
 - Google OAuth 登入（Authlib）+ 簽章 cookie session（Starlette SessionMiddleware，無伺服器端 session、無 DB）
 - 管理頁強制登入；配對紀錄/範本綁 `owner`（email）；列表只列自己的；跨使用者存取 403
-- **個別連結改 itsdangerous 簽章 token**（`/r/{token}`）：無狀態、不可偽造、不可枚舉；當事人免登入可看自己結果；修掉舊 role_id 枚舉漏洞
+- **個別連結改 itsdangerous 簽章 token**（`/r/{token}`）：無狀態、不可偽造、不可枚舉；當事人免登入可看自己結果；修掉舊 participant_id 枚舉漏洞
 - 範本私有/公開兩段可見性（meta sidecar `data/templates/<id>/meta.json`，不動核心 template_loader）；公開範本他人可見可複製不可編輯
 - 公開網路加固：所有 POST 表單 CSRF token、session cookie Secure/HttpOnly/SameSite、`/auth/login` 與配對執行端點記憶體 rate-limit
 - `.env` 自動載入（純標準庫，setdefault 不覆蓋已設變數）+ `.env.example` 範本
@@ -222,12 +222,23 @@
 - 對象名單也能用 CSV/Excel 匯入：上傳**兩個獨立檔**（參與者一個、對象一個），不必寫 YAML 旁檔
 - 核心 `data_import` 新增 `load_targets_csv/xlsx`（重用編碼偵測/表頭對齊/型別轉換）+ `load_roster_csv/xlsx(targets=)` 向後相容注入
 - 對象檔編號可省略 → 自動 T001…（避開已填）；中文表頭自動對齊；分隔符容錯（；、，）
-- **動態範例**：`/templates/{id}/example/{roles|targets}.{csv|xlsx}` 依範本 schema 即時產生範例（中文表頭 + 格式提示列），**涵蓋自訂範本、永遠與範本同步**；上傳頁提供下載連結
+- **動態範例**：`/templates/{id}/example/{participants|targets}.{csv|xlsx}` 依範本 schema 即時產生範例（中文表頭 + 格式提示列），**涵蓋自訂範本、永遠與範本同步**；上傳頁提供下載連結
 - **過去紀錄重用**：成功紀錄列出「用這份清單再配對」，從 `roster_snapshot` 還原參與者＋對象預填到填清單頁（`/match/new/fill?from_record=...`），可改後重跑；擁有者限定
 - 全 UI 用詞「名單」→「清單」；抽籤方式獨立成「3. 抽籤方式」卡片（不再混在清單來源裡）
 - CLI `.targets.yaml` 旁檔向後相容；對象試算表 vs YAML 旁檔 audit 等價（SC-005）
 - **核心只動 data_import**（資料匯入職責，教訓 7）；audit schema 不變
 - 自動化測試：420 passed, 2 skipped
+
+階段 9 用詞統一「參與者」+ role→participant 全面更名（feature 017 + 018）：
+
+- **使用者用詞**：全 UI／CLI／docs 的「角色」→「參與者」（對象不變）；feature 017
+- **內部識別碼**：subject 側 `role`→`participant`（`Role`→`Participant`、`role_id`→`participant_id`、
+  DSL 前綴 `role.`→`participant.`、URL `/role/`→`/participant/`）；保留 `Roster`/`roster` 容器
+- **audit schema v1.4 → v1.5**：`roster_snapshot.participants`、`allocation_trace[].participant_id`
+- **不向後相容（乾淨切斷）**：舊 `role.` 範本／舊 v1.4 audit／舊 URL 不保證可讀（沿用升級清空舊資料）
+- 安全加固同批進行（feature 017）：CSP/安全標頭、修反射 XSS 與開放重導向、授權/路徑遍歷、
+  token 效期、可選網域白名單；`match.py` 拆分為 match/match_view/match_exports
+- 重生全部 7 個 golden（v1.5）；全套件 457 passed
 
 尚未開始：K8s 部署（階段 5）、實際學校場景試行（UI 白話化已就緒，等真人來試）。
 
@@ -567,6 +578,25 @@
 - [x] 對象試算表 vs YAML 旁檔 audit 逐位元組等價（SC-005）；CLI 旁檔向後相容
 - [x] 成功紀錄可重用清單再配對（擁有者限定，從 audit roster_snapshot 還原預填）
 - [x] 核心僅動 data_import；audit schema 不變
+
+### 階段 9：用詞統一「參與者」+ role→participant 全面更名
+
+- [x] 完成（feature 017 安全加固/用字 + feature 018 識別碼更名）
+
+<!--
+  交付：(017) 安全加固 + 全 UI 用字「角色」→「參與者」；(018) 內部識別碼與對外契約
+  role→participant（audit schema v1.5、DSL participant.、URL /participant/）。
+  破壞性：不向後相容（升級清空舊資料）。屬資料模型/schema 演進，獨立成 feature（教訓 9）。
+  前置條件：階段 8。詳見 specs/018-rename-role-participant。
+-->
+
+**成功標準：**
+
+- [x] 對外用字「參與者 ↔ 對象」一致（UI/CLI/docs）；內部識別碼 subject 側無 role 殘留
+- [x] audit schema 升 v1.5（participants / participant_id）；同 seed bytewise 可重現仍成立（原則 2）
+- [x] 舊 role. 範本明確報錯、舊 URL 404（乾淨切斷，無向後相容）
+- [x] 安全加固：CSP/安全標頭、修 XSS/開放重導向、授權/路徑遍歷、token 效期、網域白名單
+- [x] 全套件 457 passed；7 個 golden 以 v1.5 重生
 
 ## Backlog（待真實需求再做，未排程）
 
