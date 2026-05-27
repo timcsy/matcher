@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Union
 
-from matcher.errors import RuleContradiction, UnknownAttribute
+from matcher.errors import RuleContradiction, RuleTypeError, UnknownAttribute
 
 AttrValue = Union[str, int, bool, list]  # bool 不在 spec 中支援，保留以利錯誤偵測
 
@@ -137,6 +137,18 @@ def _resolve(field_ref: str, role_attrs: dict, target_attrs: dict) -> object:
     raise UnknownAttribute(f"規則引用無效欄位前綴：`{field_ref}`（必須為 role. 或 target.）")
 
 
+def _compare_numeric(field_ref: str, actual, op: str, expected) -> bool:
+    """ge/le 比較：兩邊都必須是數值（非 bool）。型別不符 → 友善 RuleTypeError，
+    而非讓 Python 拋裸 TypeError（後者逃出退出碼表、無法解釋）。"""
+    if isinstance(actual, bool) or not isinstance(actual, (int, float)):
+        raise RuleTypeError(
+            f"規則對欄位 `{field_ref}` 用了大小比較（{op} {expected!r}），"
+            f"但該欄位的值是 {actual!r}（非數字），無法比大小。\n"
+            f"建議：把該屬性宣告為數字（int）型別，或改用等值 / 集合（eq / in）規則。"
+        )
+    return actual >= expected if op == ">=" else actual <= expected
+
+
 def evaluate(expr: RuleExpr, role_attrs: dict, target_attrs: dict) -> bool:
     """對單一 (role, target) 求值單一表達式。"""
     if isinstance(expr, Eq):
@@ -144,9 +156,9 @@ def evaluate(expr: RuleExpr, role_attrs: dict, target_attrs: dict) -> bool:
     if isinstance(expr, In):
         return _resolve(expr.field, role_attrs, target_attrs) in expr.set
     if isinstance(expr, Ge):
-        return _resolve(expr.field, role_attrs, target_attrs) >= expr.value
+        return _compare_numeric(expr.field, _resolve(expr.field, role_attrs, target_attrs), ">=", expr.value)
     if isinstance(expr, Le):
-        return _resolve(expr.field, role_attrs, target_attrs) <= expr.value
+        return _compare_numeric(expr.field, _resolve(expr.field, role_attrs, target_attrs), "<=", expr.value)
     if isinstance(expr, RoleInTargetField):
         rv = role_attrs.get(expr.role_field)
         if expr.role_field not in role_attrs:

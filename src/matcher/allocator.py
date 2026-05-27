@@ -178,7 +178,8 @@ def allocate_m2(
                 remaining[target_id] -= 1
                 assigned[role_id] = target_id
                 qualified_for_role = sorted(qualified_set.get(role_id, []))
-                candidates = [t for t in qualified_for_role if remaining.get(t, 0) >= 0]
+                # 與 M0/M1 一致：candidates = 資格 ∩ 仍有名額（> 0），不列已滿 target
+                candidates = [t for t in qualified_for_role if remaining.get(t, 0) > 0]
                 trace.append({
                     "step": step,
                     "role_id": role_id,

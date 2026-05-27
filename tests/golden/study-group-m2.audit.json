@@ -48,7 +48,6 @@
     },
     {
       "candidates": [
-        "G1",
         "G2",
         "G3"
       ],
@@ -70,7 +69,6 @@
     },
     {
       "candidates": [
-        "G1",
         "G2",
         "G3"
       ],
@@ -94,7 +92,6 @@
     },
     {
       "candidates": [
-        "G1",
         "G2",
         "G3"
       ],
@@ -116,8 +113,6 @@
     },
     {
       "candidates": [
-        "G1",
-        "G2",
         "G3"
       ],
       "chosen": "G2",
@@ -140,8 +135,6 @@
     },
     {
       "candidates": [
-        "G1",
-        "G2",
         "G3"
       ],
       "chosen": "G3",
@@ -163,8 +156,6 @@
     },
     {
       "candidates": [
-        "G1",
-        "G2",
         "G3"
       ],
       "chosen": "G3",
@@ -185,11 +176,7 @@
       "tie_break_random_index": null
     },
     {
-      "candidates": [
-        "G1",
-        "G2",
-        "G3"
-      ],
+      "candidates": [],
       "chosen": "G3",
       "fallback_random_index": null,
       "preference_rank": 1,

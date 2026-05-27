@@ -51,6 +51,11 @@ class PreferencesNotSupported(MatcherError):
     exit_code = 17
 
 
+class RuleTypeError(MatcherError):
+    """規則的比較運算子（ge/le）用在非數值屬性上——型別不相容，無法比大小。"""
+    exit_code = 18
+
+
 class TemplateNotFound(MatcherError):
     exit_code = 20
 
