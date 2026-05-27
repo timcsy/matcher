@@ -30,8 +30,8 @@ def client(tmp_path: Path):
 def test_new_match_page_has_three_modes(client: TestClient):
     """T016：/match/new 三選一。"""
     r = client.get("/match/new")
-    assert "上傳名單檔" in r.text
-    assert "直接填名單" in r.text
+    assert "上傳清單檔" in r.text
+    assert "直接填清單" in r.text
     assert "從過去紀錄" in r.text
 
 
@@ -175,4 +175,4 @@ def test_post_run_from_form_requires_at_least_one_role(client: TestClient):
     form = {"template_id": "teacher-class", "seed": "2026", "mechanism": "M0"}
     r = client.post("/match/run-from-form", data=form)
     assert r.status_code == 400
-    assert "至少" in r.text or "請填" in r.text or "名單" in r.text
+    assert "至少" in r.text or "請填" in r.text or "清單" in r.text

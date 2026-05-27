@@ -1,4 +1,4 @@
-"""UX 改善：填名單頁驗證錯誤回填（不丟資料、不露英文代碼）。"""
+"""UX 改善：填清單頁驗證錯誤回填（不丟資料、不露英文代碼）。"""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def client(tmp_path: Path):
 
 
 def test_missing_targets_refills_form_keeps_roles_no_english_code(client: TestClient):
-    """只填角色、沒填對象 → 回填名單頁（非錯誤頁），保留已填角色，且不露英文代碼。"""
+    """只填角色、沒填對象 → 回填清單頁（非錯誤頁），保留已填角色，且不露英文代碼。"""
     form = {
         "template_id": "teacher-class", "seed": "123456", "mechanism": "M0",
         "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
@@ -29,8 +29,8 @@ def test_missing_targets_refills_form_keeps_roles_no_english_code(client: TestCl
     }
     r = client.post("/match/run-from-form", data=form)
     assert r.status_code == 400
-    # 留在填名單頁（不是整頁「發生錯誤」頁）
-    assert "填名單" in r.text
+    # 留在填清單頁（不是整頁「發生錯誤」頁）
+    assert "填清單" in r.text
     assert "還差一步" in r.text
     # 不露英文技術代碼
     assert "EmptyTargets" not in r.text
@@ -45,7 +45,7 @@ def test_empty_roster_refills_with_friendly_message(client: TestClient):
     form = {"template_id": "teacher-class", "seed": "123456", "mechanism": "M0"}
     r = client.post("/match/run-from-form", data=form)
     assert r.status_code == 400
-    assert "填名單" in r.text
+    assert "填清單" in r.text
     assert "EmptyRoster" not in r.text
     assert "EmptyTargets" not in r.text
 

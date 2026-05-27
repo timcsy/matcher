@@ -52,12 +52,12 @@ def _targets_to_yaml_bytes(targets) -> bytes:
 
 
 def _empty_set_message(e: QualifiedSetEmpty) -> str:
-    """把空集合診斷組成一句白話、給填名單頁的紅字 banner（feature 015）。"""
-    base = "沒有任何人符合資格——名單與對象的所有組合都沒通過條件。"
+    """把空集合診斷組成一句白話、給填清單頁的紅字 banner（feature 015）。"""
+    base = "沒有任何人符合資格——清單與對象的所有組合都沒通過條件。"
     if getattr(e, "culprit", None):
         desc = e.rule_descriptions.get(e.culprit, e.culprit)
         n = e.rule_stats.get(e.culprit, 0)
-        return f"{base}最可能的原因：「{desc}」把 {n}／{e.total_pairs} 組都刷掉了——請檢查名單裡這項的值是否符合。"
+        return f"{base}最可能的原因：「{desc}」把 {n}／{e.total_pairs} 組都刷掉了——請檢查清單裡這項的值是否符合。"
     return base
 
 
@@ -139,7 +139,7 @@ async def new_match(
     )
 
 
-# ── Feature 012：UI 直接填名單 ───────────────────────────────────
+# ── Feature 012：UI 直接填清單 ───────────────────────────────────
 
 def _render_fill_form(
     request: Request,
@@ -152,7 +152,7 @@ def _render_fill_form(
     mechanism: str = "M0",
     status_code: int = 200,
 ):
-    """渲染填名單頁。錯誤時帶 prefill 與 form_error 回填，避免使用者重打名單。"""
+    """渲染填清單頁。錯誤時帶 prefill 與 form_error 回填，避免使用者重打清單。"""
     role_attrs = [
         {"key": a.key, "type": a.type, "required": a.required,
          "label": a.description or a.key}
@@ -217,7 +217,7 @@ async def new_match_fill(request: Request, template_id: str, email: str = Depend
 @router.post("/match/run-from-form")
 async def run_from_form(request: Request, email: str = Depends(require_login),
                         _rl=Depends(rate_limit("run", 120, 60))):
-    """UI 填名單 → CSV bytes → 既有 pipeline。
+    """UI 填清單 → CSV bytes → 既有 pipeline。
 
     M1/M2 路徑沿用 feature 009：偵測志願缺 → 跳 preferences_form。
     """
@@ -270,7 +270,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
     csv_bytes = assemble_roster_csv_bytes(form, tpl)
     # 檢查空白：CSV 只有 header 列 → 沒有任何角色
     if csv_bytes.decode("utf-8-sig").strip().count("\n") < 1:
-        return _refill("請至少填一位（第 1 步的名單還是空的）。")
+        return _refill("請至少填一位（第 1 步的清單還是空的）。")
 
     targets_yaml = assemble_targets_yaml_bytes(form, tpl)
     if targets_yaml is None:
@@ -297,7 +297,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
         owner=email,
     )
 
-    qse = None  # Feature 015：捕捉空集合，於 finally 後回填名單頁
+    qse = None  # Feature 015：捕捉空集合，於 finally 後回填清單頁
     try:
         try:
             ro, import_meta = load_roster_csv(csv_path, tpl)
@@ -323,7 +323,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
             ))
             record = MatchRecord(**common, status="success", audit=result.audit, error=None)
         except QualifiedSetEmpty as e:
-            # Feature 015：UI 填名單觸發空集合 → 回填名單頁 + 診斷，保留使用者輸入
+            # Feature 015：UI 填清單觸發空集合 → 回填清單頁 + 診斷，保留使用者輸入
             qse = e
             record = None
         except MatcherError as e:
@@ -424,7 +424,7 @@ async def run(
         tmp.write(data)
         tmp_path = Path(tmp.name)
 
-    # Feature 016：對象名單可為 CSV/Excel（試算表）或 YAML（依副檔名分派）
+    # Feature 016：對象清單可為 CSV/Excel（試算表）或 YAML（依副檔名分派）
     # - .csv/.xlsx → 解析成 targets tuple，以 targets= 注入 load_roster
     # - .yaml/.yml → 寫旁檔，由 data_import 自動取用（向後相容）
     sidecar_tmp = None
@@ -769,7 +769,7 @@ def _render_individual(request: Request, record, role_id: str):
         None,
     )
     if role is None:
-        return _individual_error(request, "您不在這次配對的名單中")
+        return _individual_error(request, "您不在這次配對的清單中")
 
     # 載入模板（用於 humanize 規則描述）
     from matcher.web.routes.pages import _reg as _shared_reg  # feature 011：共用 singleton
@@ -867,7 +867,7 @@ async def individual_audit_download(request: Request, record_id: str, role_id: s
         r["id"] == role_id for r in record.audit.get("roster_snapshot", {}).get("roles", [])
     )
     if not role_exists:
-        raise HTTPException(status_code=404, detail="您不在這次配對的名單中")
+        raise HTTPException(status_code=404, detail="您不在這次配對的清單中")
     return Response(
         content=_individual_audit_payload(record, role_id),
         media_type="application/json; charset=utf-8",
@@ -960,7 +960,7 @@ def _individual_pdf_response(record, role_id: str):
         r["id"] == role_id for r in record.audit.get("roster_snapshot", {}).get("roles", [])
     )
     if not role_exists:
-        raise HTTPException(status_code=404, detail="您不在這次配對的名單中")
+        raise HTTPException(status_code=404, detail="您不在這次配對的清單中")
     try:
         tpl = TemplateRegistry().get(record.template_id)
     except TemplateNotFound:

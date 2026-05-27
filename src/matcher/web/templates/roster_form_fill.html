@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}填名單 — {{ template.name }}{% endblock %}
+{% block title %}填清單 — {{ template.name }}{% endblock %}
 
 {% block extra_head %}
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -19,7 +19,7 @@
 {% endblock %}
 
 {% block content %}
-<h2>填名單 — {{ template.name }}</h2>
+<h2>填清單 — {{ template.name }}</h2>
 <p><small><a href="/match/new">← 回上一步（換模式或範本）</a></small></p>
 
 {% if form_error %}
@@ -39,7 +39,7 @@
   <input type="hidden" name="template_id" value="{{ template.id }}">
 
   <div class="card">
-    <h3>1. 角色名單<small style="font-weight:normal; color:#666">（要被配對的人或單位，例如老師、學生）</small></h3>
+    <h3>1. 角色清單<small style="font-weight:normal; color:#666">（要被配對的人或單位，例如老師、學生）</small></h3>
     <p><small>每位一列。空白列會自動忽略，不用刪。</small></p>
     <div class="roster-fill-scroll">
     <table class="roster-fill-table">
@@ -152,7 +152,7 @@
           亂數種子：
           <input type="number" name="seed" required value="{{ prefill_seed or 123456 }}" step="1">
         </label>
-        <small>抽籤需要一個亂數起點。<strong>同一份名單 + 同一個數字 → 永遠抽出一樣的結果</strong>，方便事後重現給家長 / 委員看。想當眾決定可用擲骰、彩券號碼當這個數字。</small>
+        <small>抽籤需要一個亂數起點。<strong>同一份清單 + 同一個數字 → 永遠抽出一樣的結果</strong>，方便事後重現給家長 / 委員看。想當眾決定可用擲骰、彩券號碼當這個數字。</small>
       </div>
     </details>
 

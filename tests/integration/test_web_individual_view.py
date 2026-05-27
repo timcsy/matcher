@@ -155,7 +155,7 @@ def test_individual_view_role_not_in_record(tmp_path: Path):
     rid = _make_success_record(c)
     r = c.get(f"/match/{rid}/role/T999")
     assert r.status_code == 404
-    assert "您不在這次配對的名單中" in r.text
+    assert "您不在這次配對的清單中" in r.text
 
 
 def test_individual_view_failed_record(tmp_path: Path):
