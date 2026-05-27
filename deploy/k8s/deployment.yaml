@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: matcher
+  namespace: matcher
   labels:
     app: matcher
 spec:
@@ -18,8 +19,8 @@ spec:
     spec:
       containers:
         - name: matcher
-          # 由 build 帶入具體 sha tag（見 quickstart / tasks T014）；committed 預設為 latest
-          image: ghcr.io/timcsy/matcher:latest
+          # 部署當下的具體 sha tag（可重現）；換版時更新此行
+          image: ghcr.io/timcsy/matcher:d0a6bfb
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8765

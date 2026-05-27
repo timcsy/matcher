@@ -5,6 +5,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: matcher-config
+  namespace: matcher
   labels:
     app: matcher
 data:

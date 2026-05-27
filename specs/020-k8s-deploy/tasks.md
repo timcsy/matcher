@@ -28,17 +28,17 @@
 
 - [X] T012 [US1] build + tag：`docker build -t ghcr.io/timcsy/matcher:$(git rev-parse --short HEAD) -t ghcr.io/timcsy/matcher:latest .`
 - [X] T013 [US1] 登入並推送 ghcr：`gh auth token | docker login ghcr.io -u timcsy --password-stdin` → `docker push` 兩個 tag；於 GitHub 確認/設定該 package 為 public
-- [ ] T014 [US1] 把 `deploy/k8s/deployment.yaml` 的 image tag 設為步驟 T012 的 `<sha>`
-- [ ] T015 [US1] 灌機密：`kubectl create secret generic matcher-secrets --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -`（值來自本機 `.env`，不入庫）
-- [ ] T016 [US1] 套用資源：`kubectl apply -f deploy/k8s/pvc.yaml -f deploy/k8s/service.yaml -f deploy/k8s/deployment.yaml` 並 `kubectl rollout status deploy/matcher --timeout=300s`
-- [ ] T017 [US1] 驗收 SC-001：`kubectl port-forward svc/matcher 8765:8765` 後 `curl -sf http://localhost:8765/login` 回 200；異常則查 `kubectl logs deploy/matcher`
+- [X] T014 [US1] 把 `deploy/k8s/deployment.yaml` 的 image tag 設為步驟 T012 的 `<sha>`
+- [X] T015 [US1] 灌機密：`kubectl create secret generic matcher-secrets --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -`（值來自本機 `.env`，不入庫）
+- [X] T016 [US1] 套用資源：`kubectl apply -f deploy/k8s/pvc.yaml -f deploy/k8s/service.yaml -f deploy/k8s/deployment.yaml` 並 `kubectl rollout status deploy/matcher --timeout=300s`
+- [X] T017 [US1] 驗收 SC-001：`kubectl port-forward svc/matcher 8765:8765` 後 `curl -sf http://localhost:8765/login` 回 200；異常則查 `kubectl logs deploy/matcher`
 
 ## Phase 4：US2 — Google 登入並完成配對（P1）
 
 **目標**：用現有 Google 帳號從 `localhost:8765` 登入、跑一次配對、下載 PDF。
 **獨立驗收**：真人登入成功 + 配對結果 + 稽核 PDF（SC-002）。依賴 T002（httpx）已在映像中。
 
-- [ ] T018 [US2] 確認映像含 httpx（T006 已驗）且 `.env` 的 `GOOGLE_CLIENT_ID/SECRET` 為現用值、Secret 已灌（T015）
+- [X] T018 [US2] 確認映像含 httpx（T006 已驗）且 `.env` 的 `GOOGLE_CLIENT_ID/SECRET` 為現用值、Secret 已灌（T015）
 - [ ] T019 [US2] 真人驗收 SC-002：瀏覽器開 `http://localhost:8765` → Google 登入成功導回 → 跑一次配對 → 下載稽核 PDF（驗證容器內 WeasyPrint/CJK 正常）。**登入由使用者本人操作**（學校帳號分頁）
 
 ## Phase 5：US3 — 重啟資料不遺失（P2）
@@ -53,12 +53,12 @@
 **目標**：repo 與映像皆無真實機密值。
 **獨立驗收**：稽核版本控制與映像（SC-004）。
 
-- [ ] T021 [P] [US4] 確認 `.gitignore` 已涵蓋 `.env`；`git ls-files` 與 `deploy/k8s/*` 內無真實機密值（manifests 只引用 Secret 名稱）
-- [ ] T022 [US4] 驗收 SC-004：`git grep -nIE 'GOCSPX-|gho_'`（追蹤檔）無結果；`docker history` / 映像層不含 `.env`（`.dockerignore` 已排除）
+- [X] T021 [P] [US4] 確認 `.gitignore` 已涵蓋 `.env`；`git ls-files` 與 `deploy/k8s/*` 內無真實機密值（manifests 只引用 Secret 名稱）
+- [X] T022 [US4] 驗收 SC-004：`git grep -nIE 'GOCSPX-|gho_'`（追蹤檔）無結果；`docker history` / 映像層不含 `.env`（`.dockerignore` 已排除）
 
 ## Phase 7：Polish & 收尾
 
-- [ ] T023 [P] 驗收 SC-005：`git diff main -- src/matcher` 為空（本 feature 0 改動核心）
+- [X] T023 [P] 驗收 SC-005：`git diff main -- src/matcher` 為空（本 feature 0 改動核心）
 - [ ] T024 [P] 更新 `knowledge/vision.md`：階段 5 勾選完成、補現狀條目（映像 ghcr、PVC、port-forward 存取、網域自理）
 - [ ] T025 [P] 更新 `README.md`：加「部署到 K8s」一節，指向 `deploy/README.md` / quickstart
 

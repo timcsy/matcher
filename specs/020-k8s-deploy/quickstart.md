@@ -3,39 +3,43 @@
 > 前提：本機已裝 `docker`、`kubectl`（context 指向 `k3s-tew`）、`gh`（已登入、含 `write:packages`）。
 > 本機 `.env` 已有現用的 `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`；本機測試 `MATCHER_INSECURE_COOKIE=1`。
 
-## 1. Build + 推映像到 ghcr
+> **重點**：(1) 部署在 namespace **`matcher`**；(2) 節點是 **amd64**，本機若為 Apple Silicon 必須用
+> `docker buildx --platform linux/amd64`（否則 pod 會 `no match for platform`）。
+
+## 1. Build（amd64）+ 推映像到 ghcr
 
 ```sh
-SHA=$(git rev-parse --short HEAD)
-docker build -t ghcr.io/timcsy/matcher:$SHA -t ghcr.io/timcsy/matcher:latest .
 gh auth token | docker login ghcr.io -u timcsy --password-stdin
-docker push ghcr.io/timcsy/matcher:$SHA
-docker push ghcr.io/timcsy/matcher:latest
+SHA=$(git rev-parse --short HEAD)
+docker buildx build --platform linux/amd64 --provenance=false \
+  -t ghcr.io/timcsy/matcher:$SHA -t ghcr.io/timcsy/matcher:latest --push .
 ```
 
-> 首次推送後，到 GitHub 把該 package 設為 public（或本就公開），cluster 才能免帳密 pull。
+> 首次推送後，到 GitHub 把該 package 設為 **public**（container package 可見性只能在網頁設：
+> Package → Settings → Danger Zone → Change visibility），cluster 才能免帳密 pull。
 
-## 2. 灌機密（值來自本機 .env，不入庫）
+## 2. 建 namespace + 灌機密（值來自本機 .env，不入庫）
 
 ```sh
-kubectl create secret generic matcher-secrets \
+kubectl apply -f deploy/k8s/namespace.yaml
+kubectl create secret generic matcher-secrets -n matcher \
   --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
 ```
 
 ## 3. 部署
 
 ```sh
-# deployment.yaml 內 image tag 用步驟 1 的 $SHA（或先 sed 帶入）
+# deployment.yaml 內 image tag 設為步驟 1 的 $SHA（manifests 已含 namespace: matcher）
 kubectl apply -f deploy/k8s/pvc.yaml \
                -f deploy/k8s/service.yaml \
                -f deploy/k8s/deployment.yaml
-kubectl rollout status deploy/matcher --timeout=300s
+kubectl rollout status deploy/matcher -n matcher --timeout=300s
 ```
 
 ## 4. 存取 + 登入（沿用現有 OAuth 回呼）
 
 ```sh
-kubectl port-forward svc/matcher 8765:8765
+kubectl port-forward -n matcher svc/matcher 8765:8765
 # 瀏覽器開 http://localhost:8765 → 用現有 Google 帳號登入
 ```
 
@@ -46,8 +50,8 @@ kubectl port-forward svc/matcher 8765:8765
 - **SC-003（持久化）**：
   ```sh
   # 跑一筆配對 + 建一個自訂範本後：
-  kubectl delete pod -l app=matcher        # 觸發重建
-  kubectl rollout status deploy/matcher
+  kubectl delete pod -n matcher -l app=matcher        # 觸發重建
+  kubectl rollout status deploy/matcher -n matcher
   # 重新 port-forward，確認「過去紀錄」與該自訂範本仍在
   ```
 - **SC-004**：`git grep -nIE 'GOCSPX-|gho_'`（追蹤檔）無結果；Secret 不在 repo。
@@ -62,7 +66,8 @@ kubectl port-forward svc/matcher 8765:8765
 
 ## 疑難排解
 
-- **pod CrashLoop / 起不來**：`kubectl logs deploy/matcher`；若提示 SESSION_SECRET → 檢查是否誤設 `MATCHER_ENV=production` 但用了預設 secret。
+- **`no match for platform`**：映像架構與節點不符——用 `docker buildx --platform linux/amd64 --push` 重 build（節點是 amd64）。
+- **pod CrashLoop / 起不來**：`kubectl logs -n matcher deploy/matcher`；若提示 SESSION_SECRET → 檢查是否誤設 `MATCHER_ENV=production` 但用了預設 secret。
 - **登入回 callback 失敗**：確認用 `localhost:8765`（非其他埠/IP），且 Google client 有註冊 `http://localhost:8765/auth/callback`。
 - **PDF 503 / 中文變空白**：映像缺系統依賴或 CJK 字體 → 檢查 Dockerfile apt 清單。
 - **映像 pull 不到**：ghcr package 未設 public，或 tag 不符。

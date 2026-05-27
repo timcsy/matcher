@@ -9,23 +9,26 @@
 
 ## 流程
 
-```sh
-# 1. build + 推映像到 ghcr（公開）
-SHA=$(git rev-parse --short HEAD)
-docker build -t ghcr.io/timcsy/matcher:$SHA -t ghcr.io/timcsy/matcher:latest .
-gh auth token | docker login ghcr.io -u timcsy --password-stdin
-docker push ghcr.io/timcsy/matcher:$SHA && docker push ghcr.io/timcsy/matcher:latest
+# 部署在 namespace `matcher`；節點為 amd64（Apple Silicon 本機必須 --platform linux/amd64）。
 
-# 2. 灌機密（值來自本機 .env，不入庫）
-kubectl create secret generic matcher-secrets \
+```sh
+# 1. build（amd64）+ 推映像到 ghcr（公開）
+gh auth token | docker login ghcr.io -u timcsy --password-stdin
+SHA=$(git rev-parse --short HEAD)
+docker buildx build --platform linux/amd64 --provenance=false \
+  -t ghcr.io/timcsy/matcher:$SHA -t ghcr.io/timcsy/matcher:latest --push .
+
+# 2. namespace + 灌機密（值來自本機 .env，不入庫）
+kubectl apply -f deploy/k8s/namespace.yaml
+kubectl create secret generic matcher-secrets -n matcher \
   --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -
 
 # 3. 部署（先把 deployment.yaml 的 image tag 設成 $SHA）
 kubectl apply -f deploy/k8s/pvc.yaml -f deploy/k8s/service.yaml -f deploy/k8s/deployment.yaml
-kubectl rollout status deploy/matcher --timeout=300s
+kubectl rollout status deploy/matcher -n matcher --timeout=300s
 
 # 4. 本機存取（沿用現有 OAuth 回呼）
-kubectl port-forward svc/matcher 8765:8765
+kubectl port-forward -n matcher svc/matcher 8765:8765
 #   → http://localhost:8765
 ```
 
@@ -34,6 +37,7 @@ kubectl port-forward svc/matcher 8765:8765
 | 檔 | 用途 |
 |---|---|
 | `../Dockerfile` | 單一容器映像 |
+| `k8s/namespace.yaml` | namespace `matcher` |
 | `k8s/pvc.yaml` | `data/` 持久卷（local-path、RWO、1Gi） |
 | `k8s/service.yaml` | ClusterIP（供 port-forward） |
 | `k8s/deployment.yaml` | 工作負載（Recreate、envFrom secret、掛 PVC、proxy-headers） |
