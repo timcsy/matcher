@@ -231,6 +231,17 @@
                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
               </template>
+              <template x-if="rule.type === 'participant_in_target_field'">
+                <div class="col-span-2 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md p-3 leading-relaxed">
+                  依兩個欄位是「單筆文字」或「多筆文字」自動判斷，方向不限：
+                  <ul class="mt-1 ml-4 list-disc space-y-0.5">
+                    <li><b>一對一</b>（兩邊單筆）：兩值相等才通過</li>
+                    <li><b>一對多</b>（參與者單筆、對象多筆）：參與者的值要在對象清單裡（例：老師專業 ∈ 班級需要科目）</li>
+                    <li><b>多對一</b>（參與者多筆、對象單筆）：對象的值要在參與者清單裡（例：班級類組 ∈ 老師可帶類組）</li>
+                    <li><b>多對多</b>（兩邊多筆）：兩份清單有交集就通過</li>
+                  </ul>
+                </div>
+              </template>
             </div>
 
             <div>
