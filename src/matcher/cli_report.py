@@ -17,7 +17,7 @@ from matcher.web.pdf import PdfRenderUnavailable, render_match_report_pdf
 def report(
     audit: Path = typer.Option(..., "--audit", help="audit JSON 檔路徑"),
     output: Path = typer.Option(..., "--output", help="PDF 輸出檔路徑"),
-    role_id: Optional[str] = typer.Option(None, "--role-id", help="缺省 → admin 版；有值 → individual 版"),
+    participant_id: Optional[str] = typer.Option(None, "--participant-id", help="缺省 → admin 版；有值 → individual 版"),
     record_id: Optional[str] = typer.Option(None, "--record-id", help="顯示用；缺省從 audit 推導或標「（CLI 產生）」"),
     created_at: Optional[str] = typer.Option(None, "--created-at", help="ISO-8601；缺省從 audit.generated_at 或當下"),
 ):
@@ -39,7 +39,7 @@ def report(
 
     try:
         pdf_bytes = render_match_report_pdf(
-            audit_data, record_meta=record_meta, role_id=role_id, template=None,
+            audit_data, record_meta=record_meta, participant_id=participant_id, template=None,
         )
     except PdfRenderUnavailable as e:
         typer.echo(
@@ -49,7 +49,7 @@ def report(
         raise typer.Exit(code=50)
     except ValueError as e:
         msg = str(e)
-        if role_id and role_id in msg:
+        if participant_id and participant_id in msg:
             typer.echo(f"參與者不存在：{e}", err=True)
             raise typer.Exit(code=52)
         typer.echo(f"audit 缺核心欄位：{e}", err=True)

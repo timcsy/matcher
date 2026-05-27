@@ -35,7 +35,7 @@ def test_new_match_page_has_three_modes(client: TestClient):
     assert "從過去紀錄" in r.text
 
 
-def test_fill_page_renders_role_attrs_from_template(client: TestClient):
+def test_fill_page_renders_participant_attrs_from_template(client: TestClient):
     """T010：填寫頁顯示範本宣告的中文欄位名。"""
     r = client.get("/match/new/fill?template_id=teacher-class")
     assert r.status_code == 200
@@ -68,10 +68,10 @@ def _fill_form(n: int = 3, seed: str = "2026"):
         ("T07", "周老師", "國文", "7"),
     ]
     for i, (rid, name, spec, sen) in enumerate(data[:n]):
-        form[f"role_{i}_id"] = rid
-        form[f"role_{i}_name"] = name
-        form[f"role_{i}_speciality"] = spec
-        form[f"role_{i}_seniority"] = sen
+        form[f"participant_{i}_id"] = rid
+        form[f"participant_{i}_name"] = name
+        form[f"participant_{i}_speciality"] = spec
+        form[f"participant_{i}_seniority"] = sen
     # Feature 013：對象一律由 UI 填或旁檔，不再有 default_targets
     classes = [
         ("C01", "三年甲班", "國文;數學", "雙語", "2"),
@@ -154,11 +154,11 @@ def test_post_run_from_form_filters_empty_rows(client: TestClient):
     # 5 列但其中 2 列空白
     form = {
         "template_id": "teacher-class", "seed": "2026", "mechanism": "M0",
-        "role_0_id": "T01", "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
-        "role_1_id": "", "role_1_name": "", "role_1_speciality": "", "role_1_seniority": "",
-        "role_2_id": "T02", "role_2_name": "李老師", "role_2_speciality": "數學", "role_2_seniority": "5",
-        "role_3_id": "", "role_3_name": "", "role_3_speciality": "", "role_3_seniority": "",
-        "role_4_id": "T03", "role_4_name": "陳老師", "role_4_speciality": "英文", "role_4_seniority": "3",
+        "participant_0_id": "T01", "participant_0_name": "王老師", "participant_0_speciality": "國文", "participant_0_seniority": "8",
+        "participant_1_id": "", "participant_1_name": "", "participant_1_speciality": "", "participant_1_seniority": "",
+        "participant_2_id": "T02", "participant_2_name": "李老師", "participant_2_speciality": "數學", "participant_2_seniority": "5",
+        "participant_3_id": "", "participant_3_name": "", "participant_3_speciality": "", "participant_3_seniority": "",
+        "participant_4_id": "T03", "participant_4_name": "陳老師", "participant_4_speciality": "英文", "participant_4_seniority": "3",
         # Feature 013：必須填對象
         "target_0_id": "C01", "target_0_capacity": "3",
         "target_0_name": "三年甲班", "target_0_required_subjects": "國文;數學", "target_0_feature": "雙語",
@@ -170,7 +170,7 @@ def test_post_run_from_form_filters_empty_rows(client: TestClient):
     assert len(audit["assignment"]) == 3
 
 
-def test_post_run_from_form_requires_at_least_one_role(client: TestClient):
+def test_post_run_from_form_requires_at_least_one_participant(client: TestClient):
     """T015：全空參與者 → 400。"""
     form = {"template_id": "teacher-class", "seed": "2026", "mechanism": "M0"}
     r = client.post("/match/run-from-form", data=form)

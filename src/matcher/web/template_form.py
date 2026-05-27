@@ -14,7 +14,7 @@ RULE_TYPES = (
     ("le", "參與者屬性 ≤ 數值（int 比較）"),
     ("eq", "參與者屬性等於某值"),
     ("in", "參與者屬性屬於集合"),
-    ("role_in_target_field", "參與者屬性出現在對象的列表屬性中"),
+    ("participant_in_target_field", "參與者屬性出現在對象的列表屬性中"),
 )
 
 
@@ -30,10 +30,10 @@ def _build_expr(rule_type: str, fields: dict) -> dict:
         # set 字串以分號分隔
         items = [x.strip() for x in fields["set"].split(";") if x.strip()]
         return {"in": {"field": fields["field"], "set": items}}
-    if rule_type == "role_in_target_field":
+    if rule_type == "participant_in_target_field":
         return {
-            "role_in_target_field": {
-                "role_field": fields["role_field"],
+            "participant_in_target_field": {
+                "participant_field": fields["participant_field"],
                 "target_field": fields["target_field"],
             }
         }
@@ -41,9 +41,9 @@ def _build_expr(rule_type: str, fields: dict) -> dict:
 
 
 def _attr_desc(attributes: dict, field_ref: str) -> str:
-    """從 attributes lookup 取繁中 description。`role.grade` → 「年級」；找不到回原 key。"""
+    """從 attributes lookup 取繁中 description。`participant.grade` → 「年級」；找不到回原 key。"""
     side, _, key = field_ref.partition(".")
-    decls = (attributes.get("roles") or []) if side == "role" else (attributes.get("targets") or [])
+    decls = (attributes.get("participants") or []) if side == "participant" else (attributes.get("targets") or [])
     for d in decls:
         if d.get("key") == key:
             return d.get("description") or key
@@ -61,18 +61,18 @@ def _auto_description(rule_type: str, fields: dict, attributes: dict) -> str:
     if rule_type == "in":
         items = [x.strip() for x in fields["set"].split(";") if x.strip()]
         return f"{_attr_desc(attributes, fields['field'])} 必須屬於：{ '、'.join(items) }"
-    if rule_type == "role_in_target_field":
-        role_desc = _attr_desc(attributes, f"role.{fields['role_field']}")
+    if rule_type == "participant_in_target_field":
+        participant_desc = _attr_desc(attributes, f"participant.{fields['participant_field']}")
         target_desc = _attr_desc(attributes, f"target.{fields['target_field']}")
-        return f"{role_desc} 必須出現在對象的{target_desc}列表中"
+        return f"{participant_desc} 必須出現在對象的{target_desc}列表中"
     raise ValueError(f"未知規則類型：{rule_type}")
 
 
 def _collect_indexed_rows(form: dict, prefix: str, fields: list[str]) -> list[dict]:
     """從 form dict 中蒐集 `<prefix>_<i>_<field>` 模式的資料，回傳非空行的 list。
 
-    例：prefix="role_attr", fields=["key", "type", ...]
-    → 找出所有 role_attr_0_key / role_attr_0_type / ... role_attr_N_key /...
+    例：prefix="participant_attr", fields=["key", "type", ...]
+    → 找出所有 participant_attr_0_key / participant_attr_0_type / ... participant_attr_N_key /...
     → 每個 i 組為一個 dict；key 為空的行略過。
     """
     rows: dict[int, dict] = {}
@@ -86,7 +86,7 @@ def _collect_indexed_rows(form: dict, prefix: str, fields: list[str]) -> list[di
                     rows.setdefault(idx, {})[fld] = v
     # 依 idx 排序，過濾掉「key 或主欄位為空」的行
     out = []
-    main_key = fields[0]  # 慣例：第一個欄位是主鍵（如 key、id、role_id）
+    main_key = fields[0]  # 慣例：第一個欄位是主鍵（如 key、id、participant_id）
     for idx in sorted(rows.keys()):
         row = rows[idx]
         if row.get(main_key, "").strip():
@@ -108,14 +108,14 @@ def assemble_template_yaml(form: dict) -> dict:
     }
 
     # 2. attributes
-    role_attrs = _collect_indexed_rows(
-        form, "role_attr", ["key", "type", "required", "description", "aliases"]
+    participant_attrs = _collect_indexed_rows(
+        form, "participant_attr", ["key", "type", "required", "description", "aliases"]
     )
     target_attrs = _collect_indexed_rows(
         form, "target_attr", ["key", "type", "required", "description", "aliases"]
     )
     attributes = {
-        "roles": [_attr_dict(r) for r in role_attrs],
+        "participants": [_attr_dict(r) for r in participant_attrs],
         "targets": [_attr_dict(r) for r in target_attrs],
     }
     tpl["attributes"] = attributes
@@ -124,7 +124,7 @@ def assemble_template_yaml(form: dict) -> dict:
     rule_rows = _collect_indexed_rows(
         form,
         "rule",
-        ["id", "type", "field", "value", "set", "role_field", "target_field", "custom_description"],
+        ["id", "type", "field", "value", "set", "participant_field", "target_field", "custom_description"],
     )
     rules = []
     for r in rule_rows:
@@ -184,12 +184,12 @@ SCENARIO_TEMPLATES = {
         "template_id": "club-signup",
         "template_name": "社團報名",
         "template_description": "依年級與興趣分配學生到社團",
-        "role_attr_0_key": "name", "role_attr_0_type": "str", "role_attr_0_required": "on",
-        "role_attr_0_description": "學生姓名", "role_attr_0_aliases": "姓名",
-        "role_attr_1_key": "grade", "role_attr_1_type": "int", "role_attr_1_required": "on",
-        "role_attr_1_description": "年級", "role_attr_1_aliases": "年級",
-        "role_attr_2_key": "interest", "role_attr_2_type": "str", "role_attr_2_required": "on",
-        "role_attr_2_description": "興趣", "role_attr_2_aliases": "興趣",
+        "participant_attr_0_key": "name", "participant_attr_0_type": "str", "participant_attr_0_required": "on",
+        "participant_attr_0_description": "學生姓名", "participant_attr_0_aliases": "姓名",
+        "participant_attr_1_key": "grade", "participant_attr_1_type": "int", "participant_attr_1_required": "on",
+        "participant_attr_1_description": "年級", "participant_attr_1_aliases": "年級",
+        "participant_attr_2_key": "interest", "participant_attr_2_type": "str", "participant_attr_2_required": "on",
+        "participant_attr_2_description": "興趣", "participant_attr_2_aliases": "興趣",
         "target_attr_0_key": "name", "target_attr_0_type": "str", "target_attr_0_required": "on",
         "target_attr_0_description": "社團名稱", "target_attr_0_aliases": "社團名稱",
         "target_attr_1_key": "topic", "target_attr_1_type": "str", "target_attr_1_required": "on",
@@ -197,9 +197,9 @@ SCENARIO_TEMPLATES = {
         "target_attr_2_key": "min_grade", "target_attr_2_type": "int", "target_attr_2_required": "on",
         "target_attr_2_description": "最低年級", "target_attr_2_aliases": "最低年級",
         "rule_0_id": "R001", "rule_0_type": "ge",
-        "rule_0_field": "role.grade", "rule_0_value": "1",
-        "rule_1_id": "R002", "rule_1_type": "role_in_target_field",
-        "rule_1_role_field": "interest", "rule_1_target_field": "topic",
+        "rule_0_field": "participant.grade", "rule_0_value": "1",
+        "rule_1_id": "R002", "rule_1_type": "participant_in_target_field",
+        "rule_1_participant_field": "interest", "rule_1_target_field": "topic",
         "target_0_id": "C1", "target_0_capacity": "5",
         "target_0_name": "程式社", "target_0_topic": "program", "target_0_min_grade": "4",
         "target_1_id": "C2", "target_1_capacity": "5",
@@ -212,15 +212,15 @@ SCENARIO_TEMPLATES = {
         "template_id": "tutoring",
         "template_name": "課輔師生媒合",
         "template_description": "依專業配對課輔老師到學生需求",
-        "role_attr_0_key": "name", "role_attr_0_type": "str", "role_attr_0_required": "on",
-        "role_attr_0_description": "老師姓名", "role_attr_0_aliases": "姓名",
-        "role_attr_1_key": "specialities", "role_attr_1_type": "list_str", "role_attr_1_required": "on",
-        "role_attr_1_description": "可教科目", "role_attr_1_aliases": "可教科目",
+        "participant_attr_0_key": "name", "participant_attr_0_type": "str", "participant_attr_0_required": "on",
+        "participant_attr_0_description": "老師姓名", "participant_attr_0_aliases": "姓名",
+        "participant_attr_1_key": "specialities", "participant_attr_1_type": "list_str", "participant_attr_1_required": "on",
+        "participant_attr_1_description": "可教科目", "participant_attr_1_aliases": "可教科目",
         "target_attr_0_key": "name", "target_attr_0_type": "str", "target_attr_0_required": "on",
         "target_attr_0_description": "學生姓名", "target_attr_0_aliases": "學生姓名",
         "target_attr_1_key": "subject", "target_attr_1_type": "str", "target_attr_1_required": "on",
         "target_attr_1_description": "需要輔導的科目", "target_attr_1_aliases": "科目",
-        "rule_0_id": "R001", "rule_0_type": "role_in_target_field",
-        "rule_0_role_field": "specialities", "rule_0_target_field": "subject",
+        "rule_0_id": "R001", "rule_0_type": "participant_in_target_field",
+        "rule_0_participant_field": "specialities", "rule_0_target_field": "subject",
     },
 }

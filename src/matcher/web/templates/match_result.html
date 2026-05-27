@@ -30,13 +30,13 @@
 <table>
   <thead><tr><th>誰</th><th>分到哪裡</th>{% if mechanism != 'M0' %}<th>志願排名</th>{% endif %}</tr></thead>
   <tbody>
-    {% set role_attrs = {} %}
-    {% for r in record.audit.roster_snapshot.roles %}{% if role_attrs.update({r.id: r.attributes}) %}{% endif %}{% endfor %}
+    {% set participant_attrs = {} %}
+    {% for r in record.audit.roster_snapshot.participants %}{% if participant_attrs.update({r.id: r.attributes}) %}{% endif %}{% endfor %}
     {% set target_attrs = {} %}
     {% for t in record.audit.roster_snapshot.targets %}{% if target_attrs.update({t.id: t.attributes}) %}{% endif %}{% endfor %}
-    {% for role_id, target_id in record.audit.assignment.items() | sort %}
+    {% for participant_id, target_id in record.audit.assignment.items() | sort %}
     <tr>
-      <td>{{ role_attrs.get(role_id, {}).get('name', '') or role_id }} <small style="color:#888"><code>{{ role_id }}</code></small></td>
+      <td>{{ participant_attrs.get(participant_id, {}).get('name', '') or participant_id }} <small style="color:#888"><code>{{ participant_id }}</code></small></td>
       <td>
         {% if target_id %}
           {{ target_attrs.get(target_id, {}).get('name', '') or target_id }} <small style="color:#888"><code>{{ target_id }}</code></small>
@@ -45,7 +45,7 @@
         {% endif %}
       </td>
       {% if mechanism != 'M0' %}
-      <td>{{ rank_display_by_role.get(role_id, '') }}</td>
+      <td>{{ rank_display_by_participant.get(participant_id, '') }}</td>
       {% endif %}
     </tr>
     {% endfor %}
@@ -61,12 +61,12 @@
 </p>
 
 <details style="margin-top:2rem">
-  <summary>給每位當事人的個別連結（共 {{ roles_for_links | length }} 位）</summary>
+  <summary>給每位當事人的個別連結（共 {{ participants_for_links | length }} 位）</summary>
   <p><small>把以下連結各自寄給對應的當事人（家長、老師），他們可以獨立查看自己的配對結果和判定理由，不會看到別人的資料。</small></p>
   <table>
     <thead><tr><th>姓名</th><th><small>編號</small></th><th>個別查詢連結</th></tr></thead>
     <tbody>
-      {% for r in roles_for_links %}
+      {% for r in participants_for_links %}
       <tr>
         <td>{{ r.name }}</td>
         <td><small><code>{{ r.id }}</code></small></td>

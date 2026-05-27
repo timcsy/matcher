@@ -47,4 +47,4 @@ def test_other_endpoints_still_work_without_weasyprint(tmp_path: Path, monkeypat
     rid = _run_m0_record(c)
     assert c.get(f"/match/{rid}").status_code == 200
     assert c.get(f"/match/{rid}/audit").status_code == 200
-    assert c.get(f"/match/{rid}/role/T01").status_code == 200
+    assert c.get(f"/match/{rid}/participant/T01").status_code == 200

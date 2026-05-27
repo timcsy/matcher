@@ -6,8 +6,8 @@ import pytest
 
 from matcher.web.routes.auth import _email_allowed, _safe_next
 from matcher.web.security import (
-    sign_role_token,
-    verify_role_token,
+    sign_participant_token,
+    verify_participant_token,
 )
 from matcher.web.store import safe_fs_id
 
@@ -51,19 +51,19 @@ def test_safe_fs_id_accepts_normal_ids():
     assert safe_fs_id("teacher-class") == "teacher-class"
 
 
-def test_role_token_roundtrip():
-    tok = sign_role_token("m1", "R001")
-    assert verify_role_token(tok) == ("m1", "R001")
+def test_participant_token_roundtrip():
+    tok = sign_participant_token("m1", "R001")
+    assert verify_participant_token(tok) == ("m1", "R001")
 
 
-def test_role_token_tampered_rejected():
-    tok = sign_role_token("m1", "R001")
-    assert verify_role_token(tok + "x") is None
-    assert verify_role_token("not-a-token") is None
+def test_participant_token_tampered_rejected():
+    tok = sign_participant_token("m1", "R001")
+    assert verify_participant_token(tok + "x") is None
+    assert verify_participant_token("not-a-token") is None
 
 
-def test_role_token_expires(monkeypatch):
-    tok = sign_role_token("m1", "R001")
+def test_participant_token_expires(monkeypatch):
+    tok = sign_participant_token("m1", "R001")
     # 效期設 -1 秒 → 必定過期 → None（不依賴測試執行時間）
-    monkeypatch.setenv("ROLE_TOKEN_MAX_AGE", "-1")
-    assert verify_role_token(tok) is None
+    monkeypatch.setenv("PARTICIPANT_TOKEN_MAX_AGE", "-1")
+    assert verify_participant_token(tok) is None

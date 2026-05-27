@@ -164,7 +164,7 @@ def _render_fill_form(
     request: Request,
     tpl,
     *,
-    prefill_roles=None,
+    prefill_participants=None,
     prefill_targets=None,
     form_error: Optional[str] = None,
     info_note: Optional[str] = None,
@@ -173,10 +173,10 @@ def _render_fill_form(
     status_code: int = 200,
 ):
     """渲染填清單頁。錯誤時帶 prefill 與 form_error 回填，避免使用者重打清單。"""
-    role_attrs = [
+    participant_attrs = [
         {"key": a.key, "type": a.type, "required": a.required,
          "label": a.description or a.key}
-        for a in tpl.attributes.roles
+        for a in tpl.attributes.participants
     ]
     target_attrs = [
         {"key": a.key, "type": a.type, "required": a.required,
@@ -184,8 +184,8 @@ def _render_fill_form(
         for a in tpl.attributes.targets
     ]
     # 預設給三列空白；錯誤回填時用使用者送來的內容
-    if prefill_roles is None:
-        prefill_roles = [{}, {}, {}]
+    if prefill_participants is None:
+        prefill_participants = [{}, {}, {}]
     if prefill_targets is None:
         prefill_targets = [{}, {}, {}]
 
@@ -193,13 +193,13 @@ def _render_fill_form(
         request, "roster_form_fill.html",
         {
             "template": tpl,
-            "role_attrs": role_attrs,
+            "participant_attrs": participant_attrs,
             "target_attrs": target_attrs,
             # Feature 013：對象段一律顯示
             "has_prefs_schema": tpl.preferences_schema is not None,
             "mechanisms": MECHANISMS,
             "default_mechanism": "M0",
-            "prefill_roles": prefill_roles,
+            "prefill_participants": prefill_participants,
             "prefill_targets": prefill_targets,
             "form_error": form_error,
             "info_note": info_note,
@@ -233,21 +233,21 @@ def _flatten_snapshot_value(v) -> str:
 def _snapshot_to_prefill(record) -> tuple[list, list]:
     """把一筆配對紀錄的 roster 快照 → 填清單頁的 prefill（參與者、對象）。"""
     snap = (record.audit or {}).get("roster_snapshot", {})
-    roles = []
-    for r in snap.get("roles", []):
+    participants = []
+    for r in snap.get("participants", []):
         row = {"id": r.get("id", "")}
         for k, val in (r.get("attributes") or {}).items():
             row[k] = _flatten_snapshot_value(val)
         if r.get("preferences"):
             row["preferences"] = ";".join(str(x) for x in r["preferences"])
-        roles.append(row)
+        participants.append(row)
     targets = []
     for t in snap.get("targets", []):
         row = {"id": t.get("id", ""), "capacity": str(t.get("capacity", ""))}
         for k, val in (t.get("attributes") or {}).items():
             row[k] = _flatten_snapshot_value(val)
         targets.append(row)
-    return roles, targets
+    return participants, targets
 
 
 @router.get("/match/new/fill")
@@ -265,7 +265,7 @@ async def new_match_fill(request: Request, template_id: str,
     except TemplateNotFound as e:
         return _error_page(request, "TemplateNotFound", str(e), status_code=404)
 
-    prefill_roles = prefill_targets = None
+    prefill_participants = prefill_targets = None
     note = None
     if from_record:
         store = MatchStore()
@@ -276,12 +276,12 @@ async def new_match_fill(request: Request, template_id: str,
         _owner_or_403(request, rec)
         if rec.audit is None:
             return _error_page(request, "NoSnapshot", "該紀錄沒有可沿用的清單（執行失敗的紀錄）。", status_code=400)
-        prefill_roles, prefill_targets = _snapshot_to_prefill(rec)
+        prefill_participants, prefill_targets = _snapshot_to_prefill(rec)
         note = f"已沿用過去紀錄的清單（{from_record}），可直接修改後再配對。"
 
     return _render_fill_form(
         request, tpl,
-        prefill_roles=prefill_roles, prefill_targets=prefill_targets,
+        prefill_participants=prefill_participants, prefill_targets=prefill_targets,
         info_note=note,
     )
 
@@ -312,11 +312,11 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
         return _error_page(request, "TemplateNotFound", str(e), status_code=404)
 
     # 蒐集使用者填的列，供驗證失敗時回填（不讓他重打）
-    role_keys = ["id"] + [a.key for a in tpl.attributes.roles]
+    participant_keys = ["id"] + [a.key for a in tpl.attributes.participants]
     if tpl.preferences_schema is not None:
-        role_keys.append("preferences")
+        participant_keys.append("preferences")
     target_keys = ["id", "capacity"] + [a.key for a in tpl.attributes.targets]
-    filled_roles = _extract_form_rows(form, "role", role_keys)
+    filled_participants = _extract_form_rows(form, "participant", participant_keys)
     filled_targets = _extract_form_rows(form, "target", target_keys)
     mechanism = (form.get("mechanism") or "M0").strip().upper()
     seed_raw = form.get("seed", "123456")
@@ -324,7 +324,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
     def _refill(msg: str):
         return _render_fill_form(
             request, tpl,
-            prefill_roles=filled_roles or None,
+            prefill_participants=filled_participants or None,
             prefill_targets=filled_targets or None,
             form_error=msg,
             seed=seed_raw,
@@ -379,13 +379,13 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
             if (
                 tpl.preferences_schema is not None
                 and mechanism in ("M1", "M2")
-                and all(not role.preferences for role in ro.roles)
+                and all(not participant.preferences for participant in ro.participants)
             ):
                 return _render_preferences_form(
                     request, template_id=template_id, template_name=tpl.name,
                     mechanism=mechanism, seed=seed,
                     roster_bytes=csv_bytes, roster_filename=roster_filename,
-                    roles=ro.roles, targets=ro.targets, targets_bytes=targets_yaml,
+                    participants=ro.participants, targets=ro.targets, targets_bytes=targets_yaml,
                     max_choices=tpl.preferences_schema.max_choices,
                 )
 
@@ -411,7 +411,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
     if qse is not None:
         return _render_fill_form(
             request, tpl,
-            prefill_roles=filled_roles or None,
+            prefill_participants=filled_participants or None,
             prefill_targets=filled_targets or None,
             form_error=_empty_set_message(qse),
             seed=seed_raw, mechanism=mechanism, status_code=400,
@@ -535,14 +535,14 @@ async def run(
             if (
                 tpl.preferences_schema is not None
                 and mechanism in ("M1", "M2")
-                and all(not role.preferences for role in ro.roles)
+                and all(not participant.preferences for participant in ro.participants)
             ):
                 tmp_path.unlink(missing_ok=True)
                 return _render_preferences_form(
                     request, template_id=template_id, template_name=tpl.name,
                     mechanism=mechanism, seed=seed,
                     roster_bytes=data, roster_filename=roster.filename or "roster.csv",
-                    roles=ro.roles, targets=ro.targets, targets_bytes=sidecar_data,
+                    participants=ro.participants, targets=ro.targets, targets_bytes=sidecar_data,
                     max_choices=tpl.preferences_schema.max_choices,
                 )
 
@@ -583,7 +583,7 @@ def _render_preferences_form(
     seed: int,
     roster_bytes: bytes,
     roster_filename: str,
-    roles,
+    participants,
     targets,
     targets_bytes: bytes = b"",
     max_choices: int,
@@ -607,9 +607,9 @@ def _render_preferences_form(
             }
             for t in targets
         ]
-    roles_for_form = [
+    participants_for_form = [
         {"id": r.id, "display_name": (r.attributes or {}).get("name", r.id)}
-        for r in roles
+        for r in participants
     ]
     return _templates(request).TemplateResponse(
         request, "preferences_form.html",
@@ -622,7 +622,7 @@ def _render_preferences_form(
             "roster_bytes_b64": base64.b64encode(roster_bytes).decode("ascii"),
             "roster_filename": roster_filename,
             "targets_bytes_b64": base64.b64encode(targets_bytes).decode("ascii"),
-            "roles_for_form": roles_for_form,
+            "participants_for_form": participants_for_form,
             "targets_for_options": targets_for_options,
             "max_choices": max_choices,
             "form_errors": form_errors or [],
@@ -700,24 +700,24 @@ async def submit_preferences(request: Request, email: str = Depends(require_logi
     form_errors: list[str] = []
     previous_form_values: dict[str, str] = {}
     if action == "submit":
-        new_roles = []
+        new_participants = []
         any_pref = False
-        for role in ro.roles:
+        for participant in ro.participants:
             prefs: list[str] = []
             for rank in range(1, max_choices + 1):
-                field = f"pref_{role.id}_{rank}"
+                field = f"pref_{participant.id}_{rank}"
                 value = (form.get(field) or "").strip()
                 previous_form_values[field] = value
                 if value:
                     if value not in valid_target_ids:
-                        form_errors.append(f"參與者 {role.id} 的第 {rank} 志願選了無效的對象「{value}」。")
+                        form_errors.append(f"參與者 {participant.id} 的第 {rank} 志願選了無效的對象「{value}」。")
                         continue
                     prefs.append(value)
             if len(set(prefs)) != len(prefs):
-                form_errors.append(f"參與者 {role.id} 的志願中有重複——同列不可重複選同對象。")
+                form_errors.append(f"參與者 {participant.id} 的志願中有重複——同列不可重複選同對象。")
             if prefs:
                 any_pref = True
-            new_roles.append(dataclasses.replace(role, preferences=tuple(prefs)))
+            new_participants.append(dataclasses.replace(participant, preferences=tuple(prefs)))
 
         if form_errors:
             return _render_preferences_form(
@@ -725,7 +725,7 @@ async def submit_preferences(request: Request, email: str = Depends(require_logi
                 template_id=template_id, template_name=tpl.name,
                 mechanism=mechanism, seed=seed,
                 roster_bytes=roster_bytes, roster_filename=roster_filename,
-                roles=ro.roles, targets=ro.targets, targets_bytes=targets_bytes,
+                participants=ro.participants, targets=ro.targets, targets_bytes=targets_bytes,
                 max_choices=max_choices,
                 form_errors=form_errors,
                 previous_form_values=previous_form_values,
@@ -738,13 +738,13 @@ async def submit_preferences(request: Request, email: str = Depends(require_logi
                 template_id=template_id, template_name=tpl.name,
                 mechanism=mechanism, seed=seed,
                 roster_bytes=roster_bytes, roster_filename=roster_filename,
-                roles=ro.roles, targets=ro.targets, targets_bytes=targets_bytes,
+                participants=ro.participants, targets=ro.targets, targets_bytes=targets_bytes,
                 max_choices=max_choices,
                 form_errors=form_errors,
                 previous_form_values=previous_form_values,
             )
 
-        ro = dataclasses.replace(ro, roles=tuple(new_roles))
+        ro = dataclasses.replace(ro, participants=tuple(new_participants))
     # action == "skip" → ro 不動（preferences 全空），交由 pipeline reject
 
     # 跑 pipeline 並寫 record

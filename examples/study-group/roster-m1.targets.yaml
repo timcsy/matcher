@@ -1,4 +1,4 @@
-roles: []
+participants: []
 targets:
   - id: G1
     capacity: 3

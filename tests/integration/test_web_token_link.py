@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from matcher.template_loader import TemplateRegistry
 from matcher.web.app import create_app
-from matcher.web.security import sign_role_token
+from matcher.web.security import sign_participant_token
 from tests.integration._authhelper import login
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -45,23 +45,23 @@ def test_result_page_shows_token_links(client, monkeypatch):
     html = client.get(f"/match/{rid}").text
     assert "/r/" in html
     # 不該再用可枚舉的舊路徑當連結
-    assert f"/match/{rid}/role/T01" not in html
+    assert f"/match/{rid}/participant/T01" not in html
 
 
 def test_token_link_anonymous_ok(client, monkeypatch):
     rid = _run_match(client, monkeypatch)
-    token = sign_role_token(rid, "T01")
+    token = sign_participant_token(rid, "T01")
     anon = TestClient(client.app)  # 全新 client，未登入
     r = anon.get(f"/r/{token}")
     assert r.status_code == 200
     assert "您的配對結果" in r.text
 
 
-def test_token_link_only_own_role(client, monkeypatch):
+def test_token_link_only_own_participant(client, monkeypatch):
     rid = _run_match(client, monkeypatch)
     anon = TestClient(client.app)
     # T01 的 token 顯示 T01（王），不含 T02（李）的姓名作為「本人」
-    html = anon.get(f"/r/{sign_role_token(rid, 'T01')}").text
+    html = anon.get(f"/r/{sign_participant_token(rid, 'T01')}").text
     assert "王" in html
 
 
@@ -70,7 +70,7 @@ def test_forged_or_random_token_404(client, monkeypatch):
     anon = TestClient(client.app)
     assert anon.get("/r/totally-made-up-token").status_code == 404
     # 竄改合法 token
-    tok = sign_role_token("x", "y")
+    tok = sign_participant_token("x", "y")
     assert anon.get(f"/r/{tok[:-1]}X").status_code == 404
 
 
@@ -78,5 +78,5 @@ def test_old_individual_path_blocked_for_anon(client, monkeypatch):
     rid = _run_match(client, monkeypatch)
     anon = TestClient(client.app)
     # 未登入走舊可枚舉路徑 → 導向登入（非 200）
-    r = anon.get(f"/match/{rid}/role/T01", follow_redirects=False)
+    r = anon.get(f"/match/{rid}/participant/T01", follow_redirects=False)
     assert r.status_code in (303, 403)

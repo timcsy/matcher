@@ -49,7 +49,7 @@
   <thead><tr><th>顯示名稱</th><th>類型</th><th><small>英文代號</small></th></tr></thead>
   {% set type_label = {'str': '文字', 'int': '數字', 'list_str': '多筆文字'} %}
   <tbody>
-    {% for a in tpl.attributes.roles %}
+    {% for a in tpl.attributes.participants %}
     <tr><td>{{ a.description or a.key }}</td><td>{{ type_label.get(a.type, a.type) }}</td><td><small><code>{{ a.key }}</code></small></td></tr>
     {% endfor %}
   </tbody>

@@ -4,7 +4,7 @@ name: "研習分組"
 description: "依年級與容量限制分配學生到研習組別"
 
 attributes:
-  roles:
+  participants:
     - key: name
       type: str
       required: true
@@ -37,7 +37,7 @@ rules:
     description: "學生年級必須 ≥ 分組的最低年級限制"
     expr:
       ge:
-        field: role.grade
+        field: participant.grade
         value: 1
   - id: R002
     description: "分組主題屬於三類之一（程式、自然、人文）"
@@ -66,10 +66,10 @@ ui_fields:
 report_fields:
   - key: student_name
     label: "學生姓名"
-    source: roster_snapshot.roles[].attributes.name
+    source: roster_snapshot.participants[].attributes.name
   - key: assigned_group
     label: "分配到的組別"
-    source: assignment.{role_id}
+    source: assignment.{participant_id}
 
 preferences_schema:
   max_choices: 3

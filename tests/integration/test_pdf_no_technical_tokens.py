@@ -60,6 +60,6 @@ def test_admin_pdf_no_forbidden_tokens(tmp_path: Path):
 def test_individual_pdf_no_forbidden_tokens(tmp_path: Path):
     c = _client(tmp_path)
     rid = _run_m2_record(c)
-    text = _pdf_text(c.get(f"/match/{rid}/role/S01/report.pdf").content, tmp_path)
+    text = _pdf_text(c.get(f"/match/{rid}/participant/S01/report.pdf").content, tmp_path)
     for tok in FORBIDDEN:
         assert tok not in text, f"individual PDF 含禁用 token: {tok}"

@@ -21,7 +21,7 @@ name: "我的媒合場景"              # 必填，UI 上顯示用
 description: "一句話說明這個模板做什麼"  # 必填
 
 attributes:                       # 必填，宣告參與者與對象有哪些屬性欄位
-  roles: [...]                    # see §2
+  participants: [...]                    # see §2
   targets: [...]                  # see §2
 
 rules: [...]                      # 必填，至少 1 條規則；see §3
@@ -62,7 +62,7 @@ report_fields: [...]              # 可選；目前 PDF 未使用此欄
 - `list_str`：字串列表；在 CSV 中以分號 `;` 分隔（如 `國文;數學`）
 
 **規則**：
-- `key` 必須與 `attributes.{roles,targets}[i].key` 集合內唯一（同段 roles 內 key 不可重複；不同段如 roles vs targets 可同名）
+- `key` 必須與 `attributes.{participants,targets}[i].key` 集合內唯一（同段 participants 內 key 不可重複；不同段如 participants vs targets 可同名）
 - `aliases` 不需含 `key` 本身（系統會自動接受 `key`）
 - `aliases` 建議放最常用的中文表頭（學校行政會看的那些）
 
@@ -70,7 +70,7 @@ report_fields: [...]              # 可選；目前 PDF 未使用此欄
 
 ```yaml
 attributes:
-  roles:
+  participants:
     - key: name
       type: str
       required: true
@@ -112,7 +112,7 @@ attributes:
 
 ```yaml
 - id: R001                                  # 必填，建議 R001 / R002 ... 編號
-  description: "老師的專業必須在班級需要科目中"  # 必填，繁中；可含 role.X / target.X token（UI 會替換為「您的 X」「該對象的 X」）
+  description: "老師的專業必須在班級需要科目中"  # 必填，繁中；可含 participant.X / target.X token（UI 會替換為「您的 X」「該對象的 X」）
   expr: <expression>                         # 必填，see below
 ```
 
@@ -125,7 +125,7 @@ attributes:
 ```yaml
 expr:
   eq:
-    field: role.speciality      # 必填，必須 role.X 或 target.X 前綴
+    field: participant.speciality      # 必填，必須 participant.X 或 target.X 前綴
     value: "數學"                # 必填，要等於的值（str / int 皆可）
 ```
 
@@ -143,7 +143,7 @@ expr:
 ```yaml
 expr:
   ge:
-    field: role.seniority
+    field: participant.seniority
     value: 3                              # 必填，int
 ```
 
@@ -152,22 +152,22 @@ expr:
 ```yaml
 expr:
   le:
-    field: role.grade
+    field: participant.grade
     value: 6
 ```
 
-#### `role_in_target_field`：參與者屬性出現在對象的列表屬性中
+#### `participant_in_target_field`：參與者屬性出現在對象的列表屬性中
 
 最常用的「能不能教這個班」「能不能去這個組」判斷。
 
 ```yaml
 expr:
-  role_in_target_field:
-    role_field: speciality            # 必填，僅 key 名（不加 role. 前綴）
+  participant_in_target_field:
+    participant_field: speciality            # 必填，僅 key 名（不加 participant. 前綴）
     target_field: required_subjects    # 必填，對象的 list_str 欄位的 key 名
 ```
 
-語義：`role.speciality 在 target.required_subjects 列表中`。如果 target_field 不是 list（例如是 str），會退化為 `role.speciality == target.required_subjects`。
+語義：`participant.speciality 在 target.required_subjects 列表中`。如果 target_field 不是 list（例如是 str），會退化為 `participant.speciality == target.required_subjects`。
 
 ### 3.2 邏輯節點
 
@@ -177,7 +177,7 @@ expr:
 expr:
   and:
     - ge:
-        field: role.grade
+        field: participant.grade
         value: 4
     - in:
         field: target.topic
@@ -190,10 +190,10 @@ expr:
 expr:
   or:
     - eq:
-        field: role.is_vip
+        field: participant.is_vip
         value: true
     - ge:
-        field: role.seniority
+        field: participant.seniority
         value: 10
 ```
 
@@ -257,14 +257,14 @@ preferences_schema:
 
 ## 6. CSV / Excel 表頭對齊規則
 
-使用者匯入名單時，CSV / Excel 第一列為表頭。matcher 會嘗試把每個表頭欄對齊到 `attributes.roles[i].key` 或 `attributes.roles[i].aliases` 中的任一個。
+使用者匯入名單時，CSV / Excel 第一列為表頭。matcher 會嘗試把每個表頭欄對齊到 `attributes.participants[i].key` 或 `attributes.participants[i].aliases` 中的任一個。
 
 **強制規則**：
 - 第一欄必須是 `id` 欄（aliases 可寫 `id`、`編號`、`學號`、`教師編號` 等）；若沒這欄系統會自動生成 `R001`、`R002`...
 - 所有 `required: true` 的 attribute key 都必須有對應的表頭欄（用 key 或任一 alias）
 - 表頭可以中英文混用；對齊不分大小寫但會分中英文（「name」≠「姓名」除非有 alias）
 
-**範例**：給定模板的 attributes.roles:
+**範例**：給定模板的 attributes.participants:
 ```yaml
 - {key: name, aliases: [姓名, 學生姓名]}
 - {key: grade, aliases: [年級]}
@@ -309,7 +309,7 @@ ui_fields:
 report_fields:
   - key: student_name
     label: "學生姓名"
-    source: "roster_snapshot.roles[].attributes.name"   # JSONPath-ish
+    source: "roster_snapshot.participants[].attributes.name"   # JSONPath-ish
 ```
 
 **現階段建議**：可宣告以利未來擴充，但不要花太多時間設計——目前不影響功能。
@@ -327,7 +327,7 @@ name: "社團報名"
 description: "依年級與興趣分配學生到社團"
 
 attributes:
-  roles:
+  participants:
     - key: name
       type: str
       required: true
@@ -365,13 +365,13 @@ rules:
     description: "學生年級必須 ≥ 社團最低年級"
     expr:
       ge:
-        field: role.grade
-        value: 1     # 注意：這裡只能放固定值；若要 role.grade ≥ target.min_grade 需要不同寫法（目前 matcher 不支援欄位對欄位比較，請用 §11「現階段限制」中的 workaround）
+        field: participant.grade
+        value: 1     # 注意：這裡只能放固定值；若要 participant.grade ≥ target.min_grade 需要不同寫法（目前 matcher 不支援欄位對欄位比較，請用 §11「現階段限制」中的 workaround）
   - id: R002
     description: "學生興趣必須與社團主題相同"
     expr:
-      role_in_target_field:
-        role_field: interest
+      participant_in_target_field:
+        participant_field: interest
         target_field: topic
 
 preferences_schema:
@@ -404,7 +404,7 @@ name: "課輔師生媒合"
 description: "依專業與年資配對課輔老師到學生需求"
 
 attributes:
-  roles:
+  participants:
     - key: name
       type: str
       required: true
@@ -441,19 +441,19 @@ rules:
   - id: R001
     description: "老師可教科目必須包含學生所需科目"
     expr:
-      role_in_target_field:
-        role_field: specialities
+      participant_in_target_field:
+        participant_field: specialities
         target_field: subject
   - id: R002
     description: "老師年資至少 2 年，且不是實習老師"
     expr:
       and:
         - ge:
-            field: role.seniority
+            field: participant.seniority
             value: 2
         - not:
             eq:
-              field: role.is_intern
+              field: participant.is_intern
               value: "true"
 ```
 
@@ -465,12 +465,12 @@ rules:
 
 - [ ] `schema_version` 是 `"1.0"`（字串，含引號）
 - [ ] `id` 是純小寫英數 + 連字號，全域唯一
-- [ ] `attributes.roles` 與 `attributes.targets` 至少各有 1 個 entry
+- [ ] `attributes.participants` 與 `attributes.targets` 至少各有 1 個 entry
 - [ ] 每個 attribute 含 4 個必填欄位：`key`、`type`、`required`、`description`
 - [ ] 所有 `description` 為繁體中文
 - [ ] `rules` 至少 1 條
-- [ ] 每條規則的 `expr` 使用的 field 都正確指向 `role.X` 或 `target.X`，且 X 已在 `attributes` 宣告
-- [ ] `expr` 只使用以下算子：`eq`、`in`、`ge`、`le`、`role_in_target_field`、`and`、`or`、`not`（不可發明）
+- [ ] 每條規則的 `expr` 使用的 field 都正確指向 `participant.X` 或 `target.X`，且 X 已在 `attributes` 宣告
+- [ ] `expr` 只使用以下算子：`eq`、`in`、`ge`、`le`、`participant_in_target_field`、`and`、`or`、`not`（不可發明）
 - [ ] 若有 `preferences_schema`：`max_choices` 是 1..5 的整數
 - [ ] 若有 `default_targets`：每個 entry 的 `attributes` 涵蓋所有 required: true 的 target key
 - [ ] 整份 YAML 用 2 空白縮排，無 tab
@@ -484,7 +484,7 @@ matcher 目前 **不支援** 的能力：
 
 | 想做的事 | 為什麼不行 | Workaround |
 |---|---|---|
-| 欄位對欄位比較（如 `role.grade >= target.min_grade`）| `ge`/`le` 的 value 必須為常數 | 改用 `role_in_target_field` + 把 `target.min_grade` 改為 list_str 列出所有允許年級（如 `["4","5","6"]`） |
+| 欄位對欄位比較（如 `participant.grade >= target.min_grade`）| `ge`/`le` 的 value 必須為常數 | 改用 `participant_in_target_field` + 把 `target.min_grade` 改為 list_str 列出所有允許年級（如 `["4","5","6"]`） |
 | bool 型別 | 沒有 bool；只有 str/int/list_str | 用 `str` 存 `"true"/"false"`，用 `eq` 比對字串 |
 | 浮點數 / 日期 | 沒有 float / date 型別 | 用 int（如「年資」直接用整數年）|
 | 加權抽籤 / 優先序 | 違反 matcher 哲學（見 §3.3） | 改寫為過濾規則 |

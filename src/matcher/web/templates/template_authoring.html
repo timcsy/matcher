@@ -92,35 +92,35 @@
       <p class="text-sm text-gray-500 mb-4">要被分配的人或單位（例：學生、老師）有哪些資料？</p>
 
       <div class="space-y-2">
-        <template x-for="(row, i) in roleAttrs" :key="row._k">
+        <template x-for="(row, i) in participantAttrs" :key="row._k">
           <div class="border border-gray-200 rounded-lg p-4 bg-white" x-data="{open: !row.key}">
             <div class="flex items-center gap-3">
-              <input type="text" :name="`role_attr_${i}_key`" x-model="row.key" placeholder="代號（如 name）"
+              <input type="text" :name="`participant_attr_${i}_key`" x-model="row.key" placeholder="代號（如 name）"
                 class="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <select :name="`role_attr_${i}_type`" x-model="row.type"
+              <select :name="`participant_attr_${i}_type`" x-model="row.type"
                 class="border border-gray-300 rounded-md px-2 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="str">文字</option>
                 <option value="int">數字</option>
                 <option value="list_str">多筆文字</option>
               </select>
               <label class="flex items-center gap-1.5 text-sm text-gray-600 whitespace-nowrap">
-                <input type="checkbox" :name="`role_attr_${i}_required`" x-model="row.required" class="h-4 w-4">
+                <input type="checkbox" :name="`participant_attr_${i}_required`" x-model="row.required" class="h-4 w-4">
                 必填
               </label>
               <button type="button" @click="open=!open" class="text-gray-400 hover:text-gray-600 p-1" title="展開/收合">
                 <span x-text="open ? '▴' : '▾'"></span>
               </button>
-              <button type="button" @click="roleAttrs.splice(i,1)" class="text-red-500 hover:bg-red-50 rounded p-1" title="移除">×</button>
+              <button type="button" @click="participantAttrs.splice(i,1)" class="text-red-500 hover:bg-red-50 rounded p-1" title="移除">×</button>
             </div>
             <div x-show="open" class="mt-3 pt-3 border-t border-gray-100">
               <label class="block text-xs text-gray-500 mb-1">中文顯示名稱</label>
-              <input type="text" :name="`role_attr_${i}_description`" x-model="row.description" placeholder="如：學生姓名"
+              <input type="text" :name="`participant_attr_${i}_description`" x-model="row.description" placeholder="如：學生姓名"
                 class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
               <p class="text-xs text-gray-400 mt-1">CSV 表頭可以寫這個顯示名稱、也可以寫上面的英文代號，系統都會自動對齊。</p>
             </div>
           </div>
         </template>
-        <button type="button" @click="addRoleAttr()"
+        <button type="button" @click="addParticipantAttr()"
           class="w-full border border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-600 hover:text-blue-700 rounded-lg py-3 text-sm font-medium">
           ＋ 新增一個欄位
         </button>
@@ -173,7 +173,7 @@
       <h2 class="text-lg font-semibold mb-1">配對條件</h2>
       <p class="text-sm text-gray-500 mb-4">
         參與者要符合什麼條件，才能被分到對象？所有條件都會同時檢查。
-        <br>欄位寫成 <code class="bg-gray-100 px-1 rounded">role.代號</code> 或 <code class="bg-gray-100 px-1 rounded">target.代號</code>，如 <code class="bg-gray-100 px-1 rounded">role.grade</code>。
+        <br>欄位寫成 <code class="bg-gray-100 px-1 rounded">participant.代號</code> 或 <code class="bg-gray-100 px-1 rounded">target.代號</code>，如 <code class="bg-gray-100 px-1 rounded">participant.grade</code>。
       </p>
 
       <div class="space-y-3">
@@ -189,7 +189,7 @@
                 <option value="le">數字小於等於某值</option>
                 <option value="eq">欄位等於某值</option>
                 <option value="in">欄位是清單之一</option>
-                <option value="role_in_target_field">參與者欄位在對象的清單中</option>
+                <option value="participant_in_target_field">參與者欄位在對象的清單中</option>
               </select>
               <button type="button" @click="rules.splice(i,1)" class="text-red-500 hover:bg-red-50 rounded p-1">×</button>
             </div>
@@ -199,7 +199,7 @@
               <template x-if="['ge','le','eq','in'].includes(rule.type)">
                 <div>
                   <label class="block text-xs text-gray-500 mb-1">哪個欄位</label>
-                  <input type="text" :name="`rule_${i}_field`" x-model="rule.field" placeholder="role.grade"
+                  <input type="text" :name="`rule_${i}_field`" x-model="rule.field" placeholder="participant.grade"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
               </template>
@@ -217,14 +217,14 @@
                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
               </template>
-              <template x-if="rule.type === 'role_in_target_field'">
+              <template x-if="rule.type === 'participant_in_target_field'">
                 <div>
-                  <label class="block text-xs text-gray-500 mb-1">參與者欄位代號（不含 role.）</label>
-                  <input type="text" :name="`rule_${i}_role_field`" x-model="rule.role_field" placeholder="speciality"
+                  <label class="block text-xs text-gray-500 mb-1">參與者欄位代號（不含 participant.）</label>
+                  <input type="text" :name="`rule_${i}_participant_field`" x-model="rule.participant_field" placeholder="speciality"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
               </template>
-              <template x-if="rule.type === 'role_in_target_field'">
+              <template x-if="rule.type === 'participant_in_target_field'">
                 <div>
                   <label class="block text-xs text-gray-500 mb-1">對象清單欄位（不含 target.）</label>
                   <input type="text" :name="`rule_${i}_target_field`" x-model="rule.target_field" placeholder="required_subjects"
@@ -299,7 +299,7 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1.5">參與者</label>
-          <input type="text" id="ai-role" placeholder="學生（姓名、年級、興趣）"
+          <input type="text" id="ai-participant" placeholder="學生（姓名、年級、興趣）"
             class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div>

@@ -13,7 +13,7 @@ from matcher.rules import (
     Le,
     Not,
     Or,
-    RoleInTargetField,
+    ParticipantInTargetField,
     Rule,
     Ruleset,
     detect_contradictions,
@@ -29,11 +29,11 @@ from matcher.rules import (
 
 
 def test_eq_true():
-    assert evaluate(Eq("role.speciality", "國文"), {"speciality": "國文"}, {}) is True
+    assert evaluate(Eq("participant.speciality", "國文"), {"speciality": "國文"}, {}) is True
 
 
 def test_eq_false():
-    assert evaluate(Eq("role.speciality", "國文"), {"speciality": "數學"}, {}) is False
+    assert evaluate(Eq("participant.speciality", "國文"), {"speciality": "數學"}, {}) is False
 
 
 def test_in_passes():
@@ -45,22 +45,22 @@ def test_in_fails():
 
 
 def test_ge_and_le():
-    assert evaluate(Ge("role.seniority", 5), {"seniority": 6}, {}) is True
-    assert evaluate(Ge("role.seniority", 5), {"seniority": 5}, {}) is True
-    assert evaluate(Ge("role.seniority", 5), {"seniority": 4}, {}) is False
-    assert evaluate(Le("role.seniority", 5), {"seniority": 5}, {}) is True
-    assert evaluate(Le("role.seniority", 5), {"seniority": 6}, {}) is False
+    assert evaluate(Ge("participant.seniority", 5), {"seniority": 6}, {}) is True
+    assert evaluate(Ge("participant.seniority", 5), {"seniority": 5}, {}) is True
+    assert evaluate(Ge("participant.seniority", 5), {"seniority": 4}, {}) is False
+    assert evaluate(Le("participant.seniority", 5), {"seniority": 5}, {}) is True
+    assert evaluate(Le("participant.seniority", 5), {"seniority": 6}, {}) is False
 
 
-def test_role_in_target_field_list():
-    expr = RoleInTargetField(role_field="speciality", target_field="required_subjects")
+def test_participant_in_target_field_list():
+    expr = ParticipantInTargetField(participant_field="speciality", target_field="required_subjects")
     assert evaluate(expr, {"speciality": "國文"}, {"required_subjects": ["國文", "數學"]}) is True
     assert evaluate(expr, {"speciality": "歷史"}, {"required_subjects": ["國文", "數學"]}) is False
 
 
 def test_and_or_not():
-    e1 = Eq("role.x", 1)
-    e2 = Eq("role.y", 2)
+    e1 = Eq("participant.x", 1)
+    e2 = Eq("participant.y", 2)
     assert evaluate(And((e1, e2)), {"x": 1, "y": 2}, {}) is True
     assert evaluate(And((e1, e2)), {"x": 1, "y": 3}, {}) is False
     assert evaluate(Or((e1, e2)), {"x": 1, "y": 3}, {}) is True
@@ -71,7 +71,7 @@ def test_and_or_not():
 
 def test_unknown_attribute_raises():
     with pytest.raises(UnknownAttribute):
-        evaluate(Eq("role.missing", 1), {"speciality": "國文"}, {})
+        evaluate(Eq("participant.missing", 1), {"speciality": "國文"}, {})
     with pytest.raises(UnknownAttribute):
         evaluate(Eq("target.missing", 1), {}, {"feature": "stem"})
 
@@ -85,8 +85,8 @@ def _ruleset(*rules: Rule) -> Ruleset:
 
 def test_matched_rules_returns_passing_only():
     rs = _ruleset(
-        Rule("R001", "x=1", Eq("role.x", 1)),
-        Rule("R002", "y=2", Eq("role.y", 2)),
+        Rule("R001", "x=1", Eq("participant.x", 1)),
+        Rule("R002", "y=2", Eq("participant.y", 2)),
     )
     ms = matched_rules(rs, {"x": 1, "y": 9}, {})
     assert [m.id for m in ms] == ["R001"]
@@ -94,8 +94,8 @@ def test_matched_rules_returns_passing_only():
 
 def test_first_failed_rule_picks_first():
     rs = _ruleset(
-        Rule("R001", "x=1", Eq("role.x", 1)),
-        Rule("R002", "y=2", Eq("role.y", 2)),
+        Rule("R001", "x=1", Eq("participant.x", 1)),
+        Rule("R002", "y=2", Eq("participant.y", 2)),
     )
     assert first_failed_rule(rs, {"x": 1, "y": 9}, {}).id == "R002"
     assert first_failed_rule(rs, {"x": 1, "y": 2}, {}) is None
@@ -106,13 +106,13 @@ def test_first_failed_rule_picks_first():
 
 def test_parse_expr_all_nodes():
     node = {"and": [
-        {"eq": {"field": "role.x", "value": 1}},
+        {"eq": {"field": "participant.x", "value": 1}},
         {"or": [
             {"in": {"field": "target.f", "set": ["a", "b"]}},
-            {"not": {"ge": {"field": "role.y", "value": 3}}},
+            {"not": {"ge": {"field": "participant.y", "value": 3}}},
         ]},
-        {"role_in_target_field": {"role_field": "s", "target_field": "subs"}},
-        {"le": {"field": "role.z", "value": 10}},
+        {"participant_in_target_field": {"participant_field": "s", "target_field": "subs"}},
+        {"le": {"field": "participant.z", "value": 10}},
     ]}
     expr = parse_expr(node)
     assert isinstance(expr, And)
@@ -123,7 +123,7 @@ def test_parse_ruleset_basic():
     data = {
         "version": "1.0",
         "rules": [
-            {"id": "R001", "description": "說明", "expr": {"eq": {"field": "role.x", "value": 1}}}
+            {"id": "R001", "description": "說明", "expr": {"eq": {"field": "participant.x", "value": 1}}}
         ],
     }
     rs = parse_ruleset(data)
@@ -135,15 +135,15 @@ def test_parse_ruleset_basic():
 
 
 def test_detect_contradictions_clean():
-    rs = _ruleset(Rule("R001", "x=1", Eq("role.x", 1)))
+    rs = _ruleset(Rule("R001", "x=1", Eq("participant.x", 1)))
     detect_contradictions(rs)  # 無異常
 
 
 def test_detect_contradictions_clash():
     rs = _ruleset(
         Rule("R001", "矛盾", And((
-            Eq("role.x", 1),
-            Not(Eq("role.x", 1)),
+            Eq("participant.x", 1),
+            Not(Eq("participant.x", 1)),
         )))
     )
     with pytest.raises(RuleContradiction):

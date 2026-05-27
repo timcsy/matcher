@@ -31,8 +31,8 @@ def test_download_target_example_csv(client):
     assert rows[0] == ["編號", "容量", "班級名稱", "班級需要的科目清單", "班級特色"]
 
 
-def test_download_role_example_xlsx(client):
-    r = client.get("/templates/teacher-class/example/roles.xlsx")
+def test_download_participant_example_xlsx(client):
+    r = client.get("/templates/teacher-class/example/participants.xlsx")
     assert r.status_code == 200
     assert "spreadsheetml" in r.headers.get("content-type", "")
 
@@ -45,13 +45,13 @@ id: my-tpl
 name: 我的
 description: x
 attributes:
-  roles:
+  participants:
     - {key: name, type: str, required: true, description: 姓名}
   targets:
     - {key: name, type: str, required: true, description: 組名}
     - {key: venue, type: str, required: true, description: 場地}
 rules:
-  - {id: R001, description: 規則, expr: {eq: {field: role.name, value: x}}}
+  - {id: R001, description: 規則, expr: {eq: {field: participant.name, value: x}}}
 """
     r = client.post("/templates/save", data={"mode": "advanced", "raw_yaml": yaml_tpl})
     assert r.json().get("ok"), r.text

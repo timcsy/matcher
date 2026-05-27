@@ -59,13 +59,13 @@ def _parse_attribute_decl(d: dict, side: str) -> AttributeDecl:
 
 
 def _parse_attributes(data: dict) -> AttributeSchema:
-    roles = tuple(_parse_attribute_decl(r, "roles") for r in data.get("roles", []))
+    participants = tuple(_parse_attribute_decl(r, "participants") for r in data.get("participants", []))
     targets = tuple(_parse_attribute_decl(t, "targets") for t in data.get("targets", []))
-    if not roles:
-        raise TemplateMissingField("attributes.roles 不可為空")
+    if not participants:
+        raise TemplateMissingField("attributes.participants 不可為空")
     if not targets:
         raise TemplateMissingField("attributes.targets 不可為空")
-    return AttributeSchema(roles=roles, targets=targets)
+    return AttributeSchema(participants=participants, targets=targets)
 
 
 def _parse_ui_field(d: dict) -> UIFieldDecl:
@@ -290,7 +290,7 @@ def dump_template_yaml(tpl: Template, path: str | Path) -> None:
         "name": tpl.name,
         "description": tpl.description,
         "attributes": {
-            "roles": [_attr_decl_to_dict(a) for a in tpl.attributes.roles],
+            "participants": [_attr_decl_to_dict(a) for a in tpl.attributes.participants],
             "targets": [_attr_decl_to_dict(a) for a in tpl.attributes.targets],
         },
         "rules": _ruleset_to_yaml_list(tpl.ruleset),

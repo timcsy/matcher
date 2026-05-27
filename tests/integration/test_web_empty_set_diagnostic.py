@@ -19,7 +19,7 @@ BAD_SIDECAR = b"""targets:
 """
 CSV = b"id,name,speciality,seniority\nT01,\xe7\x8e\x8b,\xe5\x9c\x8b\xe6\x96\x87,8\n"
 
-FORBIDDEN = ("filter_trace", "qualified_set", "exit_code", "role.", "target.")
+FORBIDDEN = ("filter_trace", "qualified_set", "exit_code", "participant.", "target.")
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def test_fill_form_empty_set_refills_with_diagnostic(client: TestClient):
     """US2：UI 填清單觸發空集合 → 回填清單頁、保留輸入 + 診斷。"""
     form = {
         "template_id": "teacher-class", "seed": "1", "mechanism": "M0",
-        "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
+        "participant_0_name": "王老師", "participant_0_speciality": "國文", "participant_0_seniority": "8",
         # 班級特色填無效 → R003 全失敗
         "target_0_id": "C01", "target_0_capacity": "2", "target_0_name": "甲班",
         "target_0_required_subjects": "國文", "target_0_feature": "無效",

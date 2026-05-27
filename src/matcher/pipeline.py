@@ -25,7 +25,7 @@ from matcher.rules import (
     Le,
     Not,
     Or,
-    RoleInTargetField,
+    ParticipantInTargetField,
     Ruleset,
     detect_contradictions,
 )
@@ -53,13 +53,13 @@ class MatcherResult:
 
 
 def _collect_referenced_fields(expr) -> list[tuple[str, str]]:
-    """收集表達式引用的 (side, name)。side ∈ {role, target}。"""
+    """收集表達式引用的 (side, name)。side ∈ {participant, target}。"""
     refs: list[tuple[str, str]] = []
     if isinstance(expr, (Eq, In, Ge, Le)):
         side, _, name = expr.field.partition(".")
         refs.append((side, name))
-    elif isinstance(expr, RoleInTargetField):
-        refs.append(("role", expr.role_field))
+    elif isinstance(expr, ParticipantInTargetField):
+        refs.append(("participant", expr.participant_field))
         refs.append(("target", expr.target_field))
     elif isinstance(expr, (And, Or)):
         for c in expr.children:
@@ -70,28 +70,28 @@ def _collect_referenced_fields(expr) -> list[tuple[str, str]]:
 
 
 def _validate_attribute_references(ruleset: Ruleset, roster: Roster) -> None:
-    role_attrs = set()
-    for r in roster.roles:
-        role_attrs.update(r.attributes.keys())
+    participant_attrs = set()
+    for r in roster.participants:
+        participant_attrs.update(r.attributes.keys())
     target_attrs = set()
     for t in roster.targets:
         target_attrs.update(t.attributes.keys())
 
     for rule in ruleset.rules:
         for side, name in _collect_referenced_fields(rule.expr):
-            if side == "role" and name not in role_attrs:
+            if side == "participant" and name not in participant_attrs:
                 raise UnknownAttribute(
-                    f"規則 `{rule.id}` 引用未定義的參與者屬性 `role.{name}`；"
-                    f"目前名單中所有參與者屬性：{sorted(role_attrs)}"
+                    f"規則 `{rule.id}` 引用未定義的參與者屬性 `participant.{name}`；"
+                    f"目前名單中所有參與者屬性：{sorted(participant_attrs)}"
                 )
             if side == "target" and name not in target_attrs:
                 raise UnknownAttribute(
                     f"規則 `{rule.id}` 引用未定義的對象屬性 `target.{name}`；"
                     f"目前名單中所有對象屬性：{sorted(target_attrs)}"
                 )
-            if side not in ("role", "target"):
+            if side not in ("participant", "target"):
                 raise UnknownAttribute(
-                    f"規則 `{rule.id}` 的欄位引用 `{side}.{name}` 缺少 role./target. 前綴"
+                    f"規則 `{rule.id}` 的欄位引用 `{side}.{name}` 缺少 participant./target. 前綴"
                 )
 
 
@@ -115,7 +115,7 @@ def run_match(inp: MatcherInput) -> MatcherResult:
         )
 
     # 2b. 名單中內嵌的 preferences 在純抽籤模式下也不接受
-    if inp.mechanism == "M0" and any(role.preferences for role in inp.roster.roles):
+    if inp.mechanism == "M0" and any(participant.preferences for participant in inp.roster.participants):
         raise PreferencesNotSupported(
             "「純抽籤」不接受志願輸入。\n"
             "原因：名單中有人填了志願。\n"
@@ -123,7 +123,7 @@ def run_match(inp: MatcherInput) -> MatcherResult:
         )
 
     # 2c. 輪流挑 / 依志願先後填滿 需要至少一位參與者提供志願
-    if inp.mechanism in ("M1", "M2") and not any(role.preferences for role in inp.roster.roles):
+    if inp.mechanism in ("M1", "M2") and not any(participant.preferences for participant in inp.roster.participants):
         friendly = _FRIENDLY.get(inp.mechanism, inp.mechanism)
         raise MechanismRequiresPreferences(
             f"「{friendly}」需要至少一位填了志願；若所有人都沒志願，請改用「純抽籤」。\n"
@@ -139,11 +139,11 @@ def run_match(inp: MatcherInput) -> MatcherResult:
 
     # 5. 容量預檢：每位參與者的資格 target 都因容量耗盡而無分配 → 容量不足
     total_capacity = sum(t.capacity for t in inp.roster.targets)
-    n_roles = len(inp.roster.roles)
-    if n_roles > total_capacity:
+    n_participants = len(inp.roster.participants)
+    if n_participants > total_capacity:
         raise CapacityShortage(
             f"容量不足以容納所有參與者。\n"
-            f"細節：參與者 {n_roles} 人，所有對象總容量 {total_capacity}；超額 {n_roles - total_capacity} 人。\n"
+            f"細節：參與者 {n_participants} 人，所有對象總容量 {total_capacity}；超額 {n_participants - total_capacity} 人。\n"
             f"建議：增加對象容量、減少參與者，或調整資格條件以排除部分參與者。"
         )
 
@@ -155,16 +155,16 @@ def run_match(inp: MatcherInput) -> MatcherResult:
     if inp.mechanism == "M0":
         assignment, allocation_trace = allocate_m0(qualified_set, capacities, rng)
     elif inp.mechanism == "M1":
-        preferences_map = {role.id: list(role.preferences) for role in inp.roster.roles}
+        preferences_map = {participant.id: list(participant.preferences) for participant in inp.roster.participants}
         processing_order, assignment, allocation_trace = allocate_m1(
             qualified_set, preferences_map, capacities, rng,
-            role_order=[role.id for role in inp.roster.roles],
+            participant_order=[participant.id for participant in inp.roster.participants],
         )
     elif inp.mechanism == "M2":
-        preferences_map = {role.id: list(role.preferences) for role in inp.roster.roles}
+        preferences_map = {participant.id: list(participant.preferences) for participant in inp.roster.participants}
         processing_order, assignment, allocation_trace = allocate_m2(
             qualified_set, preferences_map, capacities, rng,
-            role_order=[role.id for role in inp.roster.roles],
+            participant_order=[participant.id for participant in inp.roster.participants],
         )
     else:
         raise ValueError(f"不支援的機制 `{inp.mechanism}`；支援：M0、M1、M2")

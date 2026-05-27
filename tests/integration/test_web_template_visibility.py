@@ -18,14 +18,14 @@ id: a-private-tpl
 name: A 的範本
 description: 測試用
 attributes:
-  roles:
+  participants:
     - {key: name, type: str, required: true, description: 姓名}
   targets:
     - {key: name, type: str, required: true, description: 組名}
 rules:
   - id: R001
     description: 規則
-    expr: {eq: {field: role.name, value: x}}
+    expr: {eq: {field: participant.name, value: x}}
 """
 
 

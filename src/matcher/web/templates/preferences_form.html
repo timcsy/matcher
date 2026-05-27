@@ -4,7 +4,7 @@
 <h2>填寫志願</h2>
 
 <div class="card">
-  <p><strong>已上傳清單</strong>：{{ roster_filename }}（{{ roles_for_form | length }} 位）</p>
+  <p><strong>已上傳清單</strong>：{{ roster_filename }}（{{ participants_for_form | length }} 位）</p>
   <p><strong>模板</strong>：{{ template_name }}</p>
   <p><strong>機制</strong>：{{ mechanism_label }}</p>
   <p><strong>隨機種子</strong>：<code>{{ seed }}</code></p>
@@ -58,11 +58,11 @@
       </tr>
     </thead>
     <tbody>
-      {% for role in roles_for_form %}
+      {% for participant in participants_for_form %}
       <tr>
-        <td><code>{{ role.id }}</code>（{{ role.display_name }}）</td>
+        <td><code>{{ participant.id }}</code>（{{ participant.display_name }}）</td>
         {% for rank in range(1, max_choices + 1) %}
-        {% set field_name = "pref_" ~ role.id ~ "_" ~ rank %}
+        {% set field_name = "pref_" ~ participant.id ~ "_" ~ rank %}
         {% set selected_value = previous_form_values.get(field_name, "") if previous_form_values else "" %}
         <td>
           <select name="{{ field_name }}">

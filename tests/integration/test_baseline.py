@@ -27,7 +27,7 @@ def test_baseline_runs_successfully(tmp_path: Path):
     assert "稽核紀錄已寫入" in result.output
     assert audit.exists()
     data = json.loads(audit.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.4"
+    assert data["schema_version"] == "1.5"
     assert data["mechanism"] == "M0"
     assert data["seed"] == 123456
     assert "assignment" in data
@@ -47,6 +47,6 @@ def test_assignment_within_qualified_set(tmp_path: Path):
     ])
     data = json.loads(audit.read_text(encoding="utf-8"))
     qs = data["qualified_set"]
-    for role_id, target_id in data["assignment"].items():
+    for participant_id, target_id in data["assignment"].items():
         if target_id is not None:
-            assert target_id in qs[role_id], f"{role_id}→{target_id} 不在資格集合內"
+            assert target_id in qs[participant_id], f"{participant_id}→{target_id} 不在資格集合內"

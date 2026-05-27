@@ -62,7 +62,7 @@
   <tbody>
     {% for row in allocation_rows %}
     <tr>
-      <td><code>{{ row.role_id }}</code>（{{ row.role_name }}）</td>
+      <td><code>{{ row.participant_id }}</code>（{{ row.participant_name }}）</td>
       <td>
         {% if row.target_id %}<code>{{ row.target_id }}</code>（{{ row.target_name }}）
         {% else %}<em>未分配</em>{% endif %}

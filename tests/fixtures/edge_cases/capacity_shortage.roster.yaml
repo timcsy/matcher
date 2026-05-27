@@ -1,4 +1,4 @@
-roles:
+participants:
   - id: R1
     attributes: {name: "甲", x: "a"}
   - id: R2

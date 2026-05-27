@@ -8,29 +8,29 @@ from matcher.rules import Ruleset, evaluate, first_failed_rule, matched_rules
 
 
 def filter_qualified(ruleset: Ruleset, roster: Roster) -> tuple[dict, list[dict]]:
-    """對每個 (role, target) 求值，產生資格集合與 filter_trace。
+    """對每個 (participant, target) 求值，產生資格集合與 filter_trace。
 
     若無任何參與者擁有資格 → QualifiedSetEmpty。
     """
-    qualified_set: dict[str, list[str]] = {r.id: [] for r in roster.roles}
+    qualified_set: dict[str, list[str]] = {r.id: [] for r in roster.participants}
     trace: list[dict] = []
 
-    for role in roster.roles:
+    for participant in roster.participants:
         for target in roster.targets:
-            ms = matched_rules(ruleset, role.attributes, target.attributes)
+            ms = matched_rules(ruleset, participant.attributes, target.attributes)
             ok = len(ms) == len(ruleset.rules)
             entry: dict = {
-                "role_id": role.id,
+                "participant_id": participant.id,
                 "target_id": target.id,
                 "qualified": ok,
                 "matched_rules": [m.id for m in ms],
             }
             if not ok:
-                failed = first_failed_rule(ruleset, role.attributes, target.attributes)
+                failed = first_failed_rule(ruleset, participant.attributes, target.attributes)
                 entry["failed_rule"] = failed.id if failed else None
             trace.append(entry)
             if ok:
-                qualified_set[role.id].append(target.id)
+                qualified_set[participant.id].append(target.id)
 
     if not any(qualified_set.values()):
         summary = rejection_summary(trace, ruleset)

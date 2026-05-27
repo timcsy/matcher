@@ -18,7 +18,7 @@ BAD_SIDECAR = """targets:
 """
 CSV = "id,name,speciality,seniority\nT01,王老師,國文,8\n"
 
-FORBIDDEN = ("filter_trace", "qualified_set", "exit_code", "role.", "target.")
+FORBIDDEN = ("filter_trace", "qualified_set", "exit_code", "participant.", "target.")
 
 
 def test_cli_empty_set_exit10_with_culprit(tmp_path: Path):

@@ -4,5 +4,5 @@ rules:
     description: "引用未定義的參與者屬性"
     expr:
       eq:
-        field: role.this_attribute_does_not_exist
+        field: participant.this_attribute_does_not_exist
         value: 1

@@ -17,11 +17,11 @@ def _minimal_tpl_dict(tpl_id: str) -> dict:
         "name": f"測試模板 {tpl_id}",
         "description": "單元測試用",
         "attributes": {
-            "roles": [{"key": "name", "type": "str", "required": True, "description": "姓名"}],
+            "participants": [{"key": "name", "type": "str", "required": True, "description": "姓名"}],
             "targets": [{"key": "name", "type": "str", "required": True, "description": "對象名"}],
         },
         "rules": [
-            {"id": "R001", "description": "至少需要一條規則", "expr": {"eq": {"field": "role.name", "value": "any"}}}
+            {"id": "R001", "description": "至少需要一條規則", "expr": {"eq": {"field": "participant.name", "value": "any"}}}
         ],
     }
 

@@ -20,7 +20,7 @@ def _csrf(c) -> str:
     return m.group(1) if m else ""
 
 
-def test_save_empty_roles_returns_friendly_json_not_500():
+def test_save_empty_participants_returns_friendly_json_not_500():
     c = _client()
     # 模擬 simple 模式：只填了範本基本資訊，參與者欄位空白（key 未填）
     data = {
@@ -29,7 +29,7 @@ def test_save_empty_roles_returns_friendly_json_not_500():
         "template_id": "x-incomplete",
         "template_name": "未填完整",
         "template_description": "測試",
-        "role_attr_0_key": "",            # 空 → attributes.roles 會是空
+        "participant_attr_0_key": "",            # 空 → attributes.participants 會是空
         "target_attr_0_key": "cls",
         "target_attr_0_type": "str",
     }

@@ -54,7 +54,7 @@ def test_post_run_with_empty_prefs_m1_renders_preferences_form(tmp_path: Path):
 
 # ── US1 主要流程 ──────────────────────────────────────────────────
 
-def test_preferences_form_lists_roles_and_targets(tmp_path: Path):
+def test_preferences_form_lists_participants_and_targets(tmp_path: Path):
     """T010：表單列出 9 學生 + 27 個 select + 候選對象段。"""
     c = _client(tmp_path)
     r = _post_run(c, mechanism="M1", csv_bytes=_empty_prefs_csv(9))
@@ -75,9 +75,9 @@ def _extract_hidden_inputs(html: str) -> dict[str, str]:
     return out
 
 
-def _submit_preferences(c: TestClient, hidden: dict, prefs_by_role: dict[str, list[str]]):
+def _submit_preferences(c: TestClient, hidden: dict, prefs_by_participant: dict[str, list[str]]):
     data = {**hidden, "_action": "submit"}
-    for rid, prefs in prefs_by_role.items():
+    for rid, prefs in prefs_by_participant.items():
         for i, pref in enumerate(prefs, start=1):
             data[f"pref_{rid}_{i}"] = pref
     return c.post("/match/preferences", data=data)

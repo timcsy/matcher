@@ -1,4 +1,4 @@
-roles:
+participants:
   - id: T01
     attributes:
       name: "王老師"

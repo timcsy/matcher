@@ -22,7 +22,7 @@ class AttributeDecl:
 
 @dataclass(frozen=True)
 class AttributeSchema:
-    roles: tuple = ()
+    participants: tuple = ()
     targets: tuple = ()
 
 

@@ -57,27 +57,27 @@ def assemble_roster_csv_bytes(form: dict, template: Template) -> bytes:
     """UI 表單 → CSV bytes（與直接上傳 CSV 路徑 bytewise 等價）。
 
     流程：
-    1. 蒐集 role_<i>_<key> 欄位
+    1. 蒐集 participant_<i>_<key> 欄位
     2. 過濾「所有 attribute 都空白」的列
     3. 組 CSV header：id + 範本宣告的每個 attribute key（按宣告順序）
     4. 對每位參與者寫一行
     5. 回 utf-8-sig bytes（沿用既有 CSV path 的 BOM 處理）
     """
-    role_keys = [a.key for a in template.attributes.roles]
+    participant_keys = [a.key for a in template.attributes.participants]
     # 若範本有 preferences_schema，加 preferences 欄
     has_prefs = template.preferences_schema is not None
 
-    fields = ["id"] + role_keys + (["preferences"] if has_prefs else [])
-    rows = _collect_indexed_rows(form, "role", fields)
-    non_empty = [r for r in rows if not _is_empty_row(r, role_keys)]
+    fields = ["id"] + participant_keys + (["preferences"] if has_prefs else [])
+    rows = _collect_indexed_rows(form, "participant", fields)
+    non_empty = [r for r in rows if not _is_empty_row(r, participant_keys)]
 
     # 哪些欄位需要分隔符正規化：list_str 屬性 + preferences
-    multi_keys = {a.key for a in template.attributes.roles if a.type == "list_str"}
+    multi_keys = {a.key for a in template.attributes.participants if a.type == "list_str"}
     if has_prefs:
         multi_keys.add("preferences")
 
     buf = io.StringIO()
-    headers = ["id"] + role_keys + (["preferences"] if has_prefs else [])
+    headers = ["id"] + participant_keys + (["preferences"] if has_prefs else [])
     writer = csv.DictWriter(buf, fieldnames=headers)
     writer.writeheader()
     for row in non_empty:

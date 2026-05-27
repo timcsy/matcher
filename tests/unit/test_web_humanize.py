@@ -19,7 +19,7 @@ def _make_template() -> Template:
         name="教師-班級配對",
         description="說明",
         attributes=AttributeSchema(
-            roles=(
+            participants=(
                 AttributeDecl(key="speciality", type="str", description="老師專業科目"),
                 AttributeDecl(key="seniority", type="int", description="年資"),
             ),
@@ -32,10 +32,10 @@ def _make_template() -> Template:
     )
 
 
-def test_role_substitution():
-    out = humanize_rule_description("role.speciality 必須是國文", _make_template())
+def test_participant_substitution():
+    out = humanize_rule_description("participant.speciality 必須是國文", _make_template())
     assert "您的 老師專業科目" in out
-    assert "role.speciality" not in out
+    assert "participant.speciality" not in out
 
 
 def test_target_substitution():
@@ -46,17 +46,17 @@ def test_target_substitution():
 
 def test_multiple_substitutions_in_one_line():
     out = humanize_rule_description(
-        "role.speciality 必須在 target.required_subjects 中",
+        "participant.speciality 必須在 target.required_subjects 中",
         _make_template(),
     )
     assert "您的 老師專業科目" in out
     assert "該對象的 班級需要科目" in out
-    assert "role." not in out
+    assert "participant." not in out
     assert "target." not in out
 
 
 def test_unknown_key_falls_back_to_key():
-    out = humanize_rule_description("role.unknown_field 大於 5", _make_template())
+    out = humanize_rule_description("participant.unknown_field 大於 5", _make_template())
     assert "您的 unknown_field" in out
 
 

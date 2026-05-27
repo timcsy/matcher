@@ -65,17 +65,17 @@ def _print_summary(audit: dict) -> None:
     typer.echo(f"seed：{audit['seed']}")
     typer.echo("最終配對：")
 
-    role_attrs = {r["id"]: r["attributes"] for r in audit["roster_snapshot"]["roles"]}
+    participant_attrs = {r["id"]: r["attributes"] for r in audit["roster_snapshot"]["participants"]}
     target_attrs = {t["id"]: t["attributes"] for t in audit["roster_snapshot"]["targets"]}
-    for role_id in sorted(audit["assignment"]):
-        target_id = audit["assignment"][role_id]
-        ra = role_attrs.get(role_id, {})
+    for participant_id in sorted(audit["assignment"]):
+        target_id = audit["assignment"][participant_id]
+        ra = participant_attrs.get(participant_id, {})
         if target_id is None:
-            typer.echo(f"  {role_id}（{ra.get('name', '')}）→ 未分配")
+            typer.echo(f"  {participant_id}（{ra.get('name', '')}）→ 未分配")
         else:
             ta = target_attrs.get(target_id, {})
             typer.echo(
-                f"  {role_id}（{ra.get('name', '')}）→ {target_id}（{ta.get('name', '')}）"
+                f"  {participant_id}（{ra.get('name', '')}）→ {target_id}（{ta.get('name', '')}）"
             )
 
 
@@ -313,7 +313,7 @@ def template_show_cmd(
     typer.echo("")
     typer.echo("=== 屬性 schema ===")
     typer.echo("參與者：")
-    for a in tpl.attributes.roles:
+    for a in tpl.attributes.participants:
         typer.echo(f"  - {a.key}（{a.type}）：{a.description}")
     typer.echo("對象：")
     for a in tpl.attributes.targets:

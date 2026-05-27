@@ -43,7 +43,7 @@ def test_m1_trace_has_null_tie_break(tmp_path: Path):
 
 
 def test_schema_version_unchanged(tmp_path: Path):
-    """audit schema 保持 v1.3，不升版本。"""
+    """audit schema 為 v1.5（feature 018 升版）。"""
     out = tmp_path / "audit.json"
     runner.invoke(app, [
         "run",
@@ -53,4 +53,4 @@ def test_schema_version_unchanged(tmp_path: Path):
         "--output", str(out),
     ])
     data = json.loads(out.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.4"
+    assert data["schema_version"] == "1.5"

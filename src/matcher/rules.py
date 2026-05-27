@@ -1,6 +1,6 @@
 """規則模型、AST 與求值器。
 
-AST 節點為 frozen dataclass；求值器在過濾期將 role.X / target.X 欄位取出比對。
+AST 節點為 frozen dataclass；求值器在過濾期將 participant.X / target.X 欄位取出比對。
 表達能力對齊 FR-013：等值、邏輯（AND/OR/NOT）、範圍/集合（≥/≤/IN）、跨側包含。
 """
 
@@ -42,8 +42,8 @@ class Le:
 
 
 @dataclass(frozen=True)
-class RoleInTargetField:
-    role_field: str
+class ParticipantInTargetField:
+    participant_field: str
     target_field: str
 
 
@@ -62,7 +62,7 @@ class Not:
     child: object
 
 
-RuleExpr = Union[Eq, In, Ge, Le, RoleInTargetField, And, Or, Not]
+RuleExpr = Union[Eq, In, Ge, Le, ParticipantInTargetField, And, Or, Not]
 
 
 @dataclass(frozen=True)
@@ -95,9 +95,9 @@ def parse_expr(node: object) -> RuleExpr:
         return Ge(field=body["field"], value=int(body["value"]))
     if op == "le":
         return Le(field=body["field"], value=int(body["value"]))
-    if op == "role_in_target_field":
-        return RoleInTargetField(
-            role_field=body["role_field"],
+    if op == "participant_in_target_field":
+        return ParticipantInTargetField(
+            participant_field=body["participant_field"],
             target_field=body["target_field"],
         )
     if op == "and":
@@ -121,20 +121,20 @@ def parse_ruleset(data: dict) -> Ruleset:
 # ── 求值 ─────────────────────────────────────────────────────────────────
 
 
-def _resolve(field_ref: str, role_attrs: dict, target_attrs: dict) -> object:
-    """解析 'role.X' / 'target.X' 形式的欄位引用。"""
+def _resolve(field_ref: str, participant_attrs: dict, target_attrs: dict) -> object:
+    """解析 'participant.X' / 'target.X' 形式的欄位引用。"""
     side, _, name = field_ref.partition(".")
     if not name:
-        raise UnknownAttribute(f"規則引用了無效欄位 `{field_ref}`：缺少 role./target. 前綴")
-    if side == "role":
-        if name not in role_attrs:
+        raise UnknownAttribute(f"規則引用了無效欄位 `{field_ref}`：缺少 participant./target. 前綴")
+    if side == "participant":
+        if name not in participant_attrs:
             raise UnknownAttribute(f"規則引用未定義的參與者屬性：`{field_ref}`")
-        return role_attrs[name]
+        return participant_attrs[name]
     if side == "target":
         if name not in target_attrs:
             raise UnknownAttribute(f"規則引用未定義的對象屬性：`{field_ref}`")
         return target_attrs[name]
-    raise UnknownAttribute(f"規則引用無效欄位前綴：`{field_ref}`（必須為 role. 或 target.）")
+    raise UnknownAttribute(f"規則引用無效欄位前綴：`{field_ref}`（必須為 participant. 或 target.）")
 
 
 def _compare_numeric(field_ref: str, actual, op: str, expected) -> bool:
@@ -149,20 +149,20 @@ def _compare_numeric(field_ref: str, actual, op: str, expected) -> bool:
     return actual >= expected if op == ">=" else actual <= expected
 
 
-def evaluate(expr: RuleExpr, role_attrs: dict, target_attrs: dict) -> bool:
-    """對單一 (role, target) 求值單一表達式。"""
+def evaluate(expr: RuleExpr, participant_attrs: dict, target_attrs: dict) -> bool:
+    """對單一 (participant, target) 求值單一表達式。"""
     if isinstance(expr, Eq):
-        return _resolve(expr.field, role_attrs, target_attrs) == expr.value
+        return _resolve(expr.field, participant_attrs, target_attrs) == expr.value
     if isinstance(expr, In):
-        return _resolve(expr.field, role_attrs, target_attrs) in expr.set
+        return _resolve(expr.field, participant_attrs, target_attrs) in expr.set
     if isinstance(expr, Ge):
-        return _compare_numeric(expr.field, _resolve(expr.field, role_attrs, target_attrs), ">=", expr.value)
+        return _compare_numeric(expr.field, _resolve(expr.field, participant_attrs, target_attrs), ">=", expr.value)
     if isinstance(expr, Le):
-        return _compare_numeric(expr.field, _resolve(expr.field, role_attrs, target_attrs), "<=", expr.value)
-    if isinstance(expr, RoleInTargetField):
-        rv = role_attrs.get(expr.role_field)
-        if expr.role_field not in role_attrs:
-            raise UnknownAttribute(f"規則引用未定義的參與者屬性：`role.{expr.role_field}`")
+        return _compare_numeric(expr.field, _resolve(expr.field, participant_attrs, target_attrs), "<=", expr.value)
+    if isinstance(expr, ParticipantInTargetField):
+        rv = participant_attrs.get(expr.participant_field)
+        if expr.participant_field not in participant_attrs:
+            raise UnknownAttribute(f"規則引用未定義的參與者屬性：`participant.{expr.participant_field}`")
         if expr.target_field not in target_attrs:
             raise UnknownAttribute(f"規則引用未定義的對象屬性：`target.{expr.target_field}`")
         tv = target_attrs[expr.target_field]
@@ -170,22 +170,22 @@ def evaluate(expr: RuleExpr, role_attrs: dict, target_attrs: dict) -> bool:
             return rv == tv
         return rv in tv
     if isinstance(expr, And):
-        return all(evaluate(c, role_attrs, target_attrs) for c in expr.children)
+        return all(evaluate(c, participant_attrs, target_attrs) for c in expr.children)
     if isinstance(expr, Or):
-        return any(evaluate(c, role_attrs, target_attrs) for c in expr.children)
+        return any(evaluate(c, participant_attrs, target_attrs) for c in expr.children)
     if isinstance(expr, Not):
-        return not evaluate(expr.child, role_attrs, target_attrs)
+        return not evaluate(expr.child, participant_attrs, target_attrs)
     raise TypeError(f"未知表達式型別：{type(expr)!r}")
 
 
-def matched_rules(ruleset: Ruleset, role_attrs: dict, target_attrs: dict) -> list[Rule]:
+def matched_rules(ruleset: Ruleset, participant_attrs: dict, target_attrs: dict) -> list[Rule]:
     """回傳所有通過的規則（依出現順序）。"""
-    return [r for r in ruleset.rules if evaluate(r.expr, role_attrs, target_attrs)]
+    return [r for r in ruleset.rules if evaluate(r.expr, participant_attrs, target_attrs)]
 
 
-def first_failed_rule(ruleset: Ruleset, role_attrs: dict, target_attrs: dict) -> Rule | None:
+def first_failed_rule(ruleset: Ruleset, participant_attrs: dict, target_attrs: dict) -> Rule | None:
     for r in ruleset.rules:
-        if not evaluate(r.expr, role_attrs, target_attrs):
+        if not evaluate(r.expr, participant_attrs, target_attrs):
             return r
     return None
 

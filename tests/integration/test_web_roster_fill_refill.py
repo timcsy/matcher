@@ -20,12 +20,12 @@ def client(tmp_path: Path):
     return TestClient(create_app())
 
 
-def test_missing_targets_refills_form_keeps_roles_no_english_code(client: TestClient):
+def test_missing_targets_refills_form_keeps_participants_no_english_code(client: TestClient):
     """只填參與者、沒填對象 → 回填清單頁（非錯誤頁），保留已填參與者，且不露英文代碼。"""
     form = {
         "template_id": "teacher-class", "seed": "123456", "mechanism": "M0",
-        "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
-        "role_1_name": "李老師", "role_1_speciality": "數學", "role_1_seniority": "5",
+        "participant_0_name": "王老師", "participant_0_speciality": "國文", "participant_0_seniority": "8",
+        "participant_1_name": "李老師", "participant_1_speciality": "數學", "participant_1_seniority": "5",
     }
     r = client.post("/match/run-from-form", data=form)
     assert r.status_code == 400
@@ -54,7 +54,7 @@ def test_non_integer_seed_refills_keeps_data(client: TestClient):
     """種子填了非數字 → 回填頁保留資料 + 友善訊息。"""
     form = {
         "template_id": "teacher-class", "seed": "abc", "mechanism": "M0",
-        "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
+        "participant_0_name": "王老師", "participant_0_speciality": "國文", "participant_0_seniority": "8",
         "target_0_id": "C01", "target_0_capacity": "2", "target_0_name": "甲班",
         "target_0_required_subjects": "國文;數學", "target_0_feature": "雙語",
     }
@@ -69,7 +69,7 @@ def test_separator_tolerance_chinese_punctuation(client: TestClient):
     import json
     form = {
         "template_id": "teacher-class", "seed": "2026", "mechanism": "M0",
-        "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
+        "participant_0_name": "王老師", "participant_0_speciality": "國文", "participant_0_seniority": "8",
         # 用頓號與全形分號混搭
         "target_0_id": "C01", "target_0_capacity": "2", "target_0_name": "甲班",
         "target_0_required_subjects": "國文、數學", "target_0_feature": "雙語",

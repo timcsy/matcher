@@ -18,7 +18,7 @@ id: del-tpl
 name: 待刪範本
 description: 測試
 attributes:
-  roles:
+  participants:
     - {key: name, type: str, required: true, description: 姓名}
     - {key: grade, type: int, required: true, description: 年級}
   targets:
@@ -26,7 +26,7 @@ attributes:
 rules:
   - id: R001
     description: 年級至少 1
-    expr: {ge: {field: role.grade, value: 1}}
+    expr: {ge: {field: participant.grade, value: 1}}
 """
 
 
@@ -97,7 +97,7 @@ def test_past_match_survives_template_deletion(make_client, monkeypatch):
     # 用該自訂範本跑一次配對（UI 填名單）
     form = {
         "template_id": tid, "seed": "2026", "mechanism": "M0", "csrf_token": csrf,
-        "role_0_name": "小明", "role_0_grade": "5",
+        "participant_0_name": "小明", "participant_0_grade": "5",
         "target_0_id": "G1", "target_0_capacity": "3", "target_0_name": "甲組",
     }
     r = c.post("/match/run-from-form", data=form, follow_redirects=False)

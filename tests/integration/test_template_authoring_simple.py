@@ -29,21 +29,21 @@ def _form_minimal(template_id: str = "club", **overrides):
         "template_id": template_id,
         "template_name": "社團報名",
         "template_description": "測試",
-        "role_attr_0_key": "name",
-        "role_attr_0_type": "str",
-        "role_attr_0_required": "on",
-        "role_attr_0_description": "姓名",
-        "role_attr_1_key": "grade",
-        "role_attr_1_type": "int",
-        "role_attr_1_required": "on",
-        "role_attr_1_description": "年級",
+        "participant_attr_0_key": "name",
+        "participant_attr_0_type": "str",
+        "participant_attr_0_required": "on",
+        "participant_attr_0_description": "姓名",
+        "participant_attr_1_key": "grade",
+        "participant_attr_1_type": "int",
+        "participant_attr_1_required": "on",
+        "participant_attr_1_description": "年級",
         "target_attr_0_key": "name",
         "target_attr_0_type": "str",
         "target_attr_0_required": "on",
         "target_attr_0_description": "對象名",
         "rule_0_id": "R001",
         "rule_0_type": "ge",
-        "rule_0_field": "role.grade",
+        "rule_0_field": "participant.grade",
         "rule_0_value": "1",
         "target_0_id": "T01",
         "target_0_capacity": "3",
@@ -75,7 +75,7 @@ def test_validate_endpoint_returns_summary(client: TestClient):
     j = r.json()
     assert j["ok"] is True
     assert j["summary"]["id"] == "club"
-    assert j["summary"]["attribute_count"]["roles"] == 2
+    assert j["summary"]["attribute_count"]["participants"] == 2
 
 
 def test_validate_endpoint_returns_errors_on_missing_id(client: TestClient):

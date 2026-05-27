@@ -1,4 +1,4 @@
-roles:
+participants:
   - id: S01
     attributes: {name: "小明", grade: 5}
     preferences: ["G1", "G2", "G3"]
