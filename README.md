@@ -1,5 +1,7 @@
 # matcher
 
+[![tests](https://github.com/timcsy/matcher/actions/workflows/ci.yml/badge.svg)](https://github.com/timcsy/matcher/actions/workflows/ci.yml)
+
 依參與者屬性媒合對象的工具——以可解釋規則篩出資格集合、以可驗證隨機程序在集合內公平分配，並產出可重現的稽核紀錄。
 
 ## 快速開始
