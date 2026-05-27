@@ -245,6 +245,16 @@
                 </div>
               </template>
               <template x-if="rule.type === 'participant_in_target_field'">
+                <div class="col-span-2">
+                  <label class="flex items-start gap-2 text-sm text-gray-700">
+                    <input type="checkbox" :name="`rule_${i}_empty_ok`" x-model="rule.empty_ok" class="h-4 w-4 mt-0.5">
+                    <span>沒填值的一方視為「不設限」，這條規則自動通過
+                      <span class="block text-xs text-gray-400">例：某班級「需要科目」留空＝不挑科目，任何老師都符合；老師「可帶」留空＝哪個班都行。</span>
+                    </span>
+                  </label>
+                </div>
+              </template>
+              <template x-if="rule.type === 'participant_in_target_field'">
                 <div class="col-span-2 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md p-3 leading-relaxed">
                   <ul class="ml-4 list-disc space-y-0.5">
                     <li><b>自動</b>：單筆對單筆＝相等；單筆對多筆＝在清單裡；多筆對多筆＝有交集</li>

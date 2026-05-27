@@ -25,6 +25,7 @@ function _parsePrefillRows(prefill, prefix, fields) {
     const row = rowsByIdx[idx];
     // checkbox 欄位轉為 boolean
     if ('required' in row) row.required = !!(row.required && row.required !== 'false');
+    if ('empty_ok' in row) row.empty_ok = !!(row.empty_ok && row.empty_ok !== 'false');
     row._k = _newKey();
     return row;
   });
@@ -33,7 +34,7 @@ function _parsePrefillRows(prefill, prefix, fields) {
 window.templateAuthor = function () {
   const pf = window._initialPrefill || {};
   const attrFields = ['key', 'type', 'required', 'description', 'aliases'];
-  const ruleFields = ['id', 'type', 'field', 'value', 'set', 'participant_field', 'target_field', 'mode', 'custom_description'];
+  const ruleFields = ['id', 'type', 'field', 'value', 'set', 'participant_field', 'target_field', 'mode', 'empty_ok', 'custom_description'];
   const targetFields = ['id', 'capacity', 'name', 'topic', 'min_grade'];
 
   const _attrRowsOrDefault = (prefix) => {
@@ -45,7 +46,7 @@ window.templateAuthor = function () {
   const _ruleRowsOrDefault = () => {
     const rows = _parsePrefillRows(pf, 'rule', ruleFields);
     return rows.length > 0 ? rows : [
-      { id: 'R001', type: '', field: '', value: '', set: '', participant_field: '', target_field: '', mode: 'auto', custom_description: '', _k: _newKey() }
+      { id: 'R001', type: '', field: '', value: '', set: '', participant_field: '', target_field: '', mode: 'auto', empty_ok: false, custom_description: '', _k: _newKey() }
     ];
   };
   const _targetRowsOrDefault = () => {
@@ -72,7 +73,7 @@ window.templateAuthor = function () {
       const n = this.rules.length + 1;
       this.rules.push({
         id: `R${String(n).padStart(3, '0')}`, type: '',
-        field: '', value: '', set: '', participant_field: '', target_field: '', mode: 'auto', custom_description: '',
+        field: '', value: '', set: '', participant_field: '', target_field: '', mode: 'auto', empty_ok: false, custom_description: '',
         _k: _newKey(),
       });
     },

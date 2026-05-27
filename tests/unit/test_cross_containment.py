@@ -98,3 +98,49 @@ def test_form_assembly_carries_mode_and_description():
     auto = _build_expr("participant_in_target_field",
                        {"participant_field": "a", "target_field": "b", "mode": "auto"})
     assert "mode" not in auto["participant_in_target_field"]
+
+
+# ── 空=不設限（feature 021：empty_ok checkbox）──
+
+def test_empty_ok_passes_when_a_side_empty_or_missing():
+    r = ParticipantInTargetField(participant_field="subjects", target_field="category", mode="intersect", empty_ok=True)
+    # 對象沒填值（空清單）→ 不設限 → 通過
+    assert evaluate(r, {"subjects": ["第一類組"]}, {"category": []}) is True
+    # 對象缺整個屬性 → 不設限 → 通過（不再 UnknownAttribute）
+    assert evaluate(r, {"subjects": ["第一類組"]}, {}) is True
+    # 參與者空字串 → 通過
+    assert evaluate(r, {"subjects": ""}, {"category": "第二類組"}) is True
+    # 兩邊都有值且非空 → 照常比對（intersect）
+    assert evaluate(r, {"subjects": ["第一類組"]}, {"category": "第二類組"}) is False
+    assert evaluate(r, {"subjects": ["第一類組"]}, {"category": "第一類組"}) is True
+
+
+def test_empty_ok_default_off_keeps_strict():
+    r = ParticipantInTargetField(participant_field="subjects", target_field="category", mode="intersect")
+    assert r.empty_ok is False
+    # 預設嚴格：對象缺屬性 → UnknownAttribute（維持現狀）
+    import pytest
+    from matcher.errors import UnknownAttribute
+    with pytest.raises(UnknownAttribute):
+        evaluate(r, {"subjects": ["第一類組"]}, {})
+
+
+def test_empty_ok_parses_from_dsl():
+    from matcher.rules import parse_expr
+    e = parse_expr({"participant_in_target_field": {
+        "participant_field": "subjects", "target_field": "category", "empty_ok": True}})
+    assert e.empty_ok is True
+
+
+def test_empty_ok_pipeline_tolerates_missing_target_attr():
+    # 含 empty_ok 規則時，對象缺該屬性不應在 pipeline 靜態檢查報錯
+    from matcher.roster import Roster, Participant, Target
+    from matcher.rules import Rule, Ruleset
+    from matcher.pipeline import _validate_attribute_references
+    rs = Ruleset(rules=(Rule(id="R1", description="x",
+        expr=ParticipantInTargetField(participant_field="subjects", target_field="category",
+                                       mode="intersect", empty_ok=True)),))
+    roster = Roster(
+        participants=(Participant(id="T1", attributes={"subjects": ["第一類組"]}),),
+        targets=(Target(id="C1", capacity=1, attributes={"name": "203"}),))  # 無 category
+    _validate_attribute_references(rs, roster)  # 不應拋例外

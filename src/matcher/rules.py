@@ -52,6 +52,8 @@ class ParticipantInTargetField:
     #   equal=兩集合相等、participant_in_target=參與者⊆對象、
     #   target_in_participant=對象⊆參與者、intersect=有交集
     mode: str = "auto"
+    # 空＝不設限（feature 021）：任一邊缺值/空 → 此規則自動通過（預設關＝維持嚴格）
+    empty_ok: bool = False
 
 
 @dataclass(frozen=True)
@@ -113,6 +115,7 @@ def parse_expr(node: object) -> RuleExpr:
             participant_field=body["participant_field"],
             target_field=body["target_field"],
             mode=mode,
+            empty_ok=bool(body.get("empty_ok", False)),
         )
     if op == "and":
         return And(children=tuple(parse_expr(c) for c in body))
@@ -174,12 +177,21 @@ def evaluate(expr: RuleExpr, participant_attrs: dict, target_attrs: dict) -> boo
     if isinstance(expr, Le):
         return _compare_numeric(expr.field, _resolve(expr.field, participant_attrs, target_attrs), "<=", expr.value)
     if isinstance(expr, ParticipantInTargetField):
+        p_in = expr.participant_field in participant_attrs
+        t_in = expr.target_field in target_attrs
         rv = participant_attrs.get(expr.participant_field)
-        if expr.participant_field not in participant_attrs:
-            raise UnknownAttribute(f"規則引用未定義的參與者屬性：`participant.{expr.participant_field}`")
-        if expr.target_field not in target_attrs:
-            raise UnknownAttribute(f"規則引用未定義的對象屬性：`target.{expr.target_field}`")
-        tv = target_attrs[expr.target_field]
+        tv = target_attrs.get(expr.target_field)
+        if expr.empty_ok:
+            # 空＝不設限：任一邊缺值或為空（None / "" / []）→ 此規則自動通過
+            def _empty(v):
+                return v is None or v == "" or v == []
+            if not p_in or not t_in or _empty(rv) or _empty(tv):
+                return True
+        else:
+            if not p_in:
+                raise UnknownAttribute(f"規則引用未定義的參與者屬性：`participant.{expr.participant_field}`")
+            if not t_in:
+                raise UnknownAttribute(f"規則引用未定義的對象屬性：`target.{expr.target_field}`")
         if expr.mode == "auto":
             # 對稱化（feature 019）：不論哪邊是清單都做合理的包含判斷。
             #   兩邊單值 → 相等；參與者單值＋對象清單 → 參與者值 ∈ 對象清單；

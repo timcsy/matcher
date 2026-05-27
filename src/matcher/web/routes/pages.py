@@ -136,11 +136,45 @@ def _template_to_form_dict(tpl) -> dict:
         out[f"target_attr_{i}_required"] = "on" if attr.required else ""
         out[f"target_attr_{i}_description"] = attr.description or ""
         out[f"target_attr_{i}_aliases"] = ", ".join(attr.aliases or [])
+    for i, rule in enumerate(tpl.ruleset.rules):
+        out[f"rule_{i}_id"] = rule.id
+        out[f"rule_{i}_custom_description"] = rule.description or ""
+        for k, v in _rule_expr_to_form_fields(rule.expr).items():
+            out[f"rule_{i}_{k}"] = v
     if tpl.preferences_schema:
         out["prefs_enabled"] = "on"
         out["prefs_max_choices"] = str(tpl.preferences_schema.max_choices)
         out["prefs_description"] = tpl.preferences_schema.description or ""
     return out
+
+
+def _rule_expr_to_form_fields(expr) -> dict:
+    """把規則 AST 反序列化成簡單表單欄位（給編輯預填）。
+
+    僅支援簡單模式的扁平算子（eq/in/ge/le/participant_in_target_field）；複合算子
+    （and/or/not）無法以簡單表單表達，回 type 留空（描述仍帶回，作者改走 YAML 模式）。
+    """
+    from matcher.rules import And, Eq, Ge, In, Le, Not, Or, ParticipantInTargetField
+
+    if isinstance(expr, Eq):
+        return {"type": "eq", "field": expr.field, "value": str(expr.value)}
+    if isinstance(expr, In):
+        return {"type": "in", "field": expr.field, "set": ";".join(str(x) for x in expr.set)}
+    if isinstance(expr, Ge):
+        return {"type": "ge", "field": expr.field, "value": str(expr.value)}
+    if isinstance(expr, Le):
+        return {"type": "le", "field": expr.field, "value": str(expr.value)}
+    if isinstance(expr, ParticipantInTargetField):
+        f = {"type": "participant_in_target_field",
+             "participant_field": expr.participant_field,
+             "target_field": expr.target_field,
+             "mode": getattr(expr, "mode", "auto")}
+        if getattr(expr, "empty_ok", False):
+            f["empty_ok"] = "on"
+        return f
+    if isinstance(expr, (And, Or, Not)):
+        return {"type": ""}
+    return {"type": ""}
 
 
 def _validate_id_format(tpl_id: str) -> None:
