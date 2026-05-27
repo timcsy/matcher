@@ -19,7 +19,7 @@ def test_allocation_respects_capacity():
     qs = {"A": ["T1"], "B": ["T1"], "C": ["T1"]}
     capacities = {"T1": 2}
     assignment, _ = allocate_m0(qs, capacities, SeededRandom(42))
-    # 至少有一位未被分配（容量 2 < 角色 3）
+    # 至少有一位未被分配（容量 2 < 參與者 3）
     assigned = [t for t in assignment.values() if t is not None]
     assert len(assigned) == 2
     assert assigned.count("T1") == 2

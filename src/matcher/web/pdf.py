@@ -107,7 +107,7 @@ def _build_individual_context(audit: dict, record_meta: dict, role_id: str, temp
     targets = roster.get("targets", []) or []
     role = next((r for r in roles if r["id"] == role_id), None)
     if role is None:
-        raise ValueError(f"角色 {role_id} 不在 audit.roster_snapshot.roles 中")
+        raise ValueError(f"參與者 {role_id} 不在 audit.roster_snapshot.roles 中")
 
     mechanism = audit.get("mechanism", "M0")
     target_name_by_id = {t["id"]: (t.get("attributes") or {}).get("name", t["id"]) for t in targets}

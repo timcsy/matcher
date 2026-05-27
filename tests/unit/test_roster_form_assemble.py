@@ -20,7 +20,7 @@ REG = TemplateRegistry()
 
 
 def test_assemble_roster_csv_basic():
-    """3 位角色 → CSV bytes 可被 DictReader 解析。"""
+    """3 位參與者 → CSV bytes 可被 DictReader 解析。"""
     tpl = REG.get("teacher-class")
     form = {
         "role_0_id": "T01", "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",

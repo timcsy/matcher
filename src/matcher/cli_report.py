@@ -50,7 +50,7 @@ def report(
     except ValueError as e:
         msg = str(e)
         if role_id and role_id in msg:
-            typer.echo(f"角色不存在：{e}", err=True)
+            typer.echo(f"參與者不存在：{e}", err=True)
             raise typer.Exit(code=52)
         typer.echo(f"audit 缺核心欄位：{e}", err=True)
         raise typer.Exit(code=51)

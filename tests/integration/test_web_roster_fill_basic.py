@@ -1,4 +1,4 @@
-"""Feature 012 US1：UI 填角色名單 → 跑通 M0 → Web/CSV bytewise 等價。"""
+"""Feature 012 US1：UI 填參與者名單 → 跑通 M0 → Web/CSV bytewise 等價。"""
 
 from __future__ import annotations
 
@@ -171,7 +171,7 @@ def test_post_run_from_form_filters_empty_rows(client: TestClient):
 
 
 def test_post_run_from_form_requires_at_least_one_role(client: TestClient):
-    """T015：全空角色 → 400。"""
+    """T015：全空參與者 → 400。"""
     form = {"template_id": "teacher-class", "seed": "2026", "mechanism": "M0"}
     r = client.post("/match/run-from-form", data=form)
     assert r.status_code == 400

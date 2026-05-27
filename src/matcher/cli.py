@@ -18,7 +18,7 @@ from matcher.template_loader import TemplateRegistry, dump_template_yaml
 
 app = typer.Typer(
     add_completion=False,
-    help="matcher：可解釋、公平、可重現的角色／對象配對工具。",
+    help="matcher：可解釋、公平、可重現的參與者／對象配對工具。",
 )
 
 template_app = typer.Typer(
@@ -51,7 +51,7 @@ def _print_summary(audit: dict) -> None:
     n_with_options = sum(1 for v in qs.values() if v)
     typer.echo("")
     typer.echo("=== 過濾階段 ===")
-    typer.echo(f"資格集合大小：{n_pairs} 個合法配對；{n_with_options} 位角色至少有一個可分配對象。")
+    typer.echo(f"資格集合大小：{n_pairs} 個合法配對；{n_with_options} 位參與者至少有一個可分配對象。")
 
     typer.echo("")
     mechanism_label = {
@@ -312,7 +312,7 @@ def template_show_cmd(
     typer.echo(f"版本：{tpl.schema_version}")
     typer.echo("")
     typer.echo("=== 屬性 schema ===")
-    typer.echo("角色：")
+    typer.echo("參與者：")
     for a in tpl.attributes.roles:
         typer.echo(f"  - {a.key}（{a.type}）：{a.description}")
     typer.echo("對象：")

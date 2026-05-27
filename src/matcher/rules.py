@@ -128,7 +128,7 @@ def _resolve(field_ref: str, role_attrs: dict, target_attrs: dict) -> object:
         raise UnknownAttribute(f"規則引用了無效欄位 `{field_ref}`：缺少 role./target. 前綴")
     if side == "role":
         if name not in role_attrs:
-            raise UnknownAttribute(f"規則引用未定義的角色屬性：`{field_ref}`")
+            raise UnknownAttribute(f"規則引用未定義的參與者屬性：`{field_ref}`")
         return role_attrs[name]
     if side == "target":
         if name not in target_attrs:
@@ -162,7 +162,7 @@ def evaluate(expr: RuleExpr, role_attrs: dict, target_attrs: dict) -> bool:
     if isinstance(expr, RoleInTargetField):
         rv = role_attrs.get(expr.role_field)
         if expr.role_field not in role_attrs:
-            raise UnknownAttribute(f"規則引用未定義的角色屬性：`role.{expr.role_field}`")
+            raise UnknownAttribute(f"規則引用未定義的參與者屬性：`role.{expr.role_field}`")
         if expr.target_field not in target_attrs:
             raise UnknownAttribute(f"規則引用未定義的對象屬性：`target.{expr.target_field}`")
         tv = target_attrs[expr.target_field]

@@ -223,7 +223,7 @@ def _build_roles(
             role_id = f"R{idx:03d}"
         from matcher.errors import DuplicateIdentity
         if role_id in seen_ids:
-            raise DuplicateIdentity(f"名單有重複身分：角色 id `{role_id}` 在第 {idx + 1} 列重複出現")
+            raise DuplicateIdentity(f"名單有重複身分：參與者 id `{role_id}` 在第 {idx + 1} 列重複出現")
         seen_ids.add(role_id)
         attrs: dict = {}
         prefs_raw = None

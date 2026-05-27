@@ -60,7 +60,7 @@ def assemble_roster_csv_bytes(form: dict, template: Template) -> bytes:
     1. 蒐集 role_<i>_<key> 欄位
     2. 過濾「所有 attribute 都空白」的列
     3. 組 CSV header：id + 範本宣告的每個 attribute key（按宣告順序）
-    4. 對每位角色寫一行
+    4. 對每位參與者寫一行
     5. 回 utf-8-sig bytes（沿用既有 CSV path 的 BOM 處理）
     """
     role_keys = [a.key for a in template.attributes.roles]

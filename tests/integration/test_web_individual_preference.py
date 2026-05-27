@@ -55,13 +55,13 @@ def test_shows_preference_rank_when_assigned_to_preferred(tmp_path: Path):
     """T030：M1 + 第 N 志願文案。"""
     c = _client(tmp_path)
     rid, audit = _make_m_record(c, "M1")
-    # 找一位 preference_rank 非 null 的角色
+    # 找一位 preference_rank 非 null 的參與者
     role_id = None
     for entry in audit["allocation_trace"]:
         if entry.get("preference_rank") is not None:
             role_id = entry["role_id"]
             break
-    assert role_id is not None, "M1 跑出來竟然完全沒有按志願分到的角色"
+    assert role_id is not None, "M1 跑出來竟然完全沒有按志願分到的參與者"
     r = c.get(f"/match/{rid}/role/{role_id}")
     assert r.status_code == 200
     rank = next(e["preference_rank"] for e in audit["allocation_trace"] if e["role_id"] == role_id)
@@ -84,7 +84,7 @@ def test_shows_fallback_with_preferences_text_or_skip(tmp_path: Path):
                 role_id = entry["role_id"]
                 break
     if role_id is None:
-        pytest.skip("roster-m1.csv 中無 fallback 且有志願 的角色（資料相依）")
+        pytest.skip("roster-m1.csv 中無 fallback 且有志願 的參與者（資料相依）")
     r = c.get(f"/match/{rid}/role/{role_id}")
     assert r.status_code == 200
     assert "您原本的志願已被分配給其他人" in r.text
@@ -92,7 +92,7 @@ def test_shows_fallback_with_preferences_text_or_skip(tmp_path: Path):
 
 
 def test_shows_fallback_without_preferences_text_or_skip(tmp_path: Path):
-    """T032：fallback + 無志願 文案（若 roster-m1 所有角色皆有志願，跳過）。"""
+    """T032：fallback + 無志願 文案（若 roster-m1 所有參與者皆有志願，跳過）。"""
     import pytest
     c = _client(tmp_path)
     rid, audit = _make_m_record(c, "M1")
@@ -107,7 +107,7 @@ def test_shows_fallback_without_preferences_text_or_skip(tmp_path: Path):
                 role_id = entry["role_id"]
                 break
     if role_id is None:
-        pytest.skip("roster-m1.csv 中無 fallback 且無志願 的角色（資料相依）")
+        pytest.skip("roster-m1.csv 中無 fallback 且無志願 的參與者（資料相依）")
     r = c.get(f"/match/{rid}/role/{role_id}")
     assert r.status_code == 200
     assert "您未在志願清單中" in r.text

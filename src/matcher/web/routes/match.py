@@ -231,7 +231,7 @@ def _flatten_snapshot_value(v) -> str:
 
 
 def _snapshot_to_prefill(record) -> tuple[list, list]:
-    """把一筆配對紀錄的 roster 快照 → 填清單頁的 prefill（角色、對象）。"""
+    """把一筆配對紀錄的 roster 快照 → 填清單頁的 prefill（參與者、對象）。"""
     snap = (record.audit or {}).get("roster_snapshot", {})
     roles = []
     for r in snap.get("roles", []):
@@ -256,7 +256,7 @@ async def new_match_fill(request: Request, template_id: str,
                          email: str = Depends(require_login)):
     """填寫頁：依範本宣告動態渲染欄位。
 
-    ?from_record=<rid>：用某筆過去紀錄的清單（角色+對象）預填，供「沿用後微調」。
+    ?from_record=<rid>：用某筆過去紀錄的清單（參與者+對象）預填，供「沿用後微調」。
     """
     from matcher.web.routes.pages import _reg as _shared_reg
     reg = _shared_reg()
@@ -340,7 +340,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
         return _refill("請選一個抽籤方式。")
 
     csv_bytes = assemble_roster_csv_bytes(form, tpl)
-    # 檢查空白：CSV 只有 header 列 → 沒有任何角色
+    # 檢查空白：CSV 只有 header 列 → 沒有任何參與者
     if csv_bytes.decode("utf-8-sig").strip().count("\n") < 1:
         return _refill("請至少填一位（第 1 步的清單還是空的）。")
 
@@ -710,11 +710,11 @@ async def submit_preferences(request: Request, email: str = Depends(require_logi
                 previous_form_values[field] = value
                 if value:
                     if value not in valid_target_ids:
-                        form_errors.append(f"角色 {role.id} 的第 {rank} 志願選了無效的對象「{value}」。")
+                        form_errors.append(f"參與者 {role.id} 的第 {rank} 志願選了無效的對象「{value}」。")
                         continue
                     prefs.append(value)
             if len(set(prefs)) != len(prefs):
-                form_errors.append(f"角色 {role.id} 的志願中有重複——同列不可重複選同對象。")
+                form_errors.append(f"參與者 {role.id} 的志願中有重複——同列不可重複選同對象。")
             if prefs:
                 any_pref = True
             new_roles.append(dataclasses.replace(role, preferences=tuple(prefs)))
@@ -732,7 +732,7 @@ async def submit_preferences(request: Request, email: str = Depends(require_logi
             )
 
         if not any_pref:
-            form_errors.append("請至少為一位角色填寫 1 個志願；若確實沒有志願，請點「跳過此步驟」。")
+            form_errors.append("請至少為一位參與者填寫 1 個志願；若確實沒有志願，請點「跳過此步驟」。")
             return _render_preferences_form(
                 request,
                 template_id=template_id, template_name=tpl.name,

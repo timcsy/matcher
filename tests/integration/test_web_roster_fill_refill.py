@@ -21,7 +21,7 @@ def client(tmp_path: Path):
 
 
 def test_missing_targets_refills_form_keeps_roles_no_english_code(client: TestClient):
-    """只填角色、沒填對象 → 回填清單頁（非錯誤頁），保留已填角色，且不露英文代碼。"""
+    """只填參與者、沒填對象 → 回填清單頁（非錯誤頁），保留已填參與者，且不露英文代碼。"""
     form = {
         "template_id": "teacher-class", "seed": "123456", "mechanism": "M0",
         "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
@@ -35,7 +35,7 @@ def test_missing_targets_refills_form_keeps_roles_no_english_code(client: TestCl
     # 不露英文技術代碼
     assert "EmptyTargets" not in r.text
     assert "EmptyRoster" not in r.text
-    # 已填的角色資料被回填（出現在 prefill JSON 裡）
+    # 已填的參與者資料被回填（出現在 prefill JSON 裡）
     assert "王老師" in r.text
     assert "李老師" in r.text
 

@@ -81,8 +81,8 @@ def _validate_attribute_references(ruleset: Ruleset, roster: Roster) -> None:
         for side, name in _collect_referenced_fields(rule.expr):
             if side == "role" and name not in role_attrs:
                 raise UnknownAttribute(
-                    f"規則 `{rule.id}` 引用未定義的角色屬性 `role.{name}`；"
-                    f"目前名單中所有角色屬性：{sorted(role_attrs)}"
+                    f"規則 `{rule.id}` 引用未定義的參與者屬性 `role.{name}`；"
+                    f"目前名單中所有參與者屬性：{sorted(role_attrs)}"
                 )
             if side == "target" and name not in target_attrs:
                 raise UnknownAttribute(
@@ -122,7 +122,7 @@ def run_match(inp: MatcherInput) -> MatcherResult:
             "建議：清空名單中的志願欄，或改用「輪流挑」或「依志願先後填滿」。"
         )
 
-    # 2c. 輪流挑 / 依志願先後填滿 需要至少一位角色提供志願
+    # 2c. 輪流挑 / 依志願先後填滿 需要至少一位參與者提供志願
     if inp.mechanism in ("M1", "M2") and not any(role.preferences for role in inp.roster.roles):
         friendly = _FRIENDLY.get(inp.mechanism, inp.mechanism)
         raise MechanismRequiresPreferences(
@@ -137,14 +137,14 @@ def run_match(inp: MatcherInput) -> MatcherResult:
     # 4. 過濾
     qualified_set, filter_trace = filter_qualified(inp.ruleset, inp.roster)
 
-    # 5. 容量預檢：每位角色的資格 target 都因容量耗盡而無分配 → 容量不足
+    # 5. 容量預檢：每位參與者的資格 target 都因容量耗盡而無分配 → 容量不足
     total_capacity = sum(t.capacity for t in inp.roster.targets)
     n_roles = len(inp.roster.roles)
     if n_roles > total_capacity:
         raise CapacityShortage(
-            f"容量不足以容納所有角色。\n"
-            f"細節：角色 {n_roles} 人，所有對象總容量 {total_capacity}；超額 {n_roles - total_capacity} 人。\n"
-            f"建議：增加對象容量、減少角色，或調整資格條件以排除部分角色。"
+            f"容量不足以容納所有參與者。\n"
+            f"細節：參與者 {n_roles} 人，所有對象總容量 {total_capacity}；超額 {n_roles - total_capacity} 人。\n"
+            f"建議：增加對象容量、減少參與者，或調整資格條件以排除部分參與者。"
         )
 
     # 6. 分配

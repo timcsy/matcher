@@ -23,10 +23,10 @@ def test_random_garbage_rejected():
 
 
 def test_token_binds_single_role():
-    """A 角色的 token 解出只含 A，無法挪用看 B。"""
+    """A 參與者的 token 解出只含 A，無法挪用看 B。"""
     a = sign_role_token("M1", "A")
     assert verify_role_token(a) == ("M1", "A")
-    # 不同角色簽出不同 token
+    # 不同參與者簽出不同 token
     b = sign_role_token("M1", "B")
     assert a != b
 

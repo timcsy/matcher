@@ -17,7 +17,7 @@ def test_processing_order_deterministic():
 
 
 def test_each_role_picks_highest_available_preference():
-    """每位角色取「合格 ∩ 仍有名額」中第一個志願。"""
+    """每位參與者取「合格 ∩ 仍有名額」中第一個志願。"""
     qs = {"A": ["X", "Y"], "B": ["X", "Y"]}
     prefs = {"A": ["Y", "X"], "B": ["Y", "X"]}
     caps = {"X": 1, "Y": 1}
@@ -90,7 +90,7 @@ def test_no_qualified_target_means_unassigned():
 
 
 def test_capacity_exhaustion():
-    """容量耗盡時後續角色未分配。"""
+    """容量耗盡時後續參與者未分配。"""
     qs = {"A": ["X"], "B": ["X"], "C": ["X"]}
     prefs = {"A": ["X"], "B": ["X"], "C": ["X"]}
     caps = {"X": 2}

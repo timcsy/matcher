@@ -33,7 +33,7 @@ def parse_roster(data: dict) -> Roster:
     raw_targets = data.get("targets") or []
 
     if not raw_roles:
-        raise EmptyRoster("名單為空：無待媒合角色")
+        raise EmptyRoster("名單為空：無待媒合參與者")
     if not raw_targets:
         raise EmptyRoster("名單為空：無待分配對象")
 
@@ -42,7 +42,7 @@ def parse_roster(data: dict) -> Roster:
     for r in raw_roles:
         rid = r["id"]
         if rid in role_ids:
-            raise DuplicateIdentity(f"名單有重複身分：角色 id `{rid}` 出現多次")
+            raise DuplicateIdentity(f"名單有重複身分：參與者 id `{rid}` 出現多次")
         role_ids.append(rid)
 
     target_ids: list[str] = []
@@ -56,7 +56,7 @@ def parse_roster(data: dict) -> Roster:
     for r in raw_roles:
         prefs = r.get("preferences", [])
         if not isinstance(prefs, list):
-            raise ValueError(f"角色 `{r['id']}` 的 preferences 必須為 list[str]，得到 {type(prefs).__name__}")
+            raise ValueError(f"參與者 `{r['id']}` 的 preferences 必須為 list[str]，得到 {type(prefs).__name__}")
         roles_list.append(Role(
             id=r["id"],
             attributes=dict(r.get("attributes", {})),

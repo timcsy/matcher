@@ -85,7 +85,7 @@ def test_m2_fallback_when_all_preferences_exhausted():
 
 
 def test_m2_unassigned_role_has_trace_entry():
-    """完全沒對象的角色也有 trace 條目（chosen=null）。"""
+    """完全沒對象的參與者也有 trace 條目（chosen=null）。"""
     qs = {"A": ["X"], "B": ["X"], "C": ["X"]}
     prefs = {"A": ["X"], "B": ["X"], "C": ["X"]}
     caps = {"X": 2}

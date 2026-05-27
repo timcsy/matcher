@@ -10,7 +10,7 @@ from matcher.rules import Ruleset, evaluate, first_failed_rule, matched_rules
 def filter_qualified(ruleset: Ruleset, roster: Roster) -> tuple[dict, list[dict]]:
     """對每個 (role, target) 求值，產生資格集合與 filter_trace。
 
-    若無任何角色擁有資格 → QualifiedSetEmpty。
+    若無任何參與者擁有資格 → QualifiedSetEmpty。
     """
     qualified_set: dict[str, list[str]] = {r.id: [] for r in roster.roles}
     trace: list[dict] = []
@@ -35,7 +35,7 @@ def filter_qualified(ruleset: Ruleset, roster: Roster) -> tuple[dict, list[dict]
     if not any(qualified_set.values()):
         summary = rejection_summary(trace, ruleset)
         raise QualifiedSetEmpty(
-            "資格集合為空：依目前規則，所有 (角色, 對象) 組合皆未通過。",
+            "資格集合為空：依目前規則，所有 (參與者, 對象) 組合皆未通過。",
             trace=trace,
             rule_stats=summary["rule_stats"],
             culprit=summary["culprit"],

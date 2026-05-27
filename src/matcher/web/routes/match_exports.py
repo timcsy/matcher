@@ -1,7 +1,7 @@
 """稽核 / PDF 下載路由：完整 audit、個別 audit 子集、admin + individual PDF。
 
 從 match.py 拆出（Feature 017）。三組 /r/{token} 下載端點共用 _record_role_from_token
-做「驗 token → 取 record → 角色存在」的重複檢查。授權檢查 _owner_or_403 由 match.py 提供。
+做「驗 token → 取 record → 參與者存在」的重複檢查。授權檢查 _owner_or_403 由 match.py 提供。
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ router = APIRouter()
 
 
 def _record_role_from_token(token: str):
-    """驗 token → 取 record → 確認角色存在；任一失敗拋 HTTPException(404)。回 (record, role_id)。"""
+    """驗 token → 取 record → 確認參與者存在；任一失敗拋 HTTPException(404)。回 (record, role_id)。"""
     verified = verify_role_token(token)
     if verified is None:
         raise HTTPException(status_code=404, detail="連結無效")
@@ -39,7 +39,7 @@ def _record_role_from_token(token: str):
         r["id"] == role_id for r in record.audit.get("roster_snapshot", {}).get("roles", [])
     )
     if not role_exists:
-        raise HTTPException(status_code=404, detail="找不到對應角色")
+        raise HTTPException(status_code=404, detail="找不到對應參與者")
     return record, role_id
 
 

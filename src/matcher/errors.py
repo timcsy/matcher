@@ -89,7 +89,7 @@ class RosterSheetAmbiguous(MatcherError):
 
 
 class MechanismRequiresPreferences(MatcherError):
-    """機制（M1 / M2 等）需要至少一位角色提供志願；通用化自階段 4a 的 M1RequiresPreferences。"""
+    """機制（M1 / M2 等）需要至少一位參與者提供志願；通用化自階段 4a 的 M1RequiresPreferences。"""
     exit_code = 40
 
 

@@ -76,7 +76,7 @@ def test_fill_page_shows_targets_section_for_custom_template_without_default_tar
 
 
 def test_post_run_from_form_with_ui_targets_succeeds(client: TestClient):
-    """T032：UI 填 5 角色 + 3 對象 → M0 跑通 → audit.targets 含這 3 對象。"""
+    """T032：UI 填 5 參與者 + 3 對象 → M0 跑通 → audit.targets 含這 3 對象。"""
     form = {
         "template_id": "custom-group", "seed": "2026", "mechanism": "M0",
     }

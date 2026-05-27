@@ -86,7 +86,7 @@ def test_render_raises_pdf_render_unavailable_when_no_weasyprint(monkeypatch):
 def test_render_failed_record_shows_error():
     meta = _record_meta()
     meta["status"] = "failed"
-    meta["error"] = {"type": "M1RequiresPreferences", "exit_code": 40, "message": "M1 需要至少一位角色提供志願"}
+    meta["error"] = {"type": "M1RequiresPreferences", "exit_code": 40, "message": "M1 需要至少一位參與者提供志願"}
     audit = _minimal_audit()
     pdf = render_match_report_pdf(audit, record_meta=meta)
     assert pdf[:8].startswith(b"%PDF-")

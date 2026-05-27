@@ -79,14 +79,14 @@ def test_post_preferences_rejects_unknown_target_id(tmp_path: Path):
 
 
 def test_post_preferences_all_empty_shows_error(tmp_path: Path):
-    """T033：全空 prefs + submit → 回填志願頁 + 「請至少為一位角色填」訊息。"""
+    """T033：全空 prefs + submit → 回填志願頁 + 「請至少為一位參與者填」訊息。"""
     c = _client(tmp_path)
     r1 = _get_form_page(c)
     hidden = _get_hidden(r1.text)
     r = c.post("/match/preferences", data={**hidden, "_action": "submit"})
     assert r.status_code == 200
     assert "填寫志願" in r.text
-    assert "請至少為一位角色填" in r.text
+    assert "請至少為一位參與者填" in r.text
 
 
 def test_preferences_form_shows_target_summary_with_capacity(tmp_path: Path):

@@ -84,10 +84,10 @@
       </div>
     </section>
 
-    {# 2. 角色資料欄位 #}
+    {# 2. 參與者資料欄位 #}
     <section>
       <div class="flex items-end justify-between mb-1">
-        <h2 class="text-lg font-semibold">「角色」資料欄位</h2>
+        <h2 class="text-lg font-semibold">「參與者」資料欄位</h2>
       </div>
       <p class="text-sm text-gray-500 mb-4">要被分配的人或單位（例：學生、老師）有哪些資料？</p>
 
@@ -172,7 +172,7 @@
     <section>
       <h2 class="text-lg font-semibold mb-1">配對條件</h2>
       <p class="text-sm text-gray-500 mb-4">
-        角色要符合什麼條件，才能被分到對象？所有條件都會同時檢查。
+        參與者要符合什麼條件，才能被分到對象？所有條件都會同時檢查。
         <br>欄位寫成 <code class="bg-gray-100 px-1 rounded">role.代號</code> 或 <code class="bg-gray-100 px-1 rounded">target.代號</code>，如 <code class="bg-gray-100 px-1 rounded">role.grade</code>。
       </p>
 
@@ -189,7 +189,7 @@
                 <option value="le">數字小於等於某值</option>
                 <option value="eq">欄位等於某值</option>
                 <option value="in">欄位是清單之一</option>
-                <option value="role_in_target_field">角色欄位在對象的清單中</option>
+                <option value="role_in_target_field">參與者欄位在對象的清單中</option>
               </select>
               <button type="button" @click="rules.splice(i,1)" class="text-red-500 hover:bg-red-50 rounded p-1">×</button>
             </div>
@@ -219,7 +219,7 @@
               </template>
               <template x-if="rule.type === 'role_in_target_field'">
                 <div>
-                  <label class="block text-xs text-gray-500 mb-1">角色欄位代號（不含 role.）</label>
+                  <label class="block text-xs text-gray-500 mb-1">參與者欄位代號（不含 role.）</label>
                   <input type="text" :name="`rule_${i}_role_field`" x-model="rule.role_field" placeholder="speciality"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
@@ -298,7 +298,7 @@
             class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1.5">角色</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">參與者</label>
           <input type="text" id="ai-role" placeholder="學生（姓名、年級、興趣）"
             class="w-full border border-gray-300 rounded-md px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>

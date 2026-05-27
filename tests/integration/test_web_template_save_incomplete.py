@@ -22,7 +22,7 @@ def _csrf(c) -> str:
 
 def test_save_empty_roles_returns_friendly_json_not_500():
     c = _client()
-    # 模擬 simple 模式：只填了範本基本資訊，角色欄位空白（key 未填）
+    # 模擬 simple 模式：只填了範本基本資訊，參與者欄位空白（key 未填）
     data = {
         "mode": "simple",
         "csrf_token": _csrf(c),

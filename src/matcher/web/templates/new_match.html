@@ -26,7 +26,7 @@
       </option>
       {% endfor %}
     </select>
-    <p><small>範本決定要配對的角色種類（如老師、學生）和條件規則。沒看到想要的？<a href="/templates/new">建立新範本 →</a></small></p>
+    <p><small>範本決定要配對的參與者種類（如老師、學生）和條件規則。沒看到想要的？<a href="/templates/new">建立新範本 →</a></small></p>
   </div>
 
   <form method="post" action="/match/run" enctype="multipart/form-data">
@@ -49,11 +49,11 @@
       {# ── 上傳檔模式 ── #}
       <div x-show="mode === 'upload'">
         <label>
-          ① 角色清單檔（要被配對的人，CSV 或 Excel，最大 5 MB）：
+          ① 參與者清單檔（要被配對的人，CSV 或 Excel，最大 5 MB）：
           <input type="file" name="roster" accept=".csv,.xlsx" :required="mode==='upload'">
         </label>
         <small>不會做？下載範例（依目前範本）：
-          <a :href="`/templates/${templateId}/example/roles.csv`">角色範例 CSV</a> ·
+          <a :href="`/templates/${templateId}/example/roles.csv`">參與者範例 CSV</a> ·
           <a :href="`/templates/${templateId}/example/roles.xlsx`">Excel</a>
         </small>
 

@@ -20,7 +20,7 @@ _TYPE_HINT = {
 
 
 def _role_columns(template: Template) -> tuple[list[str], list[str]]:
-    """回 (表頭, 提示列)。角色：編號 + 各角色屬性。"""
+    """回 (表頭, 提示列)。參與者：編號 + 各參與者屬性。"""
     headers = ["編號"]
     hints = ["（可留空，系統自動編號）"]
     for a in template.attributes.roles:

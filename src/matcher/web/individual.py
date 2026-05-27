@@ -1,4 +1,4 @@
-"""個別查詢 audit 子集：純函式，從完整 audit 中萃取屬於某角色的部分。"""
+"""個別查詢 audit 子集：純函式，從完整 audit 中萃取屬於某參與者的部分。"""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ def build_individual_audit_subset(audit: dict, role_id: str) -> dict:
     """
     role = _find_role(audit, role_id)
     if role is None:
-        raise MatchRecordNotFound(f"角色 `{role_id}` 不在這次媒合的清單中")
+        raise MatchRecordNotFound(f"參與者 `{role_id}` 不在這次媒合的清單中")
 
     assigned_target_id = audit.get("assignment", {}).get(role_id)
     assigned_target = _find_target(audit, assigned_target_id) if assigned_target_id else None

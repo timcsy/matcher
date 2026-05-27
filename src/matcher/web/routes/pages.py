@@ -241,7 +241,7 @@ async def template_authoring_guide():
 @router.get("/templates/{template_id}/example/{kind}.{fmt}")
 async def template_example(request: Request, template_id: str, kind: str, fmt: str,
                            email: str = Depends(require_login)):
-    """依範本動態產生角色/對象範例試算表（feature 016）。kind: roles|targets；fmt: csv|xlsx。"""
+    """依範本動態產生參與者/對象範例試算表（feature 016）。kind: roles|targets；fmt: csv|xlsx。"""
     from matcher.web.example_gen import role_example_bytes, target_example_bytes
     reg = _reg()
     if not reg.has(template_id):
