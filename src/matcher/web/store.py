@@ -15,6 +15,19 @@ from matcher.web.errors import MatchRecordNotFound
 SCHEMA_VERSION = "match-record/1.0"
 
 
+def safe_fs_id(raw: str) -> str:
+    """檔名/路徑用 id 清洗：擋目錄遍歷（../、絕對路徑、夾帶分隔符）。
+
+    任何含 '/'、'\\'、'..'、null、或空白的 id 一律拒絕——這些 id 會被直接接到
+    檔案系統路徑，未清洗等於任意檔案讀寫漏洞。回傳原值（合法）或拋 ValueError。
+    """
+    if not raw or "/" in raw or "\\" in raw or ".." in raw or "\x00" in raw:
+        raise ValueError(f"不合法的識別碼：{raw!r}")
+    if raw in (".", "") or raw.strip() != raw:
+        raise ValueError(f"不合法的識別碼：{raw!r}")
+    return raw
+
+
 @dataclass
 class MatchRecord:
     schema_version: str
@@ -72,7 +85,7 @@ class MatchStore:
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def _path(self, record_id: str) -> Path:
-        return self.base_dir / f"{record_id}.json"
+        return self.base_dir / f"{safe_fs_id(record_id)}.json"
 
     def save(self, record: MatchRecord) -> str:
         p = self._path(record.id)
@@ -92,7 +105,10 @@ class MatchStore:
         return records[:limit]
 
     def get(self, record_id: str) -> MatchRecord:
-        p = self._path(record_id)
+        try:
+            p = self._path(record_id)
+        except ValueError:
+            raise MatchRecordNotFound(f"找不到媒合紀錄：{record_id}")
         if not p.exists():
             raise MatchRecordNotFound(f"找不到媒合紀錄：{record_id}")
         return MatchRecord.from_dict(json.loads(p.read_text(encoding="utf-8")))

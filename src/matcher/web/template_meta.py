@@ -14,11 +14,15 @@ DEFAULT_VISIBILITY = "private"
 
 
 def _meta_path(custom_dir, tpl_id: str) -> Path:
-    return Path(custom_dir) / tpl_id / "meta.json"
+    from matcher.web.store import safe_fs_id
+    return Path(custom_dir) / safe_fs_id(tpl_id) / "meta.json"
 
 
 def read_meta(custom_dir, tpl_id: str) -> dict:
-    p = _meta_path(custom_dir, tpl_id)
+    try:
+        p = _meta_path(custom_dir, tpl_id)
+    except ValueError:
+        return {"owner": None, "visibility": DEFAULT_VISIBILITY}
     if p.exists():
         try:
             d = json.loads(p.read_text(encoding="utf-8"))

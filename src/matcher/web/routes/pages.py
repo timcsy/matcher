@@ -17,6 +17,7 @@ from matcher.template_loader import (
     parse_template,
 )
 from matcher.web.auth import current_email, require_login
+from matcher.web.ratelimit import rate_limit
 from matcher.web.security import validate_csrf
 from matcher.web.template_form import SCENARIO_TEMPLATES, assemble_template_yaml
 from matcher.web.template_meta import can_view, is_owner, read_meta, write_meta
@@ -162,7 +163,8 @@ def _build_tpl_dict_from_form(form: dict) -> dict:
 
 
 @router.post("/templates/validate")
-async def template_validate(request: Request):
+async def template_validate(request: Request, email: str = Depends(require_login),
+                            _rl=Depends(rate_limit("tpl_validate", 60, 60))):
     form = dict(await request.form())
     try:
         tpl_dict = _build_tpl_dict_from_form(form)
@@ -170,7 +172,7 @@ async def template_validate(request: Request):
         tpl = parse_template(tpl_dict)
     except yaml.YAMLError as e:
         return JSONResponse({"ok": False, "errors": [f"YAML 語法錯誤：{e}"]})
-    except (ValueError, Exception) as e:
+    except Exception as e:
         return JSONResponse({"ok": False, "errors": [str(e)]})
 
     summary = {

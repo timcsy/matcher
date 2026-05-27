@@ -345,9 +345,7 @@
 
 </div>
 
-<script>
-window._initialPrefill = {{ prefill | tojson }};
-</script>
+<div id="template-prefill" data-prefill="{{ prefill | tojson_attr }}" hidden></div>
 <script src="/static/template_form.js"></script>
 
 {% endblock %}

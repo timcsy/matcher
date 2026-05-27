@@ -35,9 +35,13 @@ def _check_csrf(request: Request, form) -> None:
 
 
 def _owner_or_403(request: Request, record) -> None:
-    """確認登入者是該紀錄擁有者；否則 403。"""
+    """確認登入者是該紀錄擁有者；否則 403。
+
+    安全預設：owner 為 None 的紀錄（升級前的舊資料）不對任何登入者開放——
+    避免無主紀錄變成跨使用者可讀的個資漏洞。需要時應回填 owner 而非放行。
+    """
     email = current_email(request)
-    if record.owner is not None and record.owner != email:
+    if record.owner != email:
         raise HTTPException(status_code=403, detail="這筆配對不屬於你，無法查看。")
 
 
@@ -77,6 +81,24 @@ def _error_dict(e: MatcherError) -> dict:
 router = APIRouter()
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+async def _read_capped(upload: "UploadFile") -> bytes:
+    """串流讀取上傳檔，超過上限即中止——避免超大檔案在大小檢查前就吃滿記憶體。"""
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await upload.read(64 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > MAX_UPLOAD_BYTES:
+            raise UploadTooLarge(
+                f"上傳檔過大（超過上限 {MAX_UPLOAD_BYTES} bytes / 5 MB）。\n"
+                f"建議：縮減檔案後重新上傳，或拆分成多次媒合。"
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 MECHANISMS = [
     ("M0", "純抽籤"),
@@ -427,13 +449,8 @@ async def run(
             status_code=400,
         )
 
-    # 驗證大小
-    data = await roster.read()
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise UploadTooLarge(
-            f"上傳檔過大（{len(data)} bytes，上限 {MAX_UPLOAD_BYTES} bytes / 5 MB）。\n"
-            f"建議：縮減檔案後重新上傳，或拆分成多次媒合。"
-        )
+    # 驗證大小（串流讀取，超過上限即中止）
+    data = await _read_capped(roster)
 
     # 驗證 MIME
     if roster.content_type not in ALLOWED_MIMES:
@@ -486,7 +503,7 @@ async def run(
     injected_targets = None            # csv/xlsx 解析出的 targets tuple
     if targets_yaml is not None and targets_yaml.filename:
         tname = targets_yaml.filename.lower()
-        traw = await targets_yaml.read()
+        traw = await _read_capped(targets_yaml)
         if traw:
             if tname.endswith(".csv") or tname.endswith(".xlsx"):
                 from matcher.data_import import load_targets_csv, load_targets_xlsx
