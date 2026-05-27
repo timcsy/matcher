@@ -60,6 +60,12 @@
   contracts/audit-schema-v1.1.json。
   階段 2b 再次驗證：audit schema 從 v1.1 升 v1.2 新增 `import_metadata` 欄位
   （YAML 路徑為 null），完全沿用此模式。
+- **例外（nuance，feature 018）**：本教訓的「只增不破」是**常態**，不是鐵律。
+  feature 018 為了用字一致（role→participant）做了**破壞性更名**——audit v1.4→v1.5、
+  鍵名 `roles`→`participants`/`role_id`→`participant_id`、重生全部 golden、不向後相容。
+  這是**刻意的例外**：當「術語一致 / 消除認知斷層」的價值夠高、且採「升級清空舊資料」策略時，
+  破壞相容是可接受的——但必須是顯式決策（獨立 feature、spec 寫明「乾淨切斷」），不可順手破壞。
+  判準：增欄位 → 走只增不破；改/刪既有鍵 → 視為破壞性，要顯式決策 + 版本升號 + golden 重生。
 
 ### 「資料來源無關性」隱藏的 ID 等價門檻
 
@@ -276,3 +282,55 @@
   問「能不能從 X 的定義自動生出來」。
 - **來源**：specs/016-targets-spreadsheet-import；`src/matcher/web/example_gen.py` + `/templates/{id}/example/` 端點；
   使用者一句「動態依範本提供範例」改變設計方向。
+
+### 公開網路安全加固是周邊整合；安全是原則 6 的首次實證
+
+- **理論說**：要把工具放上公開網路承載學生個資，安全加固聽起來像要動到核心、或得重寫一堆東西。
+- **實際發生**：feature 017 一輪加固（CSP/安全標頭、修反射型 XSS 與開放重導向、`owner=None` 授權
+  fail-open、路徑遍歷清洗、token 效期、可選網域白名單、SESSION_SECRET production 防呆）
+  **全程 `src/matcher` 0 改動**——全部落在 `matcher.web`，再次印證教訓 7「安全/部署＝周邊整合」。
+  同時這是**原則 6（資料保護）的首次實證**：原則 6 講的「保護義務」在這裡化為具體機制（私有預設、
+  跨使用者隔離、機密不外洩）。另一收穫：CSP **無法做到 strict**——樣板有原生 `onclick`、且 Tailwind
+  Play CDN/Alpine 需 `unsafe-eval`，最後保留 `unsafe-inline`；且「測試全綠 ≠ 瀏覽器對」（CSP 會擋
+  行內處理器、前端快取問題，後端測試抓不到）——這是教訓 10 在前端/部署的又一實例。
+- **解決方式**：安全標頭 middleware + `tojson_attr` 修 XSS + `_safe_next` 擋開放重導向 + `safe_fs_id`
+  清洗路徑；務實 CSP（擋外部 script 來源 + frame-ancestors，接受 unsafe-inline）。
+- **教訓**：(1) 安全/部署是周邊整合，第一檢查點仍是「核心要不要動」（多半不用）。(2) 機制（OAuth、
+  CSP、token）是滿足原則 6 的**可替換手段**，原則約束的是「保護義務」本身。(3) 前端/安全的驗收要
+  回到真實瀏覽器，不能只看後端綠燈（教訓 10）。
+- **來源**：feature 017（branch 017-security-hardening）；`src/matcher/web/app.py` 安全標頭、
+  `security.py` token 效期、`routes/auth.py` `_safe_next`/網域白名單；核心 0 改動。
+
+### 部署「實機才見真章」；依賴的 dev/執行期邊界要在打包前釐清
+
+- **理論說**：本機/CI 測試綠、`kubectl apply` 成功、pod `Running`，就代表部署好了。
+- **實際發生**：feature 020 部署到遠端 k3s，連踩三個「只有實機才會知道」的點：
+  (a) 節點是 **amd64**，本機 Apple Silicon build 出 arm64 → `ImagePullBackOff: no match for platform`，
+      要 `docker buildx --platform linux/amd64`；(b) 資源要進指定 **namespace**（`matcher`），不是 default；
+  (c) **httpx 是執行期依賴**——Authlib OAuth callback 用它，但原本只列在 `[dev]`，`--no-dev` 映像會缺它、
+      登入在 callback 才掛。其中 (c) 是寫 plan 的 research 階段就**推理出來**的（spec-kit 的價值），
+      (a)(b) 則是 apply 後看 pod 事件才現形。
+- **解決方式**：buildx 跨架構 + manifests 帶 namespace；httpx 從 `[dev]` 移到 `[project.dependencies]`
+  （`pyproject` 屬專案設定、非 `src/matcher`，不破壞核心 0 改動）。
+- **教訓**：(1) 「pod Running ≠ 服務正常」「apply 成功 ≠ 能用」——部署驗收要實跑（開頁面、走登入、刪 pod
+  驗持久化），這是教訓 10 的部署版。(2) **依賴的「執行期 vs 測試期」邊界**容易被忽略：某套件只在測試裝
+  ≠ 它只在測試用（Authlib 的 httpx 是反例）。打包 production 映像前先問「拔掉 dev extras 還跑得起來嗎」。
+  (3) 跨架構（build 機 ≠ 部署機）是遠端叢集的常見坑，預設就 `--platform` 指定目標架構。
+- **來源**：feature 020（specs/020-k8s-deploy）；`Dockerfile`、`deploy/k8s/*`、`pyproject.toml` httpx 移位；
+  節點 `tew`（amd64 公網）。
+
+### 「空＝不設限」做成明確選項，而非隱式行為——可解釋 > 魔法
+
+- **理論說**：規則欄位沒填值，系統「聰明地」自動當作不設限就好，不用麻煩使用者。
+- **實際發生**：真實使用者問「我沒填值代表沒有特別約束，怎麼辦？」——當時「跨側包含」規則對空/缺值是
+  報錯或刷光（與「沒填=不限制」的直覺相反）。可以做成「一律隱式：空就放行」，但那又是一種**魔法**
+  （正是教訓 11「說明與行為要一致」、教訓 10「隱式判斷易誤判」的陷阱根源）。使用者主動提議
+  「**可以有一個打勾的選擇**」。最後做成 `empty_ok` checkbox（預設關），勾選才「空=不設限」。
+- **解決方式**：`ParticipantInTargetField` 加 `empty_ok`（預設 False、golden 不變）；UI 一個 checkbox +
+  白話說明 + docs。對比 feature 019 的「auto 模式靠型別自動判斷」也補上「可手動指定模式」的明確覆寫。
+- **教訓**：當某個行為有「直覺但有歧義」的語意（空=不限制 vs 空=不符；list 對 list 要交集 vs 子集），
+  **與其隱式猜，不如給明確、預設安全的開關**，讓使用者顯式選擇。這直接服務原則 1/5（可解釋、對使用者
+  透明）：使用者看得到、選得到，行為才可預測。反模式檢查：發現自己在程式裡「貼心地自動處理空值/特例」時，
+  問「這該不該是使用者明確選的選項？」
+- **來源**：feature 021；`rules.py` `ParticipantInTargetField.empty_ok` + UI checkbox；
+  使用者一句「可以有一個打勾的選擇」定調設計。

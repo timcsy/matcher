@@ -240,6 +240,16 @@
   token 效期、可選網域白名單；`match.py` 拆分為 match/match_view/match_exports
 - 重生全部 7 個 golden（v1.5）；全套件 457 passed
 
+同期規則/編輯周邊改善（feature 019、021）：
+
+- **feature 019 跨側包含對稱化**：`participant_in_target_field` 不論哪邊是清單都做合理包含判斷
+  （1:N / N:1 / N:N 交集），並可明確指定比對模式（auto / equal / participant_in_target /
+  target_in_participant / intersect）。修掉「老師多值、班級單值」這類反方向資料全被刷掉的陷阱。
+- **feature 021 範本編輯 UX**：(a) 編輯範本時補回規則預填（`_template_to_form_dict` 原本漏吐 rules）；
+  (b) 規則加「**空＝不設限**」checkbox（`empty_ok`，預設關）——沒填值的一方視為不設限、自動通過；
+  (c) 配對**失敗也存 roster snapshot**，「用這份清單再配對」對失敗紀錄也可用、免重打。
+- 兩者核心僅動 `rules/pipeline/audit`（規則語意擴充，教訓 7）；`empty_ok`/`mode` 預設值使 golden 不變。
+
 階段 5 K8s 部署（feature 020）：
 
 - 單一容器映像 `ghcr.io/timcsy/matcher`（python3.11-slim + WeasyPrint/poppler/CJK 系統依賴 + uv），公開於 ghcr
