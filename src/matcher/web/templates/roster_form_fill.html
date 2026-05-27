@@ -22,6 +22,12 @@
 <h2>填清單 — {{ template.name }}</h2>
 <p><small><a href="/match/new">← 回上一步（換模式或範本）</a></small></p>
 
+{% if info_note %}
+<div style="background:#e3f2fd; border:1px solid #90caf9; border-left:4px solid #1976d2; border-radius:6px; padding:0.8em 1em; margin-bottom:1rem; color:#0d47a1">
+  📋 {{ info_note }}
+</div>
+{% endif %}
+
 {% if form_error %}
 <div class="form-error-banner">
   <strong>⚠️ 還差一步：</strong>{{ form_error }}

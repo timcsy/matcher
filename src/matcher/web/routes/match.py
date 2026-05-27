@@ -148,6 +148,7 @@ def _render_fill_form(
     prefill_roles=None,
     prefill_targets=None,
     form_error: Optional[str] = None,
+    info_note: Optional[str] = None,
     seed=None,
     mechanism: str = "M0",
     status_code: int = 200,
@@ -182,6 +183,7 @@ def _render_fill_form(
             "prefill_roles": prefill_roles,
             "prefill_targets": prefill_targets,
             "form_error": form_error,
+            "info_note": info_note,
             "prefill_seed": seed,
             "prefill_mechanism": mechanism,
         },
@@ -202,16 +204,67 @@ def _extract_form_rows(form: dict, prefix: str, keys: list[str]) -> list[dict]:
     return [rows[i] for i in sorted(rows.keys())]
 
 
+def _flatten_snapshot_value(v) -> str:
+    """快照屬性值 → 填清單頁文字輸入用字串（list→分號、其餘→str）。"""
+    if isinstance(v, list):
+        return ";".join(str(x) for x in v)
+    return "" if v is None else str(v)
+
+
+def _snapshot_to_prefill(record) -> tuple[list, list]:
+    """把一筆配對紀錄的 roster 快照 → 填清單頁的 prefill（角色、對象）。"""
+    snap = (record.audit or {}).get("roster_snapshot", {})
+    roles = []
+    for r in snap.get("roles", []):
+        row = {"id": r.get("id", "")}
+        for k, val in (r.get("attributes") or {}).items():
+            row[k] = _flatten_snapshot_value(val)
+        if r.get("preferences"):
+            row["preferences"] = ";".join(str(x) for x in r["preferences"])
+        roles.append(row)
+    targets = []
+    for t in snap.get("targets", []):
+        row = {"id": t.get("id", ""), "capacity": str(t.get("capacity", ""))}
+        for k, val in (t.get("attributes") or {}).items():
+            row[k] = _flatten_snapshot_value(val)
+        targets.append(row)
+    return roles, targets
+
+
 @router.get("/match/new/fill")
-async def new_match_fill(request: Request, template_id: str, email: str = Depends(require_login)):
-    """填寫頁：依範本宣告動態渲染欄位。"""
+async def new_match_fill(request: Request, template_id: str,
+                         from_record: Optional[str] = None,
+                         email: str = Depends(require_login)):
+    """填寫頁：依範本宣告動態渲染欄位。
+
+    ?from_record=<rid>：用某筆過去紀錄的清單（角色+對象）預填，供「沿用後微調」。
+    """
     from matcher.web.routes.pages import _reg as _shared_reg
     reg = _shared_reg()
     try:
         tpl = reg.get(template_id)
     except TemplateNotFound as e:
         return _error_page(request, "TemplateNotFound", str(e), status_code=404)
-    return _render_fill_form(request, tpl)
+
+    prefill_roles = prefill_targets = None
+    note = None
+    if from_record:
+        store = MatchStore()
+        try:
+            rec = store.get(from_record)
+        except MatchRecordNotFound:
+            return _error_page(request, "RecordNotFound", "找不到要沿用的過去紀錄。", status_code=404)
+        _owner_or_403(request, rec)
+        if rec.audit is None:
+            return _error_page(request, "NoSnapshot", "該紀錄沒有可沿用的清單（執行失敗的紀錄）。", status_code=400)
+        prefill_roles, prefill_targets = _snapshot_to_prefill(rec)
+        note = f"已沿用過去紀錄的清單（{from_record}），可直接修改後再配對。"
+
+    return _render_fill_form(
+        request, tpl,
+        prefill_roles=prefill_roles, prefill_targets=prefill_targets,
+        info_note=note,
+    )
 
 
 @router.post("/match/run-from-form")
