@@ -232,13 +232,26 @@
                 </div>
               </template>
               <template x-if="rule.type === 'participant_in_target_field'">
+                <div class="col-span-2">
+                  <label class="block text-xs text-gray-500 mb-1">比對方式</label>
+                  <select :name="`rule_${i}_mode`" x-model="rule.mode"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="auto">自動（依欄位是單筆/多筆判斷）</option>
+                    <option value="participant_in_target">參與者的值都要在對象裡</option>
+                    <option value="target_in_participant">對象的值都要在參與者裡</option>
+                    <option value="intersect">兩邊有交集（任一相同即可）</option>
+                    <option value="equal">兩邊完全相同</option>
+                  </select>
+                </div>
+              </template>
+              <template x-if="rule.type === 'participant_in_target_field'">
                 <div class="col-span-2 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md p-3 leading-relaxed">
-                  依兩個欄位是「單筆文字」或「多筆文字」自動判斷，方向不限：
-                  <ul class="mt-1 ml-4 list-disc space-y-0.5">
-                    <li><b>一對一</b>（兩邊單筆）：兩值相等才通過</li>
-                    <li><b>一對多</b>（參與者單筆、對象多筆）：參與者的值要在對象清單裡（例：老師專業 ∈ 班級需要科目）</li>
-                    <li><b>多對一</b>（參與者多筆、對象單筆）：對象的值要在參與者清單裡（例：班級類組 ∈ 老師可帶類組）</li>
-                    <li><b>多對多</b>（兩邊多筆）：兩份清單有交集就通過</li>
+                  <ul class="ml-4 list-disc space-y-0.5">
+                    <li><b>自動</b>：單筆對單筆＝相等；單筆對多筆＝在清單裡；多筆對多筆＝有交集</li>
+                    <li><b>參與者的值都要在對象裡</b>（例：老師專業「數學」要在班級需要科目「數學;英文」中）</li>
+                    <li><b>對象的值都要在參與者裡</b>（例：班級類組「第一類組」要在老師可帶類組「第一類組;第二類組」中）</li>
+                    <li><b>兩邊有交集</b>（例：老師可帶「一;二」與班級可收「二;三」有共同的「二」→ 通過）</li>
+                    <li><b>兩邊完全相同</b>（例：兩邊都是「第一類組」才通過）</li>
                   </ul>
                 </div>
               </template>

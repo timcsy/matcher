@@ -31,12 +31,14 @@ def _build_expr(rule_type: str, fields: dict) -> dict:
         items = [x.strip() for x in fields["set"].split(";") if x.strip()]
         return {"in": {"field": fields["field"], "set": items}}
     if rule_type == "participant_in_target_field":
-        return {
-            "participant_in_target_field": {
-                "participant_field": fields["participant_field"],
-                "target_field": fields["target_field"],
-            }
+        body = {
+            "participant_field": fields["participant_field"],
+            "target_field": fields["target_field"],
         }
+        mode = (fields.get("mode") or "auto").strip() or "auto"
+        if mode != "auto":
+            body["mode"] = mode
+        return {"participant_in_target_field": body}
     raise ValueError(f"未知規則類型：{rule_type}")
 
 
@@ -62,9 +64,18 @@ def _auto_description(rule_type: str, fields: dict, attributes: dict) -> str:
         items = [x.strip() for x in fields["set"].split(";") if x.strip()]
         return f"{_attr_desc(attributes, fields['field'])} 必須屬於：{ '、'.join(items) }"
     if rule_type == "participant_in_target_field":
-        participant_desc = _attr_desc(attributes, f"participant.{fields['participant_field']}")
-        target_desc = _attr_desc(attributes, f"target.{fields['target_field']}")
-        return f"{participant_desc} 必須對應到對象的{target_desc}（任一邊可多筆，做包含比對）"
+        pd = _attr_desc(attributes, f"participant.{fields['participant_field']}")
+        td = _attr_desc(attributes, f"target.{fields['target_field']}")
+        mode = (fields.get("mode") or "auto").strip() or "auto"
+        if mode == "equal":
+            return f"{pd} 必須與對象的{td}完全相同"
+        if mode == "participant_in_target":
+            return f"{pd} 必須都在對象的{td}裡"
+        if mode == "target_in_participant":
+            return f"對象的{td} 必須都在{pd}裡"
+        if mode == "intersect":
+            return f"{pd} 與對象的{td} 必須有交集"
+        return f"{pd} 必須對應到對象的{td}（任一邊可多筆，做包含比對）"  # auto
     raise ValueError(f"未知規則類型：{rule_type}")
 
 
@@ -124,7 +135,7 @@ def assemble_template_yaml(form: dict) -> dict:
     rule_rows = _collect_indexed_rows(
         form,
         "rule",
-        ["id", "type", "field", "value", "set", "participant_field", "target_field", "custom_description"],
+        ["id", "type", "field", "value", "set", "participant_field", "target_field", "mode", "custom_description"],
     )
     rules = []
     for r in rule_rows:

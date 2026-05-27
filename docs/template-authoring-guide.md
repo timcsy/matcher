@@ -178,6 +178,24 @@ expr:
 
 所以你只要把「多筆」放在任一邊都可以，系統會自動判斷包含關係。
 
+**明確指定比對方式（可選 `mode`）**：不想靠自動判斷時，可加 `mode` 直接指定（省略＝`auto`）：
+
+| `mode` | 意義 | 範例 |
+|---|---|---|
+| `auto`（預設） | 依欄位單筆/多筆自動判斷（同上表） | — |
+| `participant_in_target` | 參與者的值都要在對象裡（P ⊆ T） | 老師專業「數學」要在班級需要科目「數學;英文」中 |
+| `target_in_participant` | 對象的值都要在參與者裡（T ⊆ P） | 班級類組「第一類組」要在老師可帶類組「第一類組;第二類組」中 |
+| `intersect` | 兩邊有交集（任一相同即可） | 老師可帶「一;二」與班級可收「二;三」有共同的「二」→ 通過 |
+| `equal` | 兩邊完全相同（集合相等） | 兩邊都是「第一類組」才通過 |
+
+```yaml
+expr:
+  participant_in_target_field:
+    participant_field: subjects
+    target_field: category
+    mode: target_in_participant   # 老師可帶多類組、班級單一類組時用這個
+```
+
 ### 3.2 邏輯節點
 
 #### `and`：所有子規則皆通過

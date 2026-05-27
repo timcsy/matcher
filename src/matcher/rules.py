@@ -13,6 +13,9 @@ from matcher.errors import RuleContradiction, RuleTypeError, UnknownAttribute
 
 AttrValue = Union[str, int, bool, list]  # bool 不在 spec 中支援，保留以利錯誤偵測
 
+# participant_in_target_field 的包含模式
+_PIT_MODES = {"auto", "equal", "participant_in_target", "target_in_participant", "intersect"}
+
 
 # ── AST 節點 ─────────────────────────────────────────────────────────────
 
@@ -45,6 +48,10 @@ class Le:
 class ParticipantInTargetField:
     participant_field: str
     target_field: str
+    # 包含模式（feature 019）：auto = 依型別自動判斷；其餘為明確覆寫。
+    #   equal=兩集合相等、participant_in_target=參與者⊆對象、
+    #   target_in_participant=對象⊆參與者、intersect=有交集
+    mode: str = "auto"
 
 
 @dataclass(frozen=True)
@@ -96,9 +103,16 @@ def parse_expr(node: object) -> RuleExpr:
     if op == "le":
         return Le(field=body["field"], value=int(body["value"]))
     if op == "participant_in_target_field":
+        mode = body.get("mode", "auto")
+        if mode not in _PIT_MODES:
+            raise UnknownAttribute(
+                f"participant_in_target_field 的 mode `{mode}` 不支援；"
+                f"可用：{', '.join(sorted(_PIT_MODES))}"
+            )
         return ParticipantInTargetField(
             participant_field=body["participant_field"],
             target_field=body["target_field"],
+            mode=mode,
         )
     if op == "and":
         return And(children=tuple(parse_expr(c) for c in body))
@@ -166,17 +180,30 @@ def evaluate(expr: RuleExpr, participant_attrs: dict, target_attrs: dict) -> boo
         if expr.target_field not in target_attrs:
             raise UnknownAttribute(f"規則引用未定義的對象屬性：`target.{expr.target_field}`")
         tv = target_attrs[expr.target_field]
-        # 對稱化（feature 019）：不論哪邊是清單都做合理的包含判斷。
-        #   兩邊單值 → 相等；參與者單值＋對象清單 → 參與者值 ∈ 對象清單；
-        #   參與者清單＋對象單值 → 對象值 ∈ 參與者清單；兩邊清單 → 交集非空。
-        p_list, t_list = isinstance(rv, list), isinstance(tv, list)
-        if p_list and t_list:
-            return any(x in tv for x in rv)
-        if p_list:
-            return tv in rv
-        if t_list:
-            return rv in tv
-        return rv == tv
+        if expr.mode == "auto":
+            # 對稱化（feature 019）：不論哪邊是清單都做合理的包含判斷。
+            #   兩邊單值 → 相等；參與者單值＋對象清單 → 參與者值 ∈ 對象清單；
+            #   參與者清單＋對象單值 → 對象值 ∈ 參與者清單；兩邊清單 → 交集非空。
+            p_list, t_list = isinstance(rv, list), isinstance(tv, list)
+            if p_list and t_list:
+                return any(x in tv for x in rv)
+            if p_list:
+                return tv in rv
+            if t_list:
+                return rv in tv
+            return rv == tv
+        # 明確模式覆寫：把兩邊都當集合比較
+        p_set = set(rv) if isinstance(rv, list) else {rv}
+        t_set = set(tv) if isinstance(tv, list) else {tv}
+        if expr.mode == "equal":
+            return p_set == t_set
+        if expr.mode == "participant_in_target":
+            return p_set <= t_set
+        if expr.mode == "target_in_participant":
+            return t_set <= p_set
+        if expr.mode == "intersect":
+            return bool(p_set & t_set)
+        raise UnknownAttribute(f"未知的包含模式：{expr.mode}")
     if isinstance(expr, And):
         return all(evaluate(c, participant_attrs, target_attrs) for c in expr.children)
     if isinstance(expr, Or):

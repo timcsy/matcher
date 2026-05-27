@@ -34,10 +34,14 @@ def _expr_to_dict(expr) -> dict:
     if isinstance(expr, Le):
         return {"le": {"field": expr.field, "value": expr.value}}
     if isinstance(expr, ParticipantInTargetField):
-        return {"participant_in_target_field": {
+        body = {
             "participant_field": expr.participant_field,
             "target_field": expr.target_field,
-        }}
+        }
+        # mode 預設 auto 時略過，保持既有 audit / golden 逐位元組不變
+        if expr.mode != "auto":
+            body["mode"] = expr.mode
+        return {"participant_in_target_field": body}
     if isinstance(expr, And):
         return {"and": [_expr_to_dict(c) for c in expr.children]}
     if isinstance(expr, Or):
