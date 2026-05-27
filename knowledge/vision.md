@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）、階段 7（配對失敗可解釋）、階段 8（對象試算表匯入 + 動態範例）已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）、階段 7（配對失敗可解釋）、階段 8（對象試算表匯入 + 動態範例 + 過去紀錄重用）已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -193,7 +193,7 @@
 - 自動化測試：348 個（既有 342 + 6 新增 + 既有 15+ 調整），全綠
 - 動機：「公平公開」原則——使用者在 UI 填名單時就該透明知道對象有哪些
 
-階段 6 登入與資源歸屬（commit 待補，branch `014-auth-ownership`，**新增 authlib、itsdangerous**）：
+階段 6 登入與資源歸屬（merge `30443eb`，**新增 authlib、itsdangerous**）：
 
 - Google OAuth 登入（Authlib）+ 簽章 cookie session（Starlette SessionMiddleware，無伺服器端 session、無 DB）
 - 管理頁強制登入；配對紀錄/範本綁 `owner`（email）；列表只列自己的；跨使用者存取 403
@@ -217,15 +217,17 @@
 - **核心變動只碰 filter/errors/cli**（可解釋性職責，教訓 7）；成功 audit schema 不變
 - 自動化測試：393 passed, 2 skipped（新增 rejection_summary、空集合攜帶診斷、CLI/Web 診斷等）
 
-階段 8 對象試算表匯入 + 動態範例（branch `016-targets-spreadsheet-import`，無新依賴）：
+階段 8 對象試算表匯入 + 動態範例 + 過去紀錄重用（merge `4ae4576`，無新依賴）：
 
 - 對象名單也能用 CSV/Excel 匯入：上傳**兩個獨立檔**（角色一個、對象一個），不必寫 YAML 旁檔
 - 核心 `data_import` 新增 `load_targets_csv/xlsx`（重用編碼偵測/表頭對齊/型別轉換）+ `load_roster_csv/xlsx(targets=)` 向後相容注入
 - 對象檔編號可省略 → 自動 T001…（避開已填）；中文表頭自動對齊；分隔符容錯（；、，）
 - **動態範例**：`/templates/{id}/example/{roles|targets}.{csv|xlsx}` 依範本 schema 即時產生範例（中文表頭 + 格式提示列），**涵蓋自訂範本、永遠與範本同步**；上傳頁提供下載連結
+- **過去紀錄重用**：成功紀錄列出「用這份清單再配對」，從 `roster_snapshot` 還原角色＋對象預填到填清單頁（`/match/new/fill?from_record=...`），可改後重跑；擁有者限定
+- 全 UI 用詞「名單」→「清單」；抽籤方式獨立成「3. 抽籤方式」卡片（不再混在清單來源裡）
 - CLI `.targets.yaml` 旁檔向後相容；對象試算表 vs YAML 旁檔 audit 等價（SC-005）
 - **核心只動 data_import**（資料匯入職責，教訓 7）；audit schema 不變
-- 自動化測試：417 passed, 2 skipped
+- 自動化測試：420 passed, 2 skipped
 
 尚未開始：K8s 部署（階段 5）、實際學校場景試行（UI 白話化已就緒，等真人來試）。
 
@@ -518,7 +520,8 @@
   交付：Google OAuth 登入 + 資源綁擁有者 + 預設私有 + 範本私有/公開 + 刪除範本；
   個別連結改不可猜 token（免登入、不可枚舉）；CSRF / cookie flags / rate-limit；無 DB。
   前置條件：階段 4（公開網路部署的隱私前置）。詳見 specs/014-auth-ownership。
-  註：登入/權限非從根公理推導，屬務實決策（公開網路承載學生個資的必要防護）。
+  註：資料保護「義務」由原則 6 涵蓋（推導自原則 4＋5）；本階段的登入/權限「機制」
+  （Google OAuth、簽章 token、rate-limit）則是滿足該義務的務實手段、可替換。
 -->
 
 **成功標準：**
@@ -545,6 +548,25 @@
 - [x] UI 填名單空集合 → 回填名單頁、保留輸入 + 診斷
 - [x] teacher-class R003 說明與接受值一致（照說明填得過）
 - [x] 成功配對 audit schema 不變；核心僅動 filter/errors/cli
+
+### 階段 8：對象試算表匯入 + 動態範例 + 過去紀錄重用
+
+- [x] 完成（merge `4ae4576`）
+
+<!--
+  交付：對象也能用 CSV/Excel 兩檔獨立匯入（不必寫 YAML 旁檔）；依範本 schema
+  即時產生範例試算表（涵蓋自訂範本、永不漂移）；成功紀錄可「用這份清單再配對」
+  （從 roster_snapshot 預填填清單頁）。核心僅動 data_import（資料匯入職責，教訓 7）。
+  前置條件：階段 2b（資料匯入）、階段 4f（UI 填清單預填機制）。詳見 specs/016-targets-spreadsheet-import。
+-->
+
+**成功標準：**
+
+- [x] 對象可用 CSV/Excel 匯入（角色、對象各一檔）；編號可省略自動生成；中文表頭對齊
+- [x] 範例試算表依範本 schema 即時產生，涵蓋自訂範本且永遠與當前 schema 同步（教訓 12）
+- [x] 對象試算表 vs YAML 旁檔 audit 逐位元組等價（SC-005）；CLI 旁檔向後相容
+- [x] 成功紀錄可重用清單再配對（擁有者限定，從 audit roster_snapshot 還原預填）
+- [x] 核心僅動 data_import；audit schema 不變
 
 ## Backlog（待真實需求再做，未排程）
 
