@@ -48,7 +48,7 @@ def test_csv_upload_empty_set_shows_culprit(client: TestClient):
 
 
 def test_fill_form_empty_set_refills_with_diagnostic(client: TestClient):
-    """US2：UI 填名單觸發空集合 → 回填名單頁、保留輸入 + 診斷。"""
+    """US2：UI 填清單觸發空集合 → 回填清單頁、保留輸入 + 診斷。"""
     form = {
         "template_id": "teacher-class", "seed": "1", "mechanism": "M0",
         "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
@@ -58,7 +58,7 @@ def test_fill_form_empty_set_refills_with_diagnostic(client: TestClient):
     }
     r = client.post("/match/run-from-form", data=form, follow_redirects=False)
     assert r.status_code == 400  # 回填頁（非 303 跳走存死 record）
-    assert "填名單" in r.text
+    assert "填清單" in r.text
     # 保留輸入
     assert "王老師" in r.text
     # 診斷（元兇規則描述）

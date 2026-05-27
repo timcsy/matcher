@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）、階段 7（配對失敗可解釋）已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）、階段 7（配對失敗可解釋）、階段 8（對象試算表匯入 + 動態範例）已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -216,6 +216,16 @@
   使用者照說明填就過）；examples sidecar 同步
 - **核心變動只碰 filter/errors/cli**（可解釋性職責，教訓 7）；成功 audit schema 不變
 - 自動化測試：393 passed, 2 skipped（新增 rejection_summary、空集合攜帶診斷、CLI/Web 診斷等）
+
+階段 8 對象試算表匯入 + 動態範例（branch `016-targets-spreadsheet-import`，無新依賴）：
+
+- 對象名單也能用 CSV/Excel 匯入：上傳**兩個獨立檔**（角色一個、對象一個），不必寫 YAML 旁檔
+- 核心 `data_import` 新增 `load_targets_csv/xlsx`（重用編碼偵測/表頭對齊/型別轉換）+ `load_roster_csv/xlsx(targets=)` 向後相容注入
+- 對象檔編號可省略 → 自動 T001…（避開已填）；中文表頭自動對齊；分隔符容錯（；、，）
+- **動態範例**：`/templates/{id}/example/{roles|targets}.{csv|xlsx}` 依範本 schema 即時產生範例（中文表頭 + 格式提示列），**涵蓋自訂範本、永遠與範本同步**；上傳頁提供下載連結
+- CLI `.targets.yaml` 旁檔向後相容；對象試算表 vs YAML 旁檔 audit 等價（SC-005）
+- **核心只動 data_import**（資料匯入職責，教訓 7）；audit schema 不變
+- 自動化測試：417 passed, 2 skipped
 
 尚未開始：K8s 部署（階段 5）、實際學校場景試行（UI 白話化已就緒，等真人來試）。
 

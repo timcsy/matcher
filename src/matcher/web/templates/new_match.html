@@ -29,75 +29,87 @@
     <p><small>範本決定要配對的角色種類（如老師、學生）和條件規則。沒看到想要的？<a href="/templates/new">建立新範本 →</a></small></p>
   </div>
 
-  <div class="card">
-    <h3>2. 名單從哪來？</h3>
-    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem">
-      <button type="button" @click="mode='upload'"
-        :style="mode==='upload' ? 'background:#2c5282;color:white' : 'background:white;color:#2c5282;border:1px solid #2c5282'"
-        style="padding:0.6em 1.2em; border-radius:6px; cursor:pointer; font-size:0.95em">📂 上傳名單檔</button>
-      <button type="button" @click="mode='fill'"
-        :style="mode==='fill' ? 'background:#2c5282;color:white' : 'background:white;color:#2c5282;border:1px solid #2c5282'"
-        style="padding:0.6em 1.2em; border-radius:6px; cursor:pointer; font-size:0.95em">✏️ 直接填名單</button>
-      <a href="/matches"
-        style="padding:0.6em 1.2em; border-radius:6px; border:1px solid #888; color:#555; text-decoration:none; font-size:0.95em">📌 從過去紀錄</a>
-    </div>
+  <form method="post" action="/match/run" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+    <input type="hidden" name="template_id" :value="templateId">
 
-    {# ── 上傳檔模式 ── #}
-    <div x-show="mode === 'upload'">
-      <form method="post" action="/match/run" enctype="multipart/form-data">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
-        <input type="hidden" name="template_id" :value="templateId">
+    <div class="card">
+      <h3>2. 清單從哪來？</h3>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem">
+        <button type="button" @click="mode='upload'"
+          :style="mode==='upload' ? 'background:#2c5282;color:white' : 'background:white;color:#2c5282;border:1px solid #2c5282'"
+          style="padding:0.6em 1.2em; border-radius:6px; cursor:pointer; font-size:0.95em">📂 上傳清單檔</button>
+        <button type="button" @click="mode='fill'"
+          :style="mode==='fill' ? 'background:#2c5282;color:white' : 'background:white;color:#2c5282;border:1px solid #2c5282'"
+          style="padding:0.6em 1.2em; border-radius:6px; cursor:pointer; font-size:0.95em">✏️ 直接填清單</button>
+        <a href="/matches"
+          style="padding:0.6em 1.2em; border-radius:6px; border:1px solid #888; color:#555; text-decoration:none; font-size:0.95em">📌 從過去紀錄</a>
+      </div>
+
+      {# ── 上傳檔模式 ── #}
+      <div x-show="mode === 'upload'">
         <label>
-          名單檔（CSV 或 Excel，最大 5 MB）：
-          <input type="file" name="roster" accept=".csv,.xlsx" required>
+          ① 角色清單檔（要被配對的人，CSV 或 Excel，最大 5 MB）：
+          <input type="file" name="roster" accept=".csv,.xlsx" :required="mode==='upload'">
         </label>
-        <small>檔案第一列需是欄位名稱；可用中文也可用英文（依範本設定的顯示名稱）。</small>
-        <p><small>不會做名單？下載範例：
-          <a href="https://github.com/timcsy/matcher/raw/main/examples/teacher-class/roster.csv">教師-班級範例（CSV）</a> ·
-          <a href="https://github.com/timcsy/matcher/raw/main/examples/study-group/roster.xlsx">研習分組範例（Excel）</a>
-        </small></p>
-
-        <h4 style="margin-top:1.5rem">抽籤方式</h4>
-        <select name="mechanism">
-          {% for value, label in mechanisms %}
-          <option value="{{ value }}" {% if value == default_mechanism %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-        <small>
-          <ul style="margin: 0.5rem 0 0 1.2rem; padding: 0">
-            <li><strong>純抽籤</strong>：所有人不填志願、完全公平隨機（適合：分組順序無偏好的場景）</li>
-            <li><strong>輪流挑</strong>：按隨機順序，每個人輪流挑自己最高志願（適合：研習分組、社團選填）</li>
-            <li><strong>依志願先後填滿</strong>：先把每組的第一志願填滿，剩下的人再填第二志願⋯（適合：志願清楚分高低的場景）</li>
-          </ul>
+        <small>不會做？下載範例（依目前範本）：
+          <a :href="`/templates/${templateId}/example/roles.csv`">角色範例 CSV</a> ·
+          <a :href="`/templates/${templateId}/example/roles.xlsx`">Excel</a>
         </small>
 
-        <details style="margin-top:1.5rem">
-          <summary style="cursor:pointer; color:#555">進階：自訂抽籤亂數（一般不用改）</summary>
-          <div style="margin-top:0.6rem">
-            <label>
-              亂數種子：
-              <input type="number" name="seed" required value="123456" step="1">
-            </label>
-            <small>抽籤需要一個亂數起點。<strong>同一份名單 + 同一個數字 → 永遠抽出一樣的結果</strong>，方便事後重現給家長 / 委員看。想當眾決定可用擲骰、彩券號碼當這個數字。</small>
-          </div>
-        </details>
+        <label style="margin-top:1.2rem">
+          ② 對象清單檔（要被分進去的位置/群組，CSV 或 Excel）：
+          <input type="file" name="targets_yaml" accept=".csv,.xlsx,.yaml,.yml" :required="mode==='upload'">
+        </label>
+        <small>下載範例（依目前範本）：
+          <a :href="`/templates/${templateId}/example/targets.csv`">對象範例 CSV</a> ·
+          <a :href="`/templates/${templateId}/example/targets.xlsx`">Excel</a>
+          。下載後照欄位填你的資料再上傳即可。
+        </small>
+      </div>
 
-        <p style="margin-top:1rem"><button class="btn btn-success" type="submit">執行配對</button></p>
-      </form>
+      {# ── 直接填清單模式 ── #}
+      <div x-show="mode === 'fill'">
+        <p>用表單一筆筆填寫清單，不用做 CSV 檔。</p>
+        <p style="margin-top:1rem">
+          <a class="btn btn-success"
+             :href="`/match/new/fill?template_id=${templateId}`">
+            開始填寫 →
+          </a>
+        </p>
+      </div>
     </div>
 
-    {# ── 直接填名單模式 ── #}
-    <div x-show="mode === 'fill'">
-      <p>用表單一筆筆填寫名單，不用做 CSV 檔。</p>
-      <p style="margin-top:1rem">
-        <a class="btn btn-success"
-           :href="`/match/new/fill?template_id=${templateId}`">
-          開始填寫 →
-        </a>
-      </p>
-    </div>
+    {# ── 抽籤方式（僅上傳模式；直接填清單會在填寫頁選） ── #}
+    <div class="card" x-show="mode === 'upload'">
+      <h3>3. 抽籤方式</h3>
+      <select name="mechanism">
+        {% for value, label in mechanisms %}
+        <option value="{{ value }}" {% if value == default_mechanism %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <small>
+        <ul style="margin: 0.5rem 0 0 1.2rem; padding: 0">
+          <li><strong>純抽籤</strong>：所有人不填志願、完全公平隨機（適合：分組順序無偏好的場景）</li>
+          <li><strong>輪流挑</strong>：按隨機順序，每個人輪流挑自己最高志願（適合：研習分組、社團選填）</li>
+          <li><strong>依志願先後填滿</strong>：先把每組的第一志願填滿，剩下的人再填第二志願⋯（適合：志願清楚分高低的場景）</li>
+        </ul>
+      </small>
 
-  </div>
+      <details style="margin-top:1.5rem">
+        <summary style="cursor:pointer; color:#555">進階：自訂抽籤亂數（一般不用改）</summary>
+        <div style="margin-top:0.6rem">
+          <label>
+            亂數種子：
+            <input type="number" name="seed" required value="123456" step="1">
+          </label>
+          <small>抽籤需要一個亂數起點。<strong>同一份清單 + 同一個數字 → 永遠抽出一樣的結果</strong>，方便事後重現給家長 / 委員看。想當眾決定可用擲骰、彩券號碼當這個數字。</small>
+        </div>
+      </details>
+
+      <p style="margin-top:1rem"><button class="btn btn-success" type="submit">執行配對</button></p>
+    </div>
+  </form>
 </div>
 
 {% endblock %}
