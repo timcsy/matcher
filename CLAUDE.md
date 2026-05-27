@@ -1,6 +1,6 @@
 # matcher Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-05-26
+Auto-generated from all feature plans. Last updated: 2026-05-27
 
 ## Active Technologies
 - Python 3.11+（沿用階段 1） + Typer、PyYAML、pytest（沿用，無新增） (002-template-system)
@@ -21,6 +21,8 @@ Auto-generated from all feature plans. Last updated: 2026-05-26
 - 沿用 `data/matches/` + 新增 `data/templates/<id>/v<N>.yaml`（同檔案系統風格，無 DB） (011-template-author-ui)
 - Python 3.11+（沿用） + 沿用（fastapi、uvicorn、jinja2、python-multipart、PyYAML、openpyxl、Typer、pytest、httpx[dev]、weasyprint）+ Tailwind Play CDN + Alpine.js（CDN，無 build）——**無新增** (012-web-roster-form)
 - 沿用 `data/matches/` + `data/templates/`；UI 填的名單**不持久化**（in-memory CSV bytes 走既有路徑） (012-web-roster-form)
+- Python 3.11（沿用；映像基底 `python:3.11-slim-bookworm`） + 沿用（fastapi、uvicorn[standard]、jinja2、weasyprint、authlib、itsdangerous、PyYAML、openpyxl、Typer）；環境以 **uv** 安裝（沿用工具鏈） (020-k8s-deploy)
+- 純檔案系統 `data/`（match 紀錄 JSON + 範本 YAML），掛在 **PVC**（k3s local-path 動態供應）；無 DB (020-k8s-deploy)
 
 - Python 3.11+ + Typer（CLI）、PyYAML（YAML 解析）、pytest（測試）；不額外引入 schema / validation 套件，所有結構化驗證在 `rules.py` / `roster.py` 內以純 Python 完成 (001-core-allocator)
 
@@ -40,6 +42,7 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3.11+: Follow standard conventions
 
 ## Recent Changes
+- 020-k8s-deploy: Added Python 3.11（沿用；映像基底 `python:3.11-slim-bookworm`） + 沿用（fastapi、uvicorn[standard]、jinja2、weasyprint、authlib、itsdangerous、PyYAML、openpyxl、Typer）；環境以 **uv** 安裝（沿用工具鏈）
 - 012-web-roster-form: Added Python 3.11+（沿用） + 沿用（fastapi、uvicorn、jinja2、python-multipart、PyYAML、openpyxl、Typer、pytest、httpx[dev]、weasyprint）+ Tailwind Play CDN + Alpine.js（CDN，無 build）——**無新增**
 - 011-template-author-ui: Added Python 3.11+（沿用） + 沿用（fastapi、uvicorn[standard]、jinja2、python-multipart、PyYAML、openpyxl、Typer、pytest、httpx[dev]、weasyprint）——**無新增**
 
