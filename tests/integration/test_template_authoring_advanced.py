@@ -26,7 +26,7 @@ id: my-yaml-tpl
 name: 我的範本
 description: 測試用
 attributes:
-  roles:
+  participants:
     - key: name
       type: str
       required: true
@@ -40,7 +40,7 @@ rules:
   - id: R001
     description: 規則 1
     expr:
-      eq: {field: role.name, value: x}
+      eq: {field: participant.name, value: x}
 """
 
 
@@ -77,7 +77,7 @@ def test_validate_returns_error_on_invalid_yaml_syntax(client: TestClient):
 
 def test_validate_returns_error_on_invalid_expr_operator(client: TestClient):
     """T053：未知 expr 算子 → ok=false。"""
-    bad = VALID_YAML.replace("eq: {field: role.name, value: x}", "gt: {field: role.name, value: x}")
+    bad = VALID_YAML.replace("eq: {field: participant.name, value: x}", "gt: {field: participant.name, value: x}")
     r = client.post(
         "/templates/validate",
         data={"mode": "advanced", "raw_yaml": bad},

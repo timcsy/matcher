@@ -1,8 +1,8 @@
 version: "1.0"
 rules:
   - id: R001
-    description: "引用未定義的角色屬性"
+    description: "引用未定義的參與者屬性"
     expr:
       eq:
-        field: role.this_attribute_does_not_exist
+        field: participant.this_attribute_does_not_exist
         value: 1

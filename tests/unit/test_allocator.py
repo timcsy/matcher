@@ -10,16 +10,16 @@ def test_allocation_within_qualified_set():
     qs = {"A": ["T1", "T2"], "B": ["T2"]}
     capacities = {"T1": 1, "T2": 1}
     assignment, trace = allocate_m0(qs, capacities, SeededRandom(1))
-    for role, target in assignment.items():
+    for participant, target in assignment.items():
         if target is not None:
-            assert target in qs[role], f"{role}→{target} 不在資格集合內"
+            assert target in qs[participant], f"{participant}→{target} 不在資格集合內"
 
 
 def test_allocation_respects_capacity():
     qs = {"A": ["T1"], "B": ["T1"], "C": ["T1"]}
     capacities = {"T1": 2}
     assignment, _ = allocate_m0(qs, capacities, SeededRandom(42))
-    # 至少有一位未被分配（容量 2 < 角色 3）
+    # 至少有一位未被分配（容量 2 < 參與者 3）
     assigned = [t for t in assignment.values() if t is not None]
     assert len(assigned) == 2
     assert assigned.count("T1") == 2
@@ -41,7 +41,7 @@ def test_allocation_trace_structure():
     assert len(trace) == 1
     step = trace[0]
     assert step["step"] == 1
-    assert step["role_id"] == "A"
+    assert step["participant_id"] == "A"
     assert set(step["candidates"]) == {"T1", "T2"}
     assert step["chosen"] in {"T1", "T2"}
     assert "random_index" in step

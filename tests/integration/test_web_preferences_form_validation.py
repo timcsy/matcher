@@ -79,14 +79,14 @@ def test_post_preferences_rejects_unknown_target_id(tmp_path: Path):
 
 
 def test_post_preferences_all_empty_shows_error(tmp_path: Path):
-    """T033：全空 prefs + submit → 回填志願頁 + 「請至少為一位角色填」訊息。"""
+    """T033：全空 prefs + submit → 回填志願頁 + 「請至少為一位參與者填」訊息。"""
     c = _client(tmp_path)
     r1 = _get_form_page(c)
     hidden = _get_hidden(r1.text)
     r = c.post("/match/preferences", data={**hidden, "_action": "submit"})
     assert r.status_code == 200
     assert "填寫志願" in r.text
-    assert "請至少為一位角色填" in r.text
+    assert "請至少為一位參與者填" in r.text
 
 
 def test_preferences_form_shows_target_summary_with_capacity(tmp_path: Path):
@@ -106,7 +106,7 @@ def test_render_preferences_form_with_empty_targets_renders_friendly_error_block
     request = MagicMock()
     request.app.state.templates = MagicMock()
 
-    class _FakeRole:
+    class _FakeParticipant:
         id = "S01"
         attributes = {"name": "A"}
 
@@ -115,11 +115,11 @@ def test_render_preferences_form_with_empty_targets_renders_friendly_error_block
         template_id="x", template_name="X",
         mechanism="M1", seed=1,
         roster_bytes=b"", roster_filename="x.csv",
-        roles=[_FakeRole()], targets=tuple(),
+        participants=[_FakeParticipant()], targets=tuple(),
         max_choices=3,
     )
     # 驗證 TemplateResponse 被呼叫且 targets_for_options 為 None
     call = request.app.state.templates.TemplateResponse.call_args
     context = call.args[2] if len(call.args) >= 3 else call.kwargs["context"]
     assert context["targets_for_options"] is None
-    assert context["roles_for_form"] == [{"id": "S01", "display_name": "A"}]
+    assert context["participants_for_form"] == [{"id": "S01", "display_name": "A"}]

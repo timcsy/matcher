@@ -39,7 +39,7 @@
 - **來源**：specs/001-core-allocator/spec.md User Story 3；
   src/matcher/pipeline.py `run_match` 中的 PreferencesNotSupported 判斷。
   階段 2a 再次驗證：study-group 模板宣告 `preferences_schema`，
-  Role.preferences 內嵌欄位於 M0 機制下被拒絕，無須改動 schema 即支援階段 4 的志願序機制。
+  Participant.preferences 內嵌欄位於 M0 機制下被拒絕，無須改動 schema 即支援階段 4 的志願序機制。
 
 ### audit schema 演進採「新增可選欄位 + null 表示不適用」最乾淨
 
@@ -65,7 +65,7 @@
 
 - **理論說**：階段 2b 要做到 SC-001「CSV / Excel / YAML 三路徑稽核紀錄五段相同」，
   本以為只要結構化資料相同（屬性、規則、容量、seed 全等）就成立。
-- **實際發生**：CSV 載入器原本依列序自動生成 role id（R001、R002…），
+- **實際發生**：CSV 載入器原本依列序自動生成 participant id（R001、R002…），
   而既有 YAML 名單用的是 T01、T02…。即使所有屬性都對齊，`assignment` 與 `qualified_set`
   的 key 仍不同——bytewise 比對永遠失敗。發現「資料結構等價」不蘊含「id 等價」。
 - **解決方式**：CSV/Excel 載入器加可選 `id` 欄位（亦接受別名「編號」）；
@@ -75,7 +75,7 @@
   自動生成的 id 適合 quick demo，但會阻擋「跨來源等價」目標。設計匯入介面時，
   「可選 id 欄位」是低成本的必要保留位。
 - **來源**：specs/003-data-import/spec.md SC-001、contracts/csv-format.md（已陳舊，
-  待 minor commit 同步）；src/matcher/data_import.py `_find_id_header`、`_build_roles`；
+  待 minor commit 同步）；src/matcher/data_import.py `_find_id_header`、`_build_participants`；
   tests/integration/test_csv_import.py `test_csv_yaml_equivalence_core_fields`。
 
 ### library + CLI + Web 三入口共用核心的價值
@@ -105,7 +105,7 @@
   問題是這不可重複、無法在 CI 跑、且任何文案修改都需要重審。
 - **實際發生**：實作中發現「面向一般教師」這個抽象目標**可以化約為硬規則**：
   「HTML response 不含 `filter_trace` / `allocation_trace` / `qualified_set` / `random_index` /
-  `exit_code` 等技術 token，且不匹配 `role\.\w+` / `target\.\w+` 等正則 pattern」。
+  `exit_code` 等技術 token，且不匹配 `participant\.\w+` / `target\.\w+` 等正則 pattern」。
   這條規則可用 `assert token not in r.text` + `re.search` 自動檢驗，
   任何不小心讓技術詞洩漏到 UI 的修改都會立刻被測試擋下。
 - **解決方式**：在 spec 寫明 `FORBIDDEN_TECHNICAL_TOKENS` 與 `FORBIDDEN_PATTERNS` 清單；
@@ -217,19 +217,19 @@
 ### 簽章 token 取代索引檔，是「無狀態鑑權 + 不破壞無 DB 架構」的廉價解
 
 - **理論說**：要做「不可猜、不可枚舉的個別查詢連結」，直覺是產一個隨機 token，
-  存一張 `token → (資源 id, 角色 id)` 對應表，查詢時去表裡找。
+  存一張 `token → (資源 id, 參與者 id)` 對應表，查詢時去表裡找。
 - **實際發生**：feature 014 要在「不引入 DB」的約束下做這件事。隨機 token + 對應表
   會逼出一個新的持久化結構（索引檔），帶來並發寫入、清理、跨副本同步的麻煩——等於
-  偷渡一個迷你資料庫。改用 **itsdangerous 簽章**把 `(match_id, role_id)` 直接簽進 token
+  偷渡一個迷你資料庫。改用 **itsdangerous 簽章**把 `(match_id, participant_id)` 直接簽進 token
   後：驗章成功就「解出」目標，**完全不需要儲存**。安全性來自 server secret（簽不出 =
   進不來），不靠保密 payload。一個函式對（sign/verify）取代整套索引機制。
-- **解決方式**：`URLSafeSerializer(SECRET, salt).dumps([match_id, role_id])` → `/r/{token}`；
+- **解決方式**：`URLSafeSerializer(SECRET, salt).dumps([match_id, participant_id])` → `/r/{token}`；
   開啟時 `loads` 驗章還原目標。session 也用同手法（簽章 cookie，無伺服器端 session）。
 - **教訓**：當你需要「可驗證但不可偽造的識別碼」時，先問「能不能用**簽章**取代**儲存**」。
   簽章（HMAC / itsdangerous / JWT）把「狀態」編碼進 token 本身，換來無狀態、免索引、
   免並發處理、天然跨副本——尤其在「不想引入 DB」的約束下，這幾乎總是更輕的解。
   反模式檢查：發現自己要「為了查 token 而建一張表」時，停下來想簽章。
-- **來源**：specs/014-auth-ownership；`src/matcher/web/security.py` sign/verify_role_token；
+- **來源**：specs/014-auth-ownership；`src/matcher/web/security.py` sign/verify_participant_token；
   research.md D3；對比「隨機 token + 索引檔」被否決。同案另一收穫：auth 作為周邊整合，
   全程 `src/matcher/*` 核心 0 改動（再次印證教訓 7）。
 

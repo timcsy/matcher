@@ -43,13 +43,13 @@
   <a href="/templates" style="margin-left:1rem">回所有範本</a>
 </p>
 
-<h3>「角色」資料欄位</h3>
+<h3>「參與者」資料欄位</h3>
 <p><small>要被配對的人或單位（例：學生、老師）有哪些資料。</small></p>
 <table>
   <thead><tr><th>顯示名稱</th><th>類型</th><th><small>英文代號</small></th></tr></thead>
   {% set type_label = {'str': '文字', 'int': '數字', 'list_str': '多筆文字'} %}
   <tbody>
-    {% for a in tpl.attributes.roles %}
+    {% for a in tpl.attributes.participants %}
     <tr><td>{{ a.description or a.key }}</td><td>{{ type_label.get(a.type, a.type) }}</td><td><small><code>{{ a.key }}</code></small></td></tr>
     {% endfor %}
   </tbody>
@@ -68,7 +68,7 @@
 </table>
 
 <h3>配對條件</h3>
-<p><small>角色要符合什麼條件，才能被分到對象。所有條件都會同時檢查。</small></p>
+<p><small>參與者要符合什麼條件，才能被分到對象。所有條件都會同時檢查。</small></p>
 <table>
   <thead><tr><th>條件說明</th><th><small>編號</small></th></tr></thead>
   <tbody>

@@ -1,7 +1,7 @@
 """CSV / Excel 名單匯入。
 
 依模板宣告的 attributes schema（含 aliases）對齊欄位，產出與 YAML 路徑等價的 Roster。
-targets 由旁檔 `<stem>.targets.yaml` 提供（CSV/Excel 為平表格式，不適合表達 roles+targets 兩段）。
+targets 由旁檔 `<stem>.targets.yaml` 提供（CSV/Excel 為平表格式，不適合表達 participants+targets 兩段）。
 
 研究決策見 specs/003-data-import/research.md。
 """
@@ -18,7 +18,7 @@ from matcher.errors import (
     RosterSheetAmbiguous,
     RosterTypeError,
 )
-from matcher.roster import Role, Roster, Target
+from matcher.roster import Participant, Roster, Target
 from matcher.template import AttributeDecl, Template
 
 ENCODINGS_TO_TRY = ("utf-8", "utf-8-sig", "cp950")
@@ -161,7 +161,7 @@ def _resolve_headers(
     template: Template,
 ) -> tuple[dict, set]:
     """回傳 (header_text → AttributeDecl, 偵測到的 preferences 表頭集合)。"""
-    role_decls = template.attributes.roles
+    participant_decls = template.attributes.participants
     pref_aliases = _preferences_aliases(template)
 
     header_resolved: dict = {}
@@ -174,7 +174,7 @@ def _resolve_headers(
         if normalized in pref_aliases:
             pref_headers.add(h)
             continue
-        decl = resolve_header(normalized, role_decls)
+        decl = resolve_header(normalized, participant_decls)
         if decl is None:
             continue
         if decl.key in seen_keys:
@@ -186,13 +186,13 @@ def _resolve_headers(
         seen_keys[decl.key] = h
         header_resolved[h] = decl
 
-    required_role_keys = [d.key for d in role_decls if d.required]
+    required_participant_keys = [d.key for d in participant_decls if d.required]
     resolved_keys = {d.key for d in header_resolved.values()}
-    missing = [k for k in required_role_keys if k not in resolved_keys]
+    missing = [k for k in required_participant_keys if k not in resolved_keys]
     if missing:
         miss_info = []
         for k in missing:
-            decl = next((d for d in role_decls if d.key == k), None)
+            decl = next((d for d in participant_decls if d.key == k), None)
             aliases = list(decl.aliases) if decl else []
             alias_text = "、".join(aliases) if aliases else "（無）"
             miss_info.append(f"`{k}`（可用別名：{alias_text}）")
@@ -205,7 +205,7 @@ def _resolve_headers(
     return header_resolved, pref_headers
 
 
-def _build_roles(
+def _build_participants(
     rows: list,
     header_resolved: dict,
     pref_headers: set,
@@ -215,16 +215,16 @@ def _build_roles(
         raise EmptyRoster("名單為空：只有表頭、無資料列")
 
     seen_ids: set = set()
-    roles_list = []
+    participants_list = []
     for idx, row in enumerate(rows, start=1):
         if id_header is not None and row.get(id_header):
-            role_id = str(row[id_header]).strip()
+            participant_id = str(row[id_header]).strip()
         else:
-            role_id = f"R{idx:03d}"
+            participant_id = f"R{idx:03d}"
         from matcher.errors import DuplicateIdentity
-        if role_id in seen_ids:
-            raise DuplicateIdentity(f"名單有重複身分：角色 id `{role_id}` 在第 {idx + 1} 列重複出現")
-        seen_ids.add(role_id)
+        if participant_id in seen_ids:
+            raise DuplicateIdentity(f"名單有重複身分：參與者 id `{participant_id}` 在第 {idx + 1} 列重複出現")
+        seen_ids.add(participant_id)
         attrs: dict = {}
         prefs_raw = None
 
@@ -245,9 +245,9 @@ def _build_roles(
         else:
             prefs = ()
 
-        roles_list.append(Role(id=role_id, attributes=attrs, preferences=prefs))
+        participants_list.append(Participant(id=participant_id, attributes=attrs, preferences=prefs))
 
-    return tuple(roles_list)
+    return tuple(participants_list)
 
 
 def _load_targets(path: Path, template: Template) -> tuple:
@@ -425,7 +425,7 @@ def load_roster_csv(path: str | Path, template: Template, targets=None) -> tuple
     id_header = _find_id_header(headers)
 
     rows = list(reader)
-    roles = _build_roles(rows, header_resolved, pref_headers, id_header=id_header)
+    participants = _build_participants(rows, header_resolved, pref_headers, id_header=id_header)
     targets = tuple(targets) if targets is not None else _load_targets(p, template)
 
     metadata = {
@@ -435,7 +435,7 @@ def load_roster_csv(path: str | Path, template: Template, targets=None) -> tuple
         "row_count": len(rows),
         "file_basename": p.name,
     }
-    return Roster(roles=roles, targets=targets), metadata
+    return Roster(participants=participants, targets=targets), metadata
 
 
 # ── Excel 匯入 ─────────────────────────────────────────────────────
@@ -500,7 +500,7 @@ def load_roster_xlsx(
 
     wb.close()
 
-    roles = _build_roles(row_dicts, header_resolved, pref_headers, id_header=id_header)
+    participants = _build_participants(row_dicts, header_resolved, pref_headers, id_header=id_header)
     targets = tuple(targets) if targets is not None else _load_targets(p, template)
 
     metadata = {
@@ -510,4 +510,4 @@ def load_roster_xlsx(
         "row_count": len(row_dicts),
         "file_basename": p.name,
     }
-    return Roster(roles=roles, targets=targets), metadata
+    return Roster(participants=participants, targets=targets), metadata

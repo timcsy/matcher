@@ -4,5 +4,5 @@ rules:
     description: "內部矛盾：x=1 且 x!=1"
     expr:
       and:
-        - eq: {field: role.x, value: 1}
-        - not: {eq: {field: role.x, value: 1}}
+        - eq: {field: participant.x, value: 1}
+        - not: {eq: {field: participant.x, value: 1}}

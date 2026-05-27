@@ -4,5 +4,5 @@ rules:
     description: "永遠不會通過：要求所有人專業都是 不存在科目"
     expr:
       eq:
-        field: role.speciality
+        field: participant.speciality
         value: "不存在的科目"

@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<title>您的配對結果 — {{ role_id }}</title>
+<title>您的配對結果 — {{ participant_id }}</title>
 <style>
   @page { size: A4; margin: 2cm; }
   body { font-family: sans-serif; font-size: 11pt; line-height: 1.5; }
@@ -26,14 +26,14 @@
   <tr><th>時間</th><td>{{ created_at }}</td></tr>
   <tr><th>模板</th><td>{{ template_name }}</td></tr>
   <tr><th>機制</th><td>{{ mechanism_label }}</td></tr>
-  <tr><th>角色編號</th><td>{{ role_id }}</td></tr>
-  <tr><th>姓名</th><td>{{ role_name }}</td></tr>
+  <tr><th>參與者編號</th><td>{{ participant_id }}</td></tr>
+  <tr><th>姓名</th><td>{{ participant_name }}</td></tr>
 </table>
 
 <h2>您的基本資訊</h2>
 <table class="attrs">
   <tbody>
-    {% for label, value in role_attrs_display %}
+    {% for label, value in participant_attrs_display %}
     <tr><th>{{ label }}</th><td>{{ value }}</td></tr>
     {% endfor %}
   </tbody>

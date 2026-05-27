@@ -29,7 +29,7 @@ def test_m1_runs_successfully(tmp_path: Path):
     audit = tmp_path / "audit.json"
     _run_m1(audit)
     data = json.loads(audit.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.4"
+    assert data["schema_version"] == "1.5"
     assert data["mechanism"] == "M1"
     assert data["processing_order"] is not None
     assert len(data["processing_order"]) == 9  # 9 students

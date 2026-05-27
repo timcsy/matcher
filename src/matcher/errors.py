@@ -51,6 +51,11 @@ class PreferencesNotSupported(MatcherError):
     exit_code = 17
 
 
+class RuleTypeError(MatcherError):
+    """規則的比較運算子（ge/le）用在非數值屬性上——型別不相容，無法比大小。"""
+    exit_code = 18
+
+
 class TemplateNotFound(MatcherError):
     exit_code = 20
 
@@ -84,7 +89,7 @@ class RosterSheetAmbiguous(MatcherError):
 
 
 class MechanismRequiresPreferences(MatcherError):
-    """機制（M1 / M2 等）需要至少一位角色提供志願；通用化自階段 4a 的 M1RequiresPreferences。"""
+    """機制（M1 / M2 等）需要至少一位參與者提供志願；通用化自階段 4a 的 M1RequiresPreferences。"""
     exit_code = 40
 
 

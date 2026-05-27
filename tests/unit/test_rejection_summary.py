@@ -13,9 +13,9 @@ def _ruleset(*ids):
 def test_counts_each_rule_failures():
     # 3 組；R003 全失敗，R001 失敗 1 組，R002 全過
     trace = [
-        {"role_id": "A", "target_id": "X", "matched_rules": ["R001", "R002"]},
-        {"role_id": "A", "target_id": "Y", "matched_rules": ["R002"]},        # R001 也失敗
-        {"role_id": "B", "target_id": "X", "matched_rules": ["R001", "R002"]},
+        {"participant_id": "A", "target_id": "X", "matched_rules": ["R001", "R002"]},
+        {"participant_id": "A", "target_id": "Y", "matched_rules": ["R002"]},        # R001 也失敗
+        {"participant_id": "B", "target_id": "X", "matched_rules": ["R001", "R002"]},
     ]
     out = rejection_summary(trace, _ruleset("R001", "R002", "R003"))
     assert out["total_pairs"] == 3
@@ -24,14 +24,14 @@ def test_counts_each_rule_failures():
 
 
 def test_all_passed_no_culprit():
-    trace = [{"role_id": "A", "target_id": "X", "matched_rules": ["R001"]}]
+    trace = [{"participant_id": "A", "target_id": "X", "matched_rules": ["R001"]}]
     out = rejection_summary(trace, _ruleset("R001"))
     assert out["rule_stats"] == {"R001": 0}
     assert out["culprit"] is None
 
 
 def test_tie_takes_first_in_rule_order():
-    trace = [{"role_id": "A", "target_id": "X", "matched_rules": []}]  # 兩條都失敗
+    trace = [{"participant_id": "A", "target_id": "X", "matched_rules": []}]  # 兩條都失敗
     out = rejection_summary(trace, _ruleset("R001", "R002"))
     assert out["rule_stats"] == {"R001": 1, "R002": 1}
     assert out["culprit"] == "R001"  # 並列 → 規則順序第一

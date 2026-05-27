@@ -73,7 +73,7 @@ def test_cross_user_match_detail_403(make_client, monkeypatch):
     login(cb, monkeypatch, "b@example.com")
     assert cb.get(f"/match/{rid}", follow_redirects=False).status_code == 403
     assert cb.get(f"/match/{rid}/audit", follow_redirects=False).status_code == 403
-    assert cb.get(f"/match/{rid}/role/T01", follow_redirects=False).status_code == 403
+    assert cb.get(f"/match/{rid}/participant/T01", follow_redirects=False).status_code == 403
 
 
 def test_admin_pages_require_login(make_client):
@@ -89,7 +89,7 @@ def test_post_requires_csrf(make_client, monkeypatch):
     # 缺 CSRF token → 403
     r = c.post("/match/run-from-form", data={
         "template_id": "teacher-class", "seed": "2026", "mechanism": "M0",
-        "role_0_name": "王", "role_0_speciality": "國文", "role_0_seniority": "8",
+        "participant_0_name": "王", "participant_0_speciality": "國文", "participant_0_seniority": "8",
         "target_0_id": "C01", "target_0_capacity": "2", "target_0_name": "甲",
         "target_0_required_subjects": "國文;數學", "target_0_feature": "bilingual",
     }, follow_redirects=False)

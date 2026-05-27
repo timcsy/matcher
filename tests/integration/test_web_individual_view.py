@@ -16,7 +16,7 @@ FORBIDDEN_TECHNICAL_TOKENS = (
     "filter_trace", "allocation_trace", "qualified_set",
     "random_index", "exit_code",
 )
-FORBIDDEN_PATTERNS = (re.compile(r"\brole\.\w+"), re.compile(r"\btarget\.\w+"))
+FORBIDDEN_PATTERNS = (re.compile(r"\bparticipant\.\w+"), re.compile(r"\btarget\.\w+"))
 
 
 def _client(tmp_path: Path) -> TestClient:
@@ -57,7 +57,7 @@ def _make_failed_record(c: TestClient, tmp_path: Path) -> str:
 def test_individual_view_assigned(tmp_path: Path):
     c = _client(tmp_path)
     rid = _make_success_record(c)
-    r = c.get(f"/match/{rid}/role/T01")
+    r = c.get(f"/match/{rid}/participant/T01")
     assert r.status_code == 200
     assert "您被分到" in r.text
     # 王老師應在 attributes 顯示
@@ -67,7 +67,7 @@ def test_individual_view_assigned(tmp_path: Path):
 def test_individual_view_filter_trace_shown(tmp_path: Path):
     c = _client(tmp_path)
     rid = _make_success_record(c)
-    r = c.get(f"/match/{rid}/role/T01")
+    r = c.get(f"/match/{rid}/participant/T01")
     assert r.status_code == 200
     # 應顯示配對是怎麼決定的（規則 ID）
     assert "R001" in r.text
@@ -77,7 +77,7 @@ def test_no_technical_tokens_in_individual_view(tmp_path: Path):
     """FR-003 / SC-002：技術詞零容忍。"""
     c = _client(tmp_path)
     rid = _make_success_record(c)
-    r = c.get(f"/match/{rid}/role/T01")
+    r = c.get(f"/match/{rid}/participant/T01")
     assert r.status_code == 200
     for token in FORBIDDEN_TECHNICAL_TOKENS:
         assert token not in r.text, f"頁面含禁用 token: {token}"
@@ -93,7 +93,7 @@ def test_attribute_description_displayed_instead_of_key(tmp_path: Path):
     """
     c = _client(tmp_path)
     rid = _make_success_record(c)
-    r = c.get(f"/match/{rid}/role/T01")
+    r = c.get(f"/match/{rid}/participant/T01")
     assert r.status_code == 200
     # teacher-class 模板 attribute description 含「老師專業科目」「教學年資」
     # （見 src/matcher/templates/builtin/teacher-class.yaml）
@@ -105,15 +105,15 @@ def test_attribute_description_displayed_instead_of_key(tmp_path: Path):
 
 
 def test_humanized_rule_in_individual_view(tmp_path: Path):
-    """代名詞替換：原本「role.speciality」應變為「您的 老師專業科目」。"""
+    """代名詞替換：原本「participant.speciality」應變為「您的 老師專業科目」。"""
     c = _client(tmp_path)
     rid = _make_success_record(c)
-    r = c.get(f"/match/{rid}/role/T01")
+    r = c.get(f"/match/{rid}/participant/T01")
     assert r.status_code == 200
-    # 教師-班級 R001 描述：「老師的專業必須出現在班級的需要科目清單中」（不含 role./target. token）
+    # 教師-班級 R001 描述：「老師的專業必須出現在班級的需要科目清單中」（不含 participant./target. token）
     # R002 描述：「老師年資至少 3 年（含）以上」（也不含）
     # 因為內建模板的描述已是「用中文寫的」，所以替換規則被觸發的機率低
-    # 換句話說：本測試實際在驗證「即使含 role./target. 字串也會被替換」
+    # 換句話說：本測試實際在驗證「即使含 participant./target. 字串也會被替換」
     # → 改為直接驗證 humanize filter 已註冊（透過上一個測試的技術詞零容忍隱含驗證）
     assert "配對是怎麼決定的" in r.text
 
@@ -145,15 +145,15 @@ def test_admin_result_failed_no_individual_links(tmp_path: Path):
 
 def test_individual_view_record_not_found(tmp_path: Path):
     c = _client(tmp_path)
-    r = c.get("/match/no-such-record/role/T01")
+    r = c.get("/match/no-such-record/participant/T01")
     assert r.status_code == 404
     assert "找不到該次配對的紀錄" in r.text
 
 
-def test_individual_view_role_not_in_record(tmp_path: Path):
+def test_individual_view_participant_not_in_record(tmp_path: Path):
     c = _client(tmp_path)
     rid = _make_success_record(c)
-    r = c.get(f"/match/{rid}/role/T999")
+    r = c.get(f"/match/{rid}/participant/T999")
     assert r.status_code == 404
     assert "您不在這次配對的清單中" in r.text
 
@@ -161,7 +161,7 @@ def test_individual_view_role_not_in_record(tmp_path: Path):
 def test_individual_view_failed_record(tmp_path: Path):
     c = _client(tmp_path)
     rid = _make_failed_record(c, tmp_path)
-    r = c.get(f"/match/{rid}/role/T01")
+    r = c.get(f"/match/{rid}/participant/T01")
     assert r.status_code == 404
     assert "執行失敗" in r.text
 
@@ -173,9 +173,9 @@ def test_error_pages_have_no_technical_tokens(tmp_path: Path):
     rid_failed = _make_failed_record(c, tmp_path)
 
     pages = [
-        c.get("/match/no-such/role/T01"),
-        c.get(f"/match/{rid_ok}/role/T999"),
-        c.get(f"/match/{rid_failed}/role/T01"),
+        c.get("/match/no-such/participant/T01"),
+        c.get(f"/match/{rid_ok}/participant/T999"),
+        c.get(f"/match/{rid_failed}/participant/T01"),
     ]
     for r in pages:
         for token in FORBIDDEN_TECHNICAL_TOKENS:
@@ -188,33 +188,33 @@ def test_error_pages_have_no_technical_tokens(tmp_path: Path):
 def test_individual_audit_download(tmp_path: Path):
     c = _client(tmp_path)
     rid = _make_success_record(c)
-    r = c.get(f"/match/{rid}/role/T01/audit.json")
+    r = c.get(f"/match/{rid}/participant/T01/audit.json")
     assert r.status_code == 200
     assert r.headers["content-type"].startswith("application/json")
     assert "attachment" in r.headers.get("content-disposition", "")
     data = json.loads(r.content)
     assert data["schema_version"] == "individual-audit/1.0"
-    assert data["role_id"] == "T01"
-    assert "role_attributes" in data
+    assert data["participant_id"] == "T01"
+    assert "participant_attributes" in data
     assert "filter_trace_subset" in data
 
 
 def test_individual_audit_subset_count_matches(tmp_path: Path):
-    """SC-006：filter_trace_subset 條目數 == audit 中該 role 的條目數。"""
+    """SC-006：filter_trace_subset 條目數 == audit 中該 participant 的條目數。"""
     c = _client(tmp_path)
     rid = _make_success_record(c)
     # 下載完整 audit
     full = json.loads(c.get(f"/match/{rid}/audit").content)
-    expected_count = sum(1 for e in full["filter_trace"] if e["role_id"] == "T01")
+    expected_count = sum(1 for e in full["filter_trace"] if e["participant_id"] == "T01")
     # 下載個別 audit 子集
-    subset = json.loads(c.get(f"/match/{rid}/role/T01/audit.json").content)
+    subset = json.loads(c.get(f"/match/{rid}/participant/T01/audit.json").content)
     assert len(subset["filter_trace_subset"]) == expected_count
 
 
 def test_individual_audit_404_on_failed(tmp_path: Path):
     c = _client(tmp_path)
     rid = _make_failed_record(c, tmp_path)
-    r = c.get(f"/match/{rid}/role/T01/audit.json")
+    r = c.get(f"/match/{rid}/participant/T01/audit.json")
     assert r.status_code == 404
 
 
@@ -222,9 +222,9 @@ def test_individual_audit_404_on_failed(tmp_path: Path):
 
 
 def test_individual_view_reproducibility(tmp_path: Path):
-    """同 record + role_id 兩次訪問 response.text 完全相同。"""
+    """同 record + participant_id 兩次訪問 response.text 完全相同。"""
     c = _client(tmp_path)
     rid = _make_success_record(c)
-    r1 = c.get(f"/match/{rid}/role/T01")
-    r2 = c.get(f"/match/{rid}/role/T01")
+    r1 = c.get(f"/match/{rid}/participant/T01")
+    r2 = c.get(f"/match/{rid}/participant/T01")
     assert r1.text == r2.text

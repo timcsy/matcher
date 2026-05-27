@@ -6,16 +6,16 @@ import pytest
 
 from matcher.errors import QualifiedSetEmpty
 from matcher.filter import filter_qualified
-from matcher.roster import Role, Roster, Target
+from matcher.roster import Participant, Roster, Target
 from matcher.rules import Eq, Rule, Ruleset
 
 
 def _make_simple():
-    rs = Ruleset(rules=(Rule("R001", "x相符", Eq("role.x", "match")),))
+    rs = Ruleset(rules=(Rule("R001", "x相符", Eq("participant.x", "match")),))
     roster = Roster(
-        roles=(
-            Role("A", {"x": "match"}),
-            Role("B", {"x": "nomatch"}),
+        participants=(
+            Participant("A", {"x": "match"}),
+            Participant("B", {"x": "nomatch"}),
         ),
         targets=(Target("T1", capacity=2, attributes={"x": "match"}),),
     )
@@ -31,7 +31,7 @@ def test_filter_produces_correct_qualified_set():
 def test_filter_trace_per_pair():
     rs, roster = _make_simple()
     _, trace = filter_qualified(rs, roster)
-    pairs = {(t["role_id"], t["target_id"]): t for t in trace}
+    pairs = {(t["participant_id"], t["target_id"]): t for t in trace}
     assert pairs[("A", "T1")]["qualified"] is True
     assert pairs[("A", "T1")]["matched_rules"] == ["R001"]
     assert pairs[("B", "T1")]["qualified"] is False
@@ -39,9 +39,9 @@ def test_filter_trace_per_pair():
 
 
 def test_filter_raises_when_all_empty():
-    rs = Ruleset(rules=(Rule("R001", "永遠不符", Eq("role.x", "no_one_has_this")),))
+    rs = Ruleset(rules=(Rule("R001", "永遠不符", Eq("participant.x", "no_one_has_this")),))
     roster = Roster(
-        roles=(Role("A", {"x": "a"}), Role("B", {"x": "b"})),
+        participants=(Participant("A", {"x": "a"}), Participant("B", {"x": "b"})),
         targets=(Target("T1", capacity=1, attributes={"x": "t"}),),
     )
     with pytest.raises(QualifiedSetEmpty):

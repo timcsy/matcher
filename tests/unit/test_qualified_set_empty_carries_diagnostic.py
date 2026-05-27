@@ -6,21 +6,21 @@ import pytest
 
 from matcher.errors import QualifiedSetEmpty
 from matcher.filter import filter_qualified
-from matcher.roster import Roster, Role, Target
+from matcher.roster import Roster, Participant, Target
 from matcher.rules import Rule, Ruleset
 from matcher.rules import parse_expr
 
 
 def _ruleset_never_pass():
-    # role.x 必須等於 "impossible"
-    expr = parse_expr({"eq": {"field": "role.x", "value": "impossible"}})
+    # participant.x 必須等於 "impossible"
+    expr = parse_expr({"eq": {"field": "participant.x", "value": "impossible"}})
     return Ruleset(rules=(Rule(id="R001", description="x 必須等於 impossible", expr=expr),))
 
 
 def _roster():
-    roles = (Role(id="A", attributes={"x": "foo"}, preferences=()),)
+    participants = (Participant(id="A", attributes={"x": "foo"}, preferences=()),)
     targets = (Target(id="T1", capacity=1, attributes={}),)
-    return Roster(roles=roles, targets=targets)
+    return Roster(participants=participants, targets=targets)
 
 
 def test_empty_set_raises_with_diagnostic():

@@ -20,12 +20,12 @@ REG = TemplateRegistry()
 
 
 def test_assemble_roster_csv_basic():
-    """3 位角色 → CSV bytes 可被 DictReader 解析。"""
+    """3 位參與者 → CSV bytes 可被 DictReader 解析。"""
     tpl = REG.get("teacher-class")
     form = {
-        "role_0_id": "T01", "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
-        "role_1_id": "T02", "role_1_name": "李老師", "role_1_speciality": "數學", "role_1_seniority": "5",
-        "role_2_id": "T03", "role_2_name": "陳老師", "role_2_speciality": "英文", "role_2_seniority": "3",
+        "participant_0_id": "T01", "participant_0_name": "王老師", "participant_0_speciality": "國文", "participant_0_seniority": "8",
+        "participant_1_id": "T02", "participant_1_name": "李老師", "participant_1_speciality": "數學", "participant_1_seniority": "5",
+        "participant_2_id": "T03", "participant_2_name": "陳老師", "participant_2_speciality": "英文", "participant_2_seniority": "3",
     }
     csv_bytes = assemble_roster_csv_bytes(form, tpl)
     text = csv_bytes.decode("utf-8-sig")
@@ -39,9 +39,9 @@ def test_assemble_roster_csv_basic():
 def test_assemble_roster_csv_filters_empty_rows():
     tpl = REG.get("teacher-class")
     form = {
-        "role_0_id": "T01", "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
-        "role_1_id": "", "role_1_name": "", "role_1_speciality": "", "role_1_seniority": "",
-        "role_2_id": "T03", "role_2_name": "陳老師", "role_2_speciality": "英文", "role_2_seniority": "3",
+        "participant_0_id": "T01", "participant_0_name": "王老師", "participant_0_speciality": "國文", "participant_0_seniority": "8",
+        "participant_1_id": "", "participant_1_name": "", "participant_1_speciality": "", "participant_1_seniority": "",
+        "participant_2_id": "T03", "participant_2_name": "陳老師", "participant_2_speciality": "英文", "participant_2_seniority": "3",
     }
     csv_bytes = assemble_roster_csv_bytes(form, tpl)
     text = csv_bytes.decode("utf-8-sig")
@@ -58,8 +58,8 @@ def test_assemble_roster_csv_byte_equiv_with_csv_path(tmp_path: Path):
 
     tpl = REG.get("teacher-class")
     form = {
-        "role_0_id": "T01", "role_0_name": "王老師", "role_0_speciality": "國文", "role_0_seniority": "8",
-        "role_1_id": "T02", "role_1_name": "李老師", "role_1_speciality": "數學", "role_1_seniority": "5",
+        "participant_0_id": "T01", "participant_0_name": "王老師", "participant_0_speciality": "國文", "participant_0_seniority": "8",
+        "participant_1_id": "T02", "participant_1_name": "李老師", "participant_1_speciality": "數學", "participant_1_seniority": "5",
     }
     # Feature 013：兩條路徑都需要 sidecar
     sidecar_content = """targets:

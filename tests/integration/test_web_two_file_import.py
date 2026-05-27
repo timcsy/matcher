@@ -1,4 +1,4 @@
-"""Feature 016 US1：上傳兩個試算表（角色 + 對象）配對。"""
+"""Feature 016 US1：上傳兩個試算表（參與者 + 對象）配對。"""
 
 from __future__ import annotations
 
@@ -101,7 +101,7 @@ def test_targets_csv_equivalent_to_yaml_sidecar(client, tmp_path):
 
 
 def test_no_targets_source_friendly_error(client):
-    """只上傳角色、對象檔給空 → 友善錯誤（不露技術碼）。"""
+    """只上傳參與者、對象檔給空 → 友善錯誤（不露技術碼）。"""
     r = client.post(
         "/match/run",
         data={"template_id": "teacher-class", "seed": "2026", "mechanism": "M0",

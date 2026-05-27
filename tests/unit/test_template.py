@@ -16,13 +16,13 @@ def _minimal_data():
         "name": "教師-班級",
         "description": "說明",
         "attributes": {
-            "roles": [{"key": "speciality", "type": "str"}],
+            "participants": [{"key": "speciality", "type": "str"}],
             "targets": [{"key": "required_subjects", "type": "list_str"}],
         },
         "rules": [
             {"id": "R001", "description": "說明", "expr": {
-                "role_in_target_field": {
-                    "role_field": "speciality",
+                "participant_in_target_field": {
+                    "participant_field": "speciality",
                     "target_field": "required_subjects",
                 },
             }},
@@ -35,7 +35,7 @@ def test_parse_minimal_template():
     assert isinstance(tpl, Template)
     assert tpl.id == "tc"
     assert tpl.schema_version == "1.0"
-    assert len(tpl.attributes.roles) == 1
+    assert len(tpl.attributes.participants) == 1
     assert len(tpl.attributes.targets) == 1
     assert len(tpl.ruleset.rules) == 1
     assert tpl.ui_fields == ()
@@ -58,16 +58,16 @@ def test_missing_top_level_field_raises():
             parse_template(data)
 
 
-def test_attributes_roles_empty_raises():
+def test_attributes_participants_empty_raises():
     data = _minimal_data()
-    data["attributes"]["roles"] = []
+    data["attributes"]["participants"] = []
     with pytest.raises(TemplateMissingField):
         parse_template(data)
 
 
 def test_unknown_attribute_type_raises():
     data = _minimal_data()
-    data["attributes"]["roles"][0]["type"] = "float"
+    data["attributes"]["participants"][0]["type"] = "float"
     with pytest.raises(TemplateMissingField):
         parse_template(data)
 

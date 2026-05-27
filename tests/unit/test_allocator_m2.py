@@ -12,12 +12,12 @@ def test_m2_no_oversubscription_all_get_first_pref():
     prefs = {"A": ["X"], "B": ["Y"]}
     caps = {"X": 1, "Y": 1}
     _, assignment, trace = allocate_m2(
-        qs, prefs, caps, SeededRandom(1), role_order=["A", "B"],
+        qs, prefs, caps, SeededRandom(1), participant_order=["A", "B"],
     )
     assert assignment["A"] == "X"
     assert assignment["B"] == "Y"
-    a_trace = next(t for t in trace if t["role_id"] == "A")
-    b_trace = next(t for t in trace if t["role_id"] == "B")
+    a_trace = next(t for t in trace if t["participant_id"] == "A")
+    b_trace = next(t for t in trace if t["participant_id"] == "B")
     assert a_trace["preference_rank"] == 1
     assert b_trace["preference_rank"] == 1
     # 無超額 → tie_break_random_index 為 None
@@ -32,7 +32,7 @@ def test_m2_oversubscription_first_level():
     prefs = {"A": ["X", "Y"], "B": ["X", "Y"], "C": ["X", "Y"]}
     caps = {"X": 1, "Y": 2}
     _, assignment, trace = allocate_m2(
-        qs, prefs, caps, SeededRandom(42), role_order=["A", "B", "C"],
+        qs, prefs, caps, SeededRandom(42), participant_order=["A", "B", "C"],
     )
     # 一人到 X、兩人到 Y
     x_winners = [r for r, t in assignment.items() if t == "X"]
@@ -54,7 +54,7 @@ def test_m2_tie_break_random_index_for_competitors():
     prefs = {"A": ["X"], "B": ["X"], "C": ["X"]}
     caps = {"X": 2}
     _, assignment, trace = allocate_m2(
-        qs, prefs, caps, SeededRandom(7), role_order=["A", "B", "C"],
+        qs, prefs, caps, SeededRandom(7), participant_order=["A", "B", "C"],
     )
     # 兩人到 X，一人未分配（無 fallback 目標）
     x_winners = [r for r, t in assignment.items() if t == "X"]
@@ -74,7 +74,7 @@ def test_m2_fallback_when_all_preferences_exhausted():
     prefs = {"A": ["X", "Y"], "B": ["X"], "C": []}
     caps = {"X": 1, "Y": 2}
     _, assignment, trace = allocate_m2(
-        qs, prefs, caps, SeededRandom(99), role_order=["A", "B", "C"],
+        qs, prefs, caps, SeededRandom(99), participant_order=["A", "B", "C"],
     )
     # 應有至少一位透過 fallback 抽中
     fallback_entries = [t for t in trace if t.get("fallback_random_index") is not None]
@@ -84,13 +84,13 @@ def test_m2_fallback_when_all_preferences_exhausted():
         assert entry["preference_rank"] is None
 
 
-def test_m2_unassigned_role_has_trace_entry():
-    """完全沒對象的角色也有 trace 條目（chosen=null）。"""
+def test_m2_unassigned_participant_has_trace_entry():
+    """完全沒對象的參與者也有 trace 條目（chosen=null）。"""
     qs = {"A": ["X"], "B": ["X"], "C": ["X"]}
     prefs = {"A": ["X"], "B": ["X"], "C": ["X"]}
     caps = {"X": 2}
     _, assignment, trace = allocate_m2(
-        qs, prefs, caps, SeededRandom(7), role_order=["A", "B", "C"],
+        qs, prefs, caps, SeededRandom(7), participant_order=["A", "B", "C"],
     )
     # 應有 3 筆 trace 條目（含未分配者）
     assert len(trace) == 3
@@ -102,8 +102,8 @@ def test_m2_deterministic_same_seed():
     qs = {"A": ["X", "Y"], "B": ["X", "Y"], "C": ["X", "Y"]}
     prefs = {"A": ["X", "Y"], "B": ["X", "Y"], "C": ["X", "Y"]}
     caps = {"X": 1, "Y": 2}
-    o1, a1, t1 = allocate_m2(qs, prefs, caps, SeededRandom(123), role_order=["A", "B", "C"])
-    o2, a2, t2 = allocate_m2(qs, prefs, caps, SeededRandom(123), role_order=["A", "B", "C"])
+    o1, a1, t1 = allocate_m2(qs, prefs, caps, SeededRandom(123), participant_order=["A", "B", "C"])
+    o2, a2, t2 = allocate_m2(qs, prefs, caps, SeededRandom(123), participant_order=["A", "B", "C"])
     assert o1 == o2
     assert a1 == a2
     assert t1 == t2
@@ -115,7 +115,7 @@ def test_m2_empty_preferences_falls_back():
     prefs = {"A": []}
     caps = {"X": 1}
     _, assignment, trace = allocate_m2(
-        qs, prefs, caps, SeededRandom(1), role_order=["A"],
+        qs, prefs, caps, SeededRandom(1), participant_order=["A"],
     )
     assert assignment["A"] == "X"
     a_trace = trace[0]

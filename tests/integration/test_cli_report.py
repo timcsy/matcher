@@ -48,7 +48,7 @@ def test_cli_report_individual_pdf_success(tmp_path: Path):
     audit = _make_audit_json(tmp_path)
     pdf = tmp_path / "indiv.pdf"
     r = runner.invoke(app, [
-        "report", "--audit", str(audit), "--role-id", "S01", "--output", str(pdf),
+        "report", "--audit", str(audit), "--participant-id", "S01", "--output", str(pdf),
     ])
     assert r.exit_code == 0, r.output
     assert pdf.exists()
@@ -67,11 +67,11 @@ def test_cli_report_invalid_audit_exits_51(tmp_path: Path):
 
 
 @pytest.mark.skipif(not _WEASYPRINT_AVAILABLE, reason="WeasyPrint 不可用")
-def test_cli_report_unknown_role_exits_52(tmp_path: Path):
+def test_cli_report_unknown_participant_exits_52(tmp_path: Path):
     audit = _make_audit_json(tmp_path)
     pdf = tmp_path / "x.pdf"
     r = runner.invoke(app, [
-        "report", "--audit", str(audit), "--role-id", "S99", "--output", str(pdf),
+        "report", "--audit", str(audit), "--participant-id", "S99", "--output", str(pdf),
     ])
     assert r.exit_code == 52, r.output
 
@@ -82,7 +82,7 @@ def test_cli_report_exits_50_when_weasyprint_unavailable(tmp_path: Path, monkeyp
     # 仍須一個 valid audit JSON 才走到 render
     audit = tmp_path / "a.json"
     audit.write_text(json.dumps({
-        "assignment": {}, "roster_snapshot": {"roles": []},
+        "assignment": {}, "roster_snapshot": {"participants": []},
     }), encoding="utf-8")
     pdf = tmp_path / "x.pdf"
     r = runner.invoke(app, [

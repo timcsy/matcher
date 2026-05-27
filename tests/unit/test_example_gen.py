@@ -6,7 +6,7 @@ import csv
 import io
 
 from matcher.template_loader import TemplateRegistry
-from matcher.web.example_gen import role_example_bytes, target_example_bytes
+from matcher.web.example_gen import participant_example_bytes, target_example_bytes
 
 REG = TemplateRegistry()
 
@@ -21,8 +21,8 @@ def test_target_example_headers_match_template():
     assert headers == ["編號", "容量", "班級名稱", "班級需要的科目清單", "班級特色"]
 
 
-def test_role_example_headers_match_template():
-    rows = _csv_rows(role_example_bytes(REG.get("teacher-class"), "csv"))
+def test_participant_example_headers_match_template():
+    rows = _csv_rows(participant_example_bytes(REG.get("teacher-class"), "csv"))
     headers = rows[0]
     assert headers[0] == "編號"
     assert "老師姓名" in headers

@@ -33,7 +33,7 @@ function _parsePrefillRows(prefill, prefix, fields) {
 window.templateAuthor = function () {
   const pf = window._initialPrefill || {};
   const attrFields = ['key', 'type', 'required', 'description', 'aliases'];
-  const ruleFields = ['id', 'type', 'field', 'value', 'set', 'role_field', 'target_field', 'custom_description'];
+  const ruleFields = ['id', 'type', 'field', 'value', 'set', 'participant_field', 'target_field', 'mode', 'custom_description'];
   const targetFields = ['id', 'capacity', 'name', 'topic', 'min_grade'];
 
   const _attrRowsOrDefault = (prefix) => {
@@ -45,7 +45,7 @@ window.templateAuthor = function () {
   const _ruleRowsOrDefault = () => {
     const rows = _parsePrefillRows(pf, 'rule', ruleFields);
     return rows.length > 0 ? rows : [
-      { id: 'R001', type: '', field: '', value: '', set: '', role_field: '', target_field: '', custom_description: '', _k: _newKey() }
+      { id: 'R001', type: '', field: '', value: '', set: '', participant_field: '', target_field: '', mode: 'auto', custom_description: '', _k: _newKey() }
     ];
   };
   const _targetRowsOrDefault = () => {
@@ -57,13 +57,13 @@ window.templateAuthor = function () {
 
   return {
     tab: 'simple',
-    roleAttrs: _attrRowsOrDefault('role_attr'),
+    participantAttrs: _attrRowsOrDefault('participant_attr'),
     targetAttrs: _attrRowsOrDefault('target_attr'),
     rules: _ruleRowsOrDefault(),
     targets: _targetRowsOrDefault(),
 
-    addRoleAttr() {
-      this.roleAttrs.push({ key: '', type: 'str', required: true, description: '', aliases: '', _k: _newKey() });
+    addParticipantAttr() {
+      this.participantAttrs.push({ key: '', type: 'str', required: true, description: '', aliases: '', _k: _newKey() });
     },
     addTargetAttr() {
       this.targetAttrs.push({ key: '', type: 'str', required: true, description: '', aliases: '', _k: _newKey() });
@@ -72,7 +72,7 @@ window.templateAuthor = function () {
       const n = this.rules.length + 1;
       this.rules.push({
         id: `R${String(n).padStart(3, '0')}`, type: '',
-        field: '', value: '', set: '', role_field: '', target_field: '', custom_description: '',
+        field: '', value: '', set: '', participant_field: '', target_field: '', mode: 'auto', custom_description: '',
         _k: _newKey(),
       });
     },
@@ -89,9 +89,8 @@ function showResult(elemId, ok, summary, errors) {
   if (ok) {
     el.innerHTML = `<div style="padding:0.8em;background:#e8f5e9;border:1px solid #4caf50;color:#1b5e20;border-radius:6px">
       ✅ 檢查通過：範本 <code>${summary.id}</code>（${summary.name}）<br>
-      角色欄位 ${summary.attribute_count.roles} 個、對象欄位 ${summary.attribute_count.targets} 個、
-      條件 ${summary.rule_count} 條、預設對象 ${summary.default_target_count} 個、
-      ${summary.has_preferences_schema ? "有" : "未啟用"}志願功能。
+      參與者欄位 ${summary.attribute_count.participants} 個、對象欄位 ${summary.attribute_count.targets} 個、
+      條件 ${summary.rule_count} 條、${summary.has_preferences_schema ? "有" : "未啟用"}志願功能。
     </div>`;
   } else {
     el.innerHTML = `<div style="padding:0.8em;background:#ffebee;border:1px solid #f44336;color:#b71c1c;border-radius:6px">
@@ -148,7 +147,7 @@ async function saveAdvanced() {
 
 async function copyAiPrompt() {
   const scenario = document.getElementById("ai-scenario").value || "______";
-  const role = document.getElementById("ai-role").value || "______";
+  const participant = document.getElementById("ai-participant").value || "______";
   const target = document.getElementById("ai-target").value || "______";
   const rules = document.getElementById("ai-rules").value || "______";
   const prefs = document.getElementById("ai-prefs").value || "______";
@@ -162,7 +161,7 @@ async function copyAiPrompt() {
   }
 
   const prompt = `${guideText}\n\n---\n\n請依上面指南幫我做範本：\n\n` +
-    `情境：${scenario}\n角色：${role}\n對象：${target}\n條件：${rules}\n是否填志願：${prefs}\n\n` +
+    `情境：${scenario}\n參與者：${participant}\n對象：${target}\n條件：${rules}\n是否填志願：${prefs}\n\n` +
     `請產出完整 YAML 並依 §10 self-check 自我驗證。`;
 
   try {

@@ -18,7 +18,7 @@ from matcher.template_loader import TemplateRegistry, dump_template_yaml
 
 app = typer.Typer(
     add_completion=False,
-    help="matcher：可解釋、公平、可重現的角色／對象配對工具。",
+    help="matcher：可解釋、公平、可重現的參與者／對象配對工具。",
 )
 
 template_app = typer.Typer(
@@ -51,7 +51,7 @@ def _print_summary(audit: dict) -> None:
     n_with_options = sum(1 for v in qs.values() if v)
     typer.echo("")
     typer.echo("=== 過濾階段 ===")
-    typer.echo(f"資格集合大小：{n_pairs} 個合法配對；{n_with_options} 位角色至少有一個可分配對象。")
+    typer.echo(f"資格集合大小：{n_pairs} 個合法配對；{n_with_options} 位參與者至少有一個可分配對象。")
 
     typer.echo("")
     mechanism_label = {
@@ -65,17 +65,17 @@ def _print_summary(audit: dict) -> None:
     typer.echo(f"seed：{audit['seed']}")
     typer.echo("最終配對：")
 
-    role_attrs = {r["id"]: r["attributes"] for r in audit["roster_snapshot"]["roles"]}
+    participant_attrs = {r["id"]: r["attributes"] for r in audit["roster_snapshot"]["participants"]}
     target_attrs = {t["id"]: t["attributes"] for t in audit["roster_snapshot"]["targets"]}
-    for role_id in sorted(audit["assignment"]):
-        target_id = audit["assignment"][role_id]
-        ra = role_attrs.get(role_id, {})
+    for participant_id in sorted(audit["assignment"]):
+        target_id = audit["assignment"][participant_id]
+        ra = participant_attrs.get(participant_id, {})
         if target_id is None:
-            typer.echo(f"  {role_id}（{ra.get('name', '')}）→ 未分配")
+            typer.echo(f"  {participant_id}（{ra.get('name', '')}）→ 未分配")
         else:
             ta = target_attrs.get(target_id, {})
             typer.echo(
-                f"  {role_id}（{ra.get('name', '')}）→ {target_id}（{ta.get('name', '')}）"
+                f"  {participant_id}（{ra.get('name', '')}）→ {target_id}（{ta.get('name', '')}）"
             )
 
 
@@ -312,8 +312,8 @@ def template_show_cmd(
     typer.echo(f"版本：{tpl.schema_version}")
     typer.echo("")
     typer.echo("=== 屬性 schema ===")
-    typer.echo("角色：")
-    for a in tpl.attributes.roles:
+    typer.echo("參與者：")
+    for a in tpl.attributes.participants:
         typer.echo(f"  - {a.key}（{a.type}）：{a.description}")
     typer.echo("對象：")
     for a in tpl.attributes.targets:

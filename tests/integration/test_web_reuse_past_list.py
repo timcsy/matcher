@@ -51,7 +51,7 @@ def test_reuse_prefills_fill_form(client):
     rid = _run(client)
     r = client.get(f"/match/new/fill?template_id=teacher-class&from_record={rid}")
     assert r.status_code == 200
-    # 角色與對象都被預填
+    # 參與者與對象都被預填
     assert "王" in r.text
     assert "三年甲班" in r.text
     assert "沿用過去紀錄的清單" in r.text

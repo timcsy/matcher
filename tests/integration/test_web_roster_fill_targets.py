@@ -19,7 +19,7 @@ id: custom-group
 name: 自訂分組
 description: 沒有預設對象
 attributes:
-  roles:
+  participants:
     - key: name
       type: str
       required: true
@@ -41,7 +41,7 @@ rules:
   - id: R001
     description: 年級至少 1
     expr:
-      ge: {field: role.grade, value: 1}
+      ge: {field: participant.grade, value: 1}
 """
 
 
@@ -76,7 +76,7 @@ def test_fill_page_shows_targets_section_for_custom_template_without_default_tar
 
 
 def test_post_run_from_form_with_ui_targets_succeeds(client: TestClient):
-    """T032：UI 填 5 角色 + 3 對象 → M0 跑通 → audit.targets 含這 3 對象。"""
+    """T032：UI 填 5 參與者 + 3 對象 → M0 跑通 → audit.targets 含這 3 對象。"""
     form = {
         "template_id": "custom-group", "seed": "2026", "mechanism": "M0",
     }
@@ -84,9 +84,9 @@ def test_post_run_from_form_with_ui_targets_succeeds(client: TestClient):
         ("S01", "小明", "4"), ("S02", "小華", "5"), ("S03", "小美", "4"),
         ("S04", "阿志", "6"), ("S05", "小芬", "5"),
     ]):
-        form[f"role_{i}_id"] = rid
-        form[f"role_{i}_name"] = name
-        form[f"role_{i}_grade"] = grade
+        form[f"participant_{i}_id"] = rid
+        form[f"participant_{i}_name"] = name
+        form[f"participant_{i}_grade"] = grade
     for j, (tid, name, topic, cap) in enumerate([
         ("G1", "程式組", "program", "2"),
         ("G2", "自然組", "science", "2"),
@@ -111,7 +111,7 @@ def test_post_run_from_form_empty_targets_rejected(client: TestClient):
     """無 default_targets 範本 + UI 沒填對象 → 400。"""
     form = {
         "template_id": "custom-group", "seed": "2026", "mechanism": "M0",
-        "role_0_id": "S01", "role_0_name": "小明", "role_0_grade": "4",
+        "participant_0_id": "S01", "participant_0_name": "小明", "participant_0_grade": "4",
     }
     r = client.post("/match/run-from-form", data=form)
     assert r.status_code == 400

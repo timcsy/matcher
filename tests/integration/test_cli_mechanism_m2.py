@@ -29,7 +29,7 @@ def test_m2_runs_successfully(tmp_path: Path):
     audit = tmp_path / "audit.json"
     _run_m2(audit)
     data = json.loads(audit.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.4"
+    assert data["schema_version"] == "1.5"
     assert data["mechanism"] == "M2"
     assert data["processing_order"] is not None
 

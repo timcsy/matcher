@@ -19,11 +19,11 @@ _TYPE_HINT = {
 }
 
 
-def _role_columns(template: Template) -> tuple[list[str], list[str]]:
-    """回 (表頭, 提示列)。角色：編號 + 各角色屬性。"""
+def _participant_columns(template: Template) -> tuple[list[str], list[str]]:
+    """回 (表頭, 提示列)。參與者：編號 + 各參與者屬性。"""
     headers = ["編號"]
     hints = ["（可留空，系統自動編號）"]
-    for a in template.attributes.roles:
+    for a in template.attributes.participants:
         headers.append(a.description or a.key)
         hints.append(_TYPE_HINT.get(a.type, "（文字）"))
     if template.preferences_schema is not None:
@@ -61,8 +61,8 @@ def _xlsx_bytes(headers: list[str], hints: list[str]) -> bytes:
     return bio.getvalue()
 
 
-def role_example_bytes(template: Template, fmt: str) -> bytes:
-    headers, hints = _role_columns(template)
+def participant_example_bytes(template: Template, fmt: str) -> bytes:
+    headers, hints = _participant_columns(template)
     return _xlsx_bytes(headers, hints) if fmt == "xlsx" else _csv_bytes(headers, hints)
 
 

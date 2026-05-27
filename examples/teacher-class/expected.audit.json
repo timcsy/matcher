@@ -8,6 +8,10 @@
         "C05"
       ],
       "chosen": "C04",
+      "fallback_random_index": null,
+      "participant_id": "T01",
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 2,
       "remaining_capacity_after": {
         "C01": 2,
@@ -16,8 +20,8 @@
         "C04": 1,
         "C05": 2
       },
-      "role_id": "T01",
-      "step": 1
+      "step": 1,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -25,6 +29,10 @@
         "C03"
       ],
       "chosen": "C01",
+      "fallback_random_index": null,
+      "participant_id": "T02",
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 1,
@@ -33,8 +41,8 @@
         "C04": 1,
         "C05": 2
       },
-      "role_id": "T02",
-      "step": 2
+      "step": 2,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -42,6 +50,10 @@
         "C04"
       ],
       "chosen": "C02",
+      "fallback_random_index": null,
+      "participant_id": "T03",
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 1,
@@ -50,8 +62,8 @@
         "C04": 1,
         "C05": 2
       },
-      "role_id": "T03",
-      "step": 3
+      "step": 3,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -61,6 +73,10 @@
         "C05"
       ],
       "chosen": "C01",
+      "fallback_random_index": null,
+      "participant_id": "T04",
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -69,14 +85,18 @@
         "C04": 1,
         "C05": 2
       },
-      "role_id": "T04",
-      "step": 4
+      "step": 4,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
         "C03"
       ],
       "chosen": "C03",
+      "fallback_random_index": null,
+      "participant_id": "T05",
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -85,8 +105,8 @@
         "C04": 1,
         "C05": 2
       },
-      "role_id": "T05",
-      "step": 5
+      "step": 5,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
@@ -95,6 +115,10 @@
         "C05"
       ],
       "chosen": "C02",
+      "fallback_random_index": null,
+      "participant_id": "T06",
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -103,14 +127,18 @@
         "C04": 1,
         "C05": 2
       },
-      "role_id": "T06",
-      "step": 6
+      "step": 6,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
         "C04"
       ],
       "chosen": "C04",
+      "fallback_random_index": null,
+      "participant_id": "T07",
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -119,14 +147,18 @@
         "C04": 0,
         "C05": 2
       },
-      "role_id": "T07",
-      "step": 7
+      "step": 7,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
         "C05"
       ],
       "chosen": "C05",
+      "fallback_random_index": null,
+      "participant_id": "T08",
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -135,14 +167,18 @@
         "C04": 0,
         "C05": 1
       },
-      "role_id": "T08",
-      "step": 8
+      "step": 8,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
         "C05"
       ],
       "chosen": "C05",
+      "fallback_random_index": null,
+      "participant_id": "T09",
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -151,14 +187,18 @@
         "C04": 0,
         "C05": 0
       },
-      "role_id": "T09",
-      "step": 9
+      "step": 9,
+      "tie_break_random_index": null
     },
     {
       "candidates": [
         "C03"
       ],
       "chosen": "C03",
+      "fallback_random_index": null,
+      "participant_id": "T10",
+      "preference_rank": null,
+      "preferred_order": null,
       "random_index": 0,
       "remaining_capacity_after": {
         "C01": 0,
@@ -167,8 +207,8 @@
         "C04": 0,
         "C05": 0
       },
-      "role_id": "T10",
-      "step": 10
+      "step": 10,
+      "tie_break_random_index": null
     }
   ],
   "assignment": {
@@ -190,8 +230,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T01",
       "qualified": true,
-      "role_id": "T01",
       "target_id": "C01"
     },
     {
@@ -200,8 +240,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T01",
       "qualified": true,
-      "role_id": "T01",
       "target_id": "C02"
     },
     {
@@ -210,8 +250,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T01",
       "qualified": false,
-      "role_id": "T01",
       "target_id": "C03"
     },
     {
@@ -220,8 +260,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T01",
       "qualified": true,
-      "role_id": "T01",
       "target_id": "C04"
     },
     {
@@ -230,8 +270,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T01",
       "qualified": true,
-      "role_id": "T01",
       "target_id": "C05"
     },
     {
@@ -240,8 +280,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T02",
       "qualified": true,
-      "role_id": "T02",
       "target_id": "C01"
     },
     {
@@ -250,8 +290,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T02",
       "qualified": false,
-      "role_id": "T02",
       "target_id": "C02"
     },
     {
@@ -260,8 +300,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T02",
       "qualified": true,
-      "role_id": "T02",
       "target_id": "C03"
     },
     {
@@ -270,8 +310,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T02",
       "qualified": false,
-      "role_id": "T02",
       "target_id": "C04"
     },
     {
@@ -280,8 +320,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T02",
       "qualified": false,
-      "role_id": "T02",
       "target_id": "C05"
     },
     {
@@ -290,8 +330,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T03",
       "qualified": false,
-      "role_id": "T03",
       "target_id": "C01"
     },
     {
@@ -300,8 +340,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T03",
       "qualified": true,
-      "role_id": "T03",
       "target_id": "C02"
     },
     {
@@ -310,8 +350,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T03",
       "qualified": false,
-      "role_id": "T03",
       "target_id": "C03"
     },
     {
@@ -320,8 +360,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T03",
       "qualified": true,
-      "role_id": "T03",
       "target_id": "C04"
     },
     {
@@ -330,8 +370,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T03",
       "qualified": false,
-      "role_id": "T03",
       "target_id": "C05"
     },
     {
@@ -340,8 +380,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T04",
       "qualified": true,
-      "role_id": "T04",
       "target_id": "C01"
     },
     {
@@ -350,8 +390,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T04",
       "qualified": true,
-      "role_id": "T04",
       "target_id": "C02"
     },
     {
@@ -360,8 +400,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T04",
       "qualified": false,
-      "role_id": "T04",
       "target_id": "C03"
     },
     {
@@ -370,8 +410,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T04",
       "qualified": true,
-      "role_id": "T04",
       "target_id": "C04"
     },
     {
@@ -380,8 +420,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T04",
       "qualified": true,
-      "role_id": "T04",
       "target_id": "C05"
     },
     {
@@ -390,8 +430,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T05",
       "qualified": true,
-      "role_id": "T05",
       "target_id": "C01"
     },
     {
@@ -400,8 +440,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T05",
       "qualified": false,
-      "role_id": "T05",
       "target_id": "C02"
     },
     {
@@ -410,8 +450,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T05",
       "qualified": true,
-      "role_id": "T05",
       "target_id": "C03"
     },
     {
@@ -420,8 +460,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T05",
       "qualified": false,
-      "role_id": "T05",
       "target_id": "C04"
     },
     {
@@ -430,8 +470,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T05",
       "qualified": false,
-      "role_id": "T05",
       "target_id": "C05"
     },
     {
@@ -440,8 +480,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T06",
       "qualified": false,
-      "role_id": "T06",
       "target_id": "C01"
     },
     {
@@ -450,8 +490,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T06",
       "qualified": true,
-      "role_id": "T06",
       "target_id": "C02"
     },
     {
@@ -460,8 +500,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T06",
       "qualified": true,
-      "role_id": "T06",
       "target_id": "C03"
     },
     {
@@ -470,8 +510,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T06",
       "qualified": false,
-      "role_id": "T06",
       "target_id": "C04"
     },
     {
@@ -480,8 +520,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T06",
       "qualified": true,
-      "role_id": "T06",
       "target_id": "C05"
     },
     {
@@ -490,8 +530,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T07",
       "qualified": false,
-      "role_id": "T07",
       "target_id": "C01"
     },
     {
@@ -500,8 +540,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T07",
       "qualified": true,
-      "role_id": "T07",
       "target_id": "C02"
     },
     {
@@ -510,8 +550,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T07",
       "qualified": false,
-      "role_id": "T07",
       "target_id": "C03"
     },
     {
@@ -520,8 +560,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T07",
       "qualified": true,
-      "role_id": "T07",
       "target_id": "C04"
     },
     {
@@ -530,8 +570,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T07",
       "qualified": false,
-      "role_id": "T07",
       "target_id": "C05"
     },
     {
@@ -540,8 +580,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T08",
       "qualified": false,
-      "role_id": "T08",
       "target_id": "C01"
     },
     {
@@ -550,8 +590,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T08",
       "qualified": false,
-      "role_id": "T08",
       "target_id": "C02"
     },
     {
@@ -560,8 +600,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T08",
       "qualified": false,
-      "role_id": "T08",
       "target_id": "C03"
     },
     {
@@ -570,8 +610,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T08",
       "qualified": false,
-      "role_id": "T08",
       "target_id": "C04"
     },
     {
@@ -580,8 +620,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T08",
       "qualified": true,
-      "role_id": "T08",
       "target_id": "C05"
     },
     {
@@ -590,8 +630,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T09",
       "qualified": true,
-      "role_id": "T09",
       "target_id": "C01"
     },
     {
@@ -600,8 +640,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T09",
       "qualified": true,
-      "role_id": "T09",
       "target_id": "C02"
     },
     {
@@ -610,8 +650,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T09",
       "qualified": false,
-      "role_id": "T09",
       "target_id": "C03"
     },
     {
@@ -620,8 +660,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T09",
       "qualified": true,
-      "role_id": "T09",
       "target_id": "C04"
     },
     {
@@ -630,8 +670,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T09",
       "qualified": true,
-      "role_id": "T09",
       "target_id": "C05"
     },
     {
@@ -640,8 +680,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T10",
       "qualified": false,
-      "role_id": "T10",
       "target_id": "C01"
     },
     {
@@ -650,8 +690,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T10",
       "qualified": true,
-      "role_id": "T10",
       "target_id": "C02"
     },
     {
@@ -660,8 +700,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T10",
       "qualified": true,
-      "role_id": "T10",
       "target_id": "C03"
     },
     {
@@ -670,8 +710,8 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T10",
       "qualified": false,
-      "role_id": "T10",
       "target_id": "C04"
     },
     {
@@ -680,13 +720,15 @@
         "R002",
         "R003"
       ],
+      "participant_id": "T10",
       "qualified": true,
-      "role_id": "T10",
       "target_id": "C05"
     }
   ],
   "generated_at": null,
+  "import_metadata": null,
   "mechanism": "M0",
+  "processing_order": null,
   "qualified_set": {
     "T01": [
       "C01",
@@ -737,14 +779,15 @@
     ]
   },
   "roster_snapshot": {
-    "roles": [
+    "participants": [
       {
         "attributes": {
           "name": "王老師",
           "seniority": 8,
           "speciality": "國文"
         },
-        "id": "T01"
+        "id": "T01",
+        "preferences": []
       },
       {
         "attributes": {
@@ -752,7 +795,8 @@
           "seniority": 6,
           "speciality": "數學"
         },
-        "id": "T02"
+        "id": "T02",
+        "preferences": []
       },
       {
         "attributes": {
@@ -760,7 +804,8 @@
           "seniority": 4,
           "speciality": "英文"
         },
-        "id": "T03"
+        "id": "T03",
+        "preferences": []
       },
       {
         "attributes": {
@@ -768,7 +813,8 @@
           "seniority": 3,
           "speciality": "國文"
         },
-        "id": "T04"
+        "id": "T04",
+        "preferences": []
       },
       {
         "attributes": {
@@ -776,7 +822,8 @@
           "seniority": 10,
           "speciality": "數學"
         },
-        "id": "T05"
+        "id": "T05",
+        "preferences": []
       },
       {
         "attributes": {
@@ -784,7 +831,8 @@
           "seniority": 5,
           "speciality": "自然"
         },
-        "id": "T06"
+        "id": "T06",
+        "preferences": []
       },
       {
         "attributes": {
@@ -792,7 +840,8 @@
           "seniority": 7,
           "speciality": "英文"
         },
-        "id": "T07"
+        "id": "T07",
+        "preferences": []
       },
       {
         "attributes": {
@@ -800,7 +849,8 @@
           "seniority": 4,
           "speciality": "社會"
         },
-        "id": "T08"
+        "id": "T08",
+        "preferences": []
       },
       {
         "attributes": {
@@ -808,7 +858,8 @@
           "seniority": 12,
           "speciality": "國文"
         },
-        "id": "T09"
+        "id": "T09",
+        "preferences": []
       },
       {
         "attributes": {
@@ -816,7 +867,8 @@
           "seniority": 3,
           "speciality": "自然"
         },
-        "id": "T10"
+        "id": "T10",
+        "preferences": []
       }
     ],
     "targets": [
@@ -889,8 +941,8 @@
       {
         "description": "老師的專業必須出現在班級的需要科目清單中",
         "expr": {
-          "role_in_target_field": {
-            "role_field": "speciality",
+          "participant_in_target_field": {
+            "participant_field": "speciality",
             "target_field": "required_subjects"
           }
         },
@@ -900,7 +952,7 @@
         "description": "老師年資至少 3 年（含）以上",
         "expr": {
           "ge": {
-            "field": "role.seniority",
+            "field": "participant.seniority",
             "value": 3
           }
         },
@@ -923,6 +975,7 @@
     ],
     "version": "1.0"
   },
-  "schema_version": "1.0",
-  "seed": 123456
+  "schema_version": "1.5",
+  "seed": 123456,
+  "template_snapshot": null
 }

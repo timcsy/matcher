@@ -11,18 +11,18 @@ def test_processing_order_deterministic():
     qs = {"A": ["X", "Y"], "B": ["X", "Y"], "C": ["X", "Y"]}
     prefs = {"A": ["X"], "B": ["Y"], "C": ["X"]}
     caps = {"X": 2, "Y": 2}
-    o1, _, _ = allocate_m1(qs, prefs, caps, SeededRandom(42), role_order=["A", "B", "C"])
-    o2, _, _ = allocate_m1(qs, prefs, caps, SeededRandom(42), role_order=["A", "B", "C"])
+    o1, _, _ = allocate_m1(qs, prefs, caps, SeededRandom(42), participant_order=["A", "B", "C"])
+    o2, _, _ = allocate_m1(qs, prefs, caps, SeededRandom(42), participant_order=["A", "B", "C"])
     assert o1 == o2
 
 
-def test_each_role_picks_highest_available_preference():
-    """每位角色取「合格 ∩ 仍有名額」中第一個志願。"""
+def test_each_participant_picks_highest_available_preference():
+    """每位參與者取「合格 ∩ 仍有名額」中第一個志願。"""
     qs = {"A": ["X", "Y"], "B": ["X", "Y"]}
     prefs = {"A": ["Y", "X"], "B": ["Y", "X"]}
     caps = {"X": 1, "Y": 1}
     order, assignment, trace = allocate_m1(
-        qs, prefs, caps, SeededRandom(1), role_order=["A", "B"],
+        qs, prefs, caps, SeededRandom(1), participant_order=["A", "B"],
     )
     # 第一個處理的人應該分到 Y（第一志願）
     first_processed = order[0]
@@ -40,10 +40,10 @@ def test_fallback_when_all_preferences_full():
     prefs = {"A": ["X"], "B": ["X"], "C": []}
     caps = {"X": 1, "Y": 1, "Z": 1}
     order, assignment, trace = allocate_m1(
-        qs, prefs, caps, SeededRandom(7), role_order=["A", "B", "C"],
+        qs, prefs, caps, SeededRandom(7), participant_order=["A", "B", "C"],
     )
     # C 沒有 preferences，但有資格 target → fallback 抽籤
-    c_trace = next(t for t in trace if t["role_id"] == "C")
+    c_trace = next(t for t in trace if t["participant_id"] == "C")
     if assignment["C"] is not None:
         # 表示 fallback 啟動
         assert c_trace["preference_rank"] is None
@@ -73,8 +73,8 @@ def test_assignment_records_preference_rank():
     qs = {"A": ["X", "Y"]}
     prefs = {"A": ["X"]}
     caps = {"X": 1, "Y": 1}
-    _, assignment, trace = allocate_m1(qs, prefs, caps, SeededRandom(1), role_order=["A"])
-    a_trace = next(t for t in trace if t["role_id"] == "A")
+    _, assignment, trace = allocate_m1(qs, prefs, caps, SeededRandom(1), participant_order=["A"])
+    a_trace = next(t for t in trace if t["participant_id"] == "A")
     assert assignment["A"] == "X"
     assert a_trace["preference_rank"] == 1
     assert a_trace["preferred_order"] == ["X"]
@@ -85,16 +85,16 @@ def test_no_qualified_target_means_unassigned():
     qs = {"A": []}
     prefs = {"A": []}
     caps = {}
-    _, assignment, trace = allocate_m1(qs, prefs, caps, SeededRandom(1), role_order=["A"])
+    _, assignment, trace = allocate_m1(qs, prefs, caps, SeededRandom(1), participant_order=["A"])
     assert assignment["A"] is None
 
 
 def test_capacity_exhaustion():
-    """容量耗盡時後續角色未分配。"""
+    """容量耗盡時後續參與者未分配。"""
     qs = {"A": ["X"], "B": ["X"], "C": ["X"]}
     prefs = {"A": ["X"], "B": ["X"], "C": ["X"]}
     caps = {"X": 2}
-    order, assignment, _ = allocate_m1(qs, prefs, caps, SeededRandom(1), role_order=["A", "B", "C"])
+    order, assignment, _ = allocate_m1(qs, prefs, caps, SeededRandom(1), participant_order=["A", "B", "C"])
     # 前兩位分到 X，第三位 X 已滿、沒有其他資格 target → 未分配
     assigned = [r for r in order if assignment[r] is not None]
     assert len(assigned) == 2

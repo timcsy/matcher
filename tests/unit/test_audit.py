@@ -6,20 +6,20 @@ import json
 from pathlib import Path
 
 from matcher.audit import build_audit_record, dump_audit_json
-from matcher.roster import Role, Roster, Target
+from matcher.roster import Participant, Roster, Target
 from matcher.rules import Eq, Rule, Ruleset
 
 
 def _sample_audit():
-    rs = Ruleset(rules=(Rule("R001", "x=1", Eq("role.x", 1)),))
+    rs = Ruleset(rules=(Rule("R001", "x=1", Eq("participant.x", 1)),))
     roster = Roster(
-        roles=(Role("A", {"x": 1}),),
+        participants=(Participant("A", {"x": 1}),),
         targets=(Target("T1", capacity=1, attributes={}),),
     )
     qs = {"A": ["T1"]}
-    filter_trace = [{"role_id": "A", "target_id": "T1", "qualified": True, "matched_rules": ["R001"]}]
+    filter_trace = [{"participant_id": "A", "target_id": "T1", "qualified": True, "matched_rules": ["R001"]}]
     allocation_trace = [{
-        "step": 1, "role_id": "A", "candidates": ["T1"],
+        "step": 1, "participant_id": "A", "candidates": ["T1"],
         "random_index": 0, "chosen": "T1",
         "remaining_capacity_after": {"T1": 0},
     }]
@@ -43,7 +43,7 @@ def test_audit_record_required_fields():
         "template_snapshot", "import_metadata", "processing_order",
     ]:
         assert f in record, f"稽核紀錄缺欄位 {f}"
-    assert record["schema_version"] == "1.4"
+    assert record["schema_version"] == "1.5"
     assert record["mechanism"] == "M0"
     assert record["generated_at"] is None
 

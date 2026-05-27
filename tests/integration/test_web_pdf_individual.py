@@ -61,7 +61,7 @@ def test_download_individual_pdf_only_contains_own_data(tmp_path: Path):
     """T030：individual PDF 含自己姓名、不含其他學生姓名。"""
     c = _client(tmp_path)
     rid = _run_m1_record(c)
-    r = c.get(f"/match/{rid}/role/S01/report.pdf")
+    r = c.get(f"/match/{rid}/participant/S01/report.pdf")
     assert r.status_code == 200
     text = _pdf_text(r.content, tmp_path)
     assert "S01" in text
@@ -75,22 +75,22 @@ def test_individual_pdf_button_present_in_individual_view(tmp_path: Path):
     """T031：個別查詢頁含「下載 PDF 報告」連結。"""
     c = _client(tmp_path)
     rid = _run_m1_record(c)
-    r = c.get(f"/match/{rid}/role/S01")
+    r = c.get(f"/match/{rid}/participant/S01")
     assert "下載 PDF 報告" in r.text
-    assert f"/match/{rid}/role/S01/report.pdf" in r.text
+    assert f"/match/{rid}/participant/S01/report.pdf" in r.text
 
 
 def test_individual_pdf_404_on_failed_record(tmp_path: Path):
     """T032：failed record → 404。"""
     c = _client(tmp_path)
     rid = _run_failed_record(c)
-    r = c.get(f"/match/{rid}/role/S01/report.pdf")
+    r = c.get(f"/match/{rid}/participant/S01/report.pdf")
     assert r.status_code == 404
 
 
-def test_individual_pdf_404_on_unknown_role(tmp_path: Path):
-    """T033：role_id 不在 roster → 404。"""
+def test_individual_pdf_404_on_unknown_participant(tmp_path: Path):
+    """T033：participant_id 不在 roster → 404。"""
     c = _client(tmp_path)
     rid = _run_m1_record(c)
-    r = c.get(f"/match/{rid}/role/S99/report.pdf")
+    r = c.get(f"/match/{rid}/participant/S99/report.pdf")
     assert r.status_code == 404

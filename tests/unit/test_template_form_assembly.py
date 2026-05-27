@@ -25,14 +25,14 @@ def test_assemble_simple_form_to_yaml_dict():
         "template_id": "my-test",
         "template_name": "測試",
         "template_description": "單元測試",
-        "role_attr_0_key": "name", "role_attr_0_type": "str", "role_attr_0_required": "on",
-        "role_attr_0_description": "姓名",
-        "role_attr_1_key": "grade", "role_attr_1_type": "int", "role_attr_1_required": "on",
-        "role_attr_1_description": "年級",
+        "participant_attr_0_key": "name", "participant_attr_0_type": "str", "participant_attr_0_required": "on",
+        "participant_attr_0_description": "姓名",
+        "participant_attr_1_key": "grade", "participant_attr_1_type": "int", "participant_attr_1_required": "on",
+        "participant_attr_1_description": "年級",
         "target_attr_0_key": "name", "target_attr_0_type": "str", "target_attr_0_required": "on",
         "target_attr_0_description": "對象名",
         "rule_0_id": "R001", "rule_0_type": "ge",
-        "rule_0_field": "role.grade", "rule_0_value": "4",
+        "rule_0_field": "participant.grade", "rule_0_value": "4",
     }
     tpl_dict = assemble_template_yaml(form)
     # Feature 013：不再寫 default_targets
@@ -40,14 +40,14 @@ def test_assemble_simple_form_to_yaml_dict():
     tpl = parse_template(tpl_dict)
     assert tpl.id == "my-test"
     assert tpl.name == "測試"
-    assert len(tpl.attributes.roles) == 2
+    assert len(tpl.attributes.participants) == 2
     assert len(tpl.ruleset.rules) == 1
 
 
 def test_auto_description_for_each_rule_type():
     """T018：5 規則類型生成的 description 合理且無技術 token。"""
     attrs = {
-        "roles": [
+        "participants": [
             {"key": "grade", "description": "年級"},
             {"key": "speciality", "description": "專業科目"},
         ],
@@ -57,12 +57,12 @@ def test_auto_description_for_each_rule_type():
         ],
     }
     cases = [
-        ("ge", {"field": "role.grade", "value": "4"}, "年級 必須 ≥ 4"),
-        ("le", {"field": "role.grade", "value": "6"}, "年級 必須 ≤ 6"),
-        ("eq", {"field": "role.speciality", "value": "數學"}, "專業科目 必須等於 數學"),
-        ("in", {"field": "role.speciality", "set": "國文;數學"}, "專業科目 必須屬於：國文、數學"),
-        ("role_in_target_field", {"role_field": "speciality", "target_field": "required_subjects"},
-         "專業科目 必須出現在對象的需要科目列表中"),
+        ("ge", {"field": "participant.grade", "value": "4"}, "年級 必須 ≥ 4"),
+        ("le", {"field": "participant.grade", "value": "6"}, "年級 必須 ≤ 6"),
+        ("eq", {"field": "participant.speciality", "value": "數學"}, "專業科目 必須等於 數學"),
+        ("in", {"field": "participant.speciality", "set": "國文;數學"}, "專業科目 必須屬於：國文、數學"),
+        ("participant_in_target_field", {"participant_field": "speciality", "target_field": "required_subjects"},
+         "專業科目 必須對應到對象的需要科目（任一邊可多筆，做包含比對）"),
     ]
     for rule_type, fields, expected_desc in cases:
         desc = _auto_description(rule_type, fields, attrs)
@@ -75,12 +75,12 @@ def test_custom_description_overrides_auto():
     """T019：rule_<i>_custom_description 若提供，使用者版本生效。"""
     form = {
         "template_id": "x", "template_name": "X", "template_description": "X",
-        "role_attr_0_key": "grade", "role_attr_0_type": "int", "role_attr_0_required": "on",
-        "role_attr_0_description": "年級",
+        "participant_attr_0_key": "grade", "participant_attr_0_type": "int", "participant_attr_0_required": "on",
+        "participant_attr_0_description": "年級",
         "target_attr_0_key": "name", "target_attr_0_type": "str", "target_attr_0_required": "on",
         "target_attr_0_description": "對象名",
         "rule_0_id": "R001", "rule_0_type": "ge",
-        "rule_0_field": "role.grade", "rule_0_value": "4",
+        "rule_0_field": "participant.grade", "rule_0_value": "4",
         "rule_0_custom_description": "使用者自己寫的說明",
     }
     tpl_dict = assemble_template_yaml(form)

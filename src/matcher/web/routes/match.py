@@ -11,20 +11,17 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from matcher.data_import import load_roster_csv, load_roster_xlsx
 from matcher.errors import MatcherError, QualifiedSetEmpty, SeedMissing, TemplateNotFound
 from matcher.pipeline import MatcherInput, run_match
-from matcher.template_loader import TemplateRegistry
 from matcher.web.auth import current_email, require_login
 from matcher.web.errors import MatchRecordNotFound, UploadInvalidMime, UploadTooLarge
-from matcher.web.humanize import mechanism_label, preference_rank_display, target_summary
-from matcher.web.individual import build_individual_audit_subset
-from matcher.web.pdf import PdfRenderUnavailable, render_match_report_pdf
+from matcher.web.humanize import mechanism_label, target_summary
 from matcher.web.ratelimit import rate_limit
-from matcher.web.security import sign_role_token, validate_csrf, verify_role_token
+from matcher.web.security import validate_csrf
 from matcher.web.store import MatchRecord, MatchStore, SCHEMA_VERSION
 
 
@@ -35,9 +32,13 @@ def _check_csrf(request: Request, form) -> None:
 
 
 def _owner_or_403(request: Request, record) -> None:
-    """確認登入者是該紀錄擁有者；否則 403。"""
+    """確認登入者是該紀錄擁有者；否則 403。
+
+    安全預設：owner 為 None 的紀錄（升級前的舊資料）不對任何登入者開放——
+    避免無主紀錄變成跨使用者可讀的個資漏洞。需要時應回填 owner 而非放行。
+    """
     email = current_email(request)
-    if record.owner is not None and record.owner != email:
+    if record.owner != email:
         raise HTTPException(status_code=403, detail="這筆配對不屬於你，無法查看。")
 
 
@@ -77,6 +78,24 @@ def _error_dict(e: MatcherError) -> dict:
 router = APIRouter()
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
+
+
+async def _read_capped(upload: "UploadFile") -> bytes:
+    """串流讀取上傳檔，超過上限即中止——避免超大檔案在大小檢查前就吃滿記憶體。"""
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await upload.read(64 * 1024)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > MAX_UPLOAD_BYTES:
+            raise UploadTooLarge(
+                f"上傳檔過大（超過上限 {MAX_UPLOAD_BYTES} bytes / 5 MB）。\n"
+                f"建議：縮減檔案後重新上傳，或拆分成多次媒合。"
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 MECHANISMS = [
     ("M0", "純抽籤"),
@@ -145,7 +164,7 @@ def _render_fill_form(
     request: Request,
     tpl,
     *,
-    prefill_roles=None,
+    prefill_participants=None,
     prefill_targets=None,
     form_error: Optional[str] = None,
     info_note: Optional[str] = None,
@@ -154,10 +173,10 @@ def _render_fill_form(
     status_code: int = 200,
 ):
     """渲染填清單頁。錯誤時帶 prefill 與 form_error 回填，避免使用者重打清單。"""
-    role_attrs = [
+    participant_attrs = [
         {"key": a.key, "type": a.type, "required": a.required,
          "label": a.description or a.key}
-        for a in tpl.attributes.roles
+        for a in tpl.attributes.participants
     ]
     target_attrs = [
         {"key": a.key, "type": a.type, "required": a.required,
@@ -165,8 +184,8 @@ def _render_fill_form(
         for a in tpl.attributes.targets
     ]
     # 預設給三列空白；錯誤回填時用使用者送來的內容
-    if prefill_roles is None:
-        prefill_roles = [{}, {}, {}]
+    if prefill_participants is None:
+        prefill_participants = [{}, {}, {}]
     if prefill_targets is None:
         prefill_targets = [{}, {}, {}]
 
@@ -174,13 +193,13 @@ def _render_fill_form(
         request, "roster_form_fill.html",
         {
             "template": tpl,
-            "role_attrs": role_attrs,
+            "participant_attrs": participant_attrs,
             "target_attrs": target_attrs,
             # Feature 013：對象段一律顯示
             "has_prefs_schema": tpl.preferences_schema is not None,
             "mechanisms": MECHANISMS,
             "default_mechanism": "M0",
-            "prefill_roles": prefill_roles,
+            "prefill_participants": prefill_participants,
             "prefill_targets": prefill_targets,
             "form_error": form_error,
             "info_note": info_note,
@@ -212,23 +231,23 @@ def _flatten_snapshot_value(v) -> str:
 
 
 def _snapshot_to_prefill(record) -> tuple[list, list]:
-    """把一筆配對紀錄的 roster 快照 → 填清單頁的 prefill（角色、對象）。"""
+    """把一筆配對紀錄的 roster 快照 → 填清單頁的 prefill（參與者、對象）。"""
     snap = (record.audit or {}).get("roster_snapshot", {})
-    roles = []
-    for r in snap.get("roles", []):
+    participants = []
+    for r in snap.get("participants", []):
         row = {"id": r.get("id", "")}
         for k, val in (r.get("attributes") or {}).items():
             row[k] = _flatten_snapshot_value(val)
         if r.get("preferences"):
             row["preferences"] = ";".join(str(x) for x in r["preferences"])
-        roles.append(row)
+        participants.append(row)
     targets = []
     for t in snap.get("targets", []):
         row = {"id": t.get("id", ""), "capacity": str(t.get("capacity", ""))}
         for k, val in (t.get("attributes") or {}).items():
             row[k] = _flatten_snapshot_value(val)
         targets.append(row)
-    return roles, targets
+    return participants, targets
 
 
 @router.get("/match/new/fill")
@@ -237,7 +256,7 @@ async def new_match_fill(request: Request, template_id: str,
                          email: str = Depends(require_login)):
     """填寫頁：依範本宣告動態渲染欄位。
 
-    ?from_record=<rid>：用某筆過去紀錄的清單（角色+對象）預填，供「沿用後微調」。
+    ?from_record=<rid>：用某筆過去紀錄的清單（參與者+對象）預填，供「沿用後微調」。
     """
     from matcher.web.routes.pages import _reg as _shared_reg
     reg = _shared_reg()
@@ -246,7 +265,7 @@ async def new_match_fill(request: Request, template_id: str,
     except TemplateNotFound as e:
         return _error_page(request, "TemplateNotFound", str(e), status_code=404)
 
-    prefill_roles = prefill_targets = None
+    prefill_participants = prefill_targets = None
     note = None
     if from_record:
         store = MatchStore()
@@ -257,12 +276,12 @@ async def new_match_fill(request: Request, template_id: str,
         _owner_or_403(request, rec)
         if rec.audit is None:
             return _error_page(request, "NoSnapshot", "該紀錄沒有可沿用的清單（執行失敗的紀錄）。", status_code=400)
-        prefill_roles, prefill_targets = _snapshot_to_prefill(rec)
+        prefill_participants, prefill_targets = _snapshot_to_prefill(rec)
         note = f"已沿用過去紀錄的清單（{from_record}），可直接修改後再配對。"
 
     return _render_fill_form(
         request, tpl,
-        prefill_roles=prefill_roles, prefill_targets=prefill_targets,
+        prefill_participants=prefill_participants, prefill_targets=prefill_targets,
         info_note=note,
     )
 
@@ -293,11 +312,11 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
         return _error_page(request, "TemplateNotFound", str(e), status_code=404)
 
     # 蒐集使用者填的列，供驗證失敗時回填（不讓他重打）
-    role_keys = ["id"] + [a.key for a in tpl.attributes.roles]
+    participant_keys = ["id"] + [a.key for a in tpl.attributes.participants]
     if tpl.preferences_schema is not None:
-        role_keys.append("preferences")
+        participant_keys.append("preferences")
     target_keys = ["id", "capacity"] + [a.key for a in tpl.attributes.targets]
-    filled_roles = _extract_form_rows(form, "role", role_keys)
+    filled_participants = _extract_form_rows(form, "participant", participant_keys)
     filled_targets = _extract_form_rows(form, "target", target_keys)
     mechanism = (form.get("mechanism") or "M0").strip().upper()
     seed_raw = form.get("seed", "123456")
@@ -305,7 +324,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
     def _refill(msg: str):
         return _render_fill_form(
             request, tpl,
-            prefill_roles=filled_roles or None,
+            prefill_participants=filled_participants or None,
             prefill_targets=filled_targets or None,
             form_error=msg,
             seed=seed_raw,
@@ -321,7 +340,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
         return _refill("請選一個抽籤方式。")
 
     csv_bytes = assemble_roster_csv_bytes(form, tpl)
-    # 檢查空白：CSV 只有 header 列 → 沒有任何角色
+    # 檢查空白：CSV 只有 header 列 → 沒有任何參與者
     if csv_bytes.decode("utf-8-sig").strip().count("\n") < 1:
         return _refill("請至少填一位（第 1 步的清單還是空的）。")
 
@@ -360,13 +379,13 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
             if (
                 tpl.preferences_schema is not None
                 and mechanism in ("M1", "M2")
-                and all(not role.preferences for role in ro.roles)
+                and all(not participant.preferences for participant in ro.participants)
             ):
                 return _render_preferences_form(
                     request, template_id=template_id, template_name=tpl.name,
                     mechanism=mechanism, seed=seed,
                     roster_bytes=csv_bytes, roster_filename=roster_filename,
-                    roles=ro.roles, targets=ro.targets, targets_bytes=targets_yaml,
+                    participants=ro.participants, targets=ro.targets, targets_bytes=targets_yaml,
                     max_choices=tpl.preferences_schema.max_choices,
                 )
 
@@ -392,7 +411,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
     if qse is not None:
         return _render_fill_form(
             request, tpl,
-            prefill_roles=filled_roles or None,
+            prefill_participants=filled_participants or None,
             prefill_targets=filled_targets or None,
             form_error=_empty_set_message(qse),
             seed=seed_raw, mechanism=mechanism, status_code=400,
@@ -427,13 +446,8 @@ async def run(
             status_code=400,
         )
 
-    # 驗證大小
-    data = await roster.read()
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise UploadTooLarge(
-            f"上傳檔過大（{len(data)} bytes，上限 {MAX_UPLOAD_BYTES} bytes / 5 MB）。\n"
-            f"建議：縮減檔案後重新上傳，或拆分成多次媒合。"
-        )
+    # 驗證大小（串流讀取，超過上限即中止）
+    data = await _read_capped(roster)
 
     # 驗證 MIME
     if roster.content_type not in ALLOWED_MIMES:
@@ -486,7 +500,7 @@ async def run(
     injected_targets = None            # csv/xlsx 解析出的 targets tuple
     if targets_yaml is not None and targets_yaml.filename:
         tname = targets_yaml.filename.lower()
-        traw = await targets_yaml.read()
+        traw = await _read_capped(targets_yaml)
         if traw:
             if tname.endswith(".csv") or tname.endswith(".xlsx"):
                 from matcher.data_import import load_targets_csv, load_targets_xlsx
@@ -521,14 +535,14 @@ async def run(
             if (
                 tpl.preferences_schema is not None
                 and mechanism in ("M1", "M2")
-                and all(not role.preferences for role in ro.roles)
+                and all(not participant.preferences for participant in ro.participants)
             ):
                 tmp_path.unlink(missing_ok=True)
                 return _render_preferences_form(
                     request, template_id=template_id, template_name=tpl.name,
                     mechanism=mechanism, seed=seed,
                     roster_bytes=data, roster_filename=roster.filename or "roster.csv",
-                    roles=ro.roles, targets=ro.targets, targets_bytes=sidecar_data,
+                    participants=ro.participants, targets=ro.targets, targets_bytes=sidecar_data,
                     max_choices=tpl.preferences_schema.max_choices,
                 )
 
@@ -569,7 +583,7 @@ def _render_preferences_form(
     seed: int,
     roster_bytes: bytes,
     roster_filename: str,
-    roles,
+    participants,
     targets,
     targets_bytes: bytes = b"",
     max_choices: int,
@@ -593,9 +607,9 @@ def _render_preferences_form(
             }
             for t in targets
         ]
-    roles_for_form = [
+    participants_for_form = [
         {"id": r.id, "display_name": (r.attributes or {}).get("name", r.id)}
-        for r in roles
+        for r in participants
     ]
     return _templates(request).TemplateResponse(
         request, "preferences_form.html",
@@ -608,7 +622,7 @@ def _render_preferences_form(
             "roster_bytes_b64": base64.b64encode(roster_bytes).decode("ascii"),
             "roster_filename": roster_filename,
             "targets_bytes_b64": base64.b64encode(targets_bytes).decode("ascii"),
-            "roles_for_form": roles_for_form,
+            "participants_for_form": participants_for_form,
             "targets_for_options": targets_for_options,
             "max_choices": max_choices,
             "form_errors": form_errors or [],
@@ -686,24 +700,24 @@ async def submit_preferences(request: Request, email: str = Depends(require_logi
     form_errors: list[str] = []
     previous_form_values: dict[str, str] = {}
     if action == "submit":
-        new_roles = []
+        new_participants = []
         any_pref = False
-        for role in ro.roles:
+        for participant in ro.participants:
             prefs: list[str] = []
             for rank in range(1, max_choices + 1):
-                field = f"pref_{role.id}_{rank}"
+                field = f"pref_{participant.id}_{rank}"
                 value = (form.get(field) or "").strip()
                 previous_form_values[field] = value
                 if value:
                     if value not in valid_target_ids:
-                        form_errors.append(f"角色 {role.id} 的第 {rank} 志願選了無效的對象「{value}」。")
+                        form_errors.append(f"參與者 {participant.id} 的第 {rank} 志願選了無效的對象「{value}」。")
                         continue
                     prefs.append(value)
             if len(set(prefs)) != len(prefs):
-                form_errors.append(f"角色 {role.id} 的志願中有重複——同列不可重複選同對象。")
+                form_errors.append(f"參與者 {participant.id} 的志願中有重複——同列不可重複選同對象。")
             if prefs:
                 any_pref = True
-            new_roles.append(dataclasses.replace(role, preferences=tuple(prefs)))
+            new_participants.append(dataclasses.replace(participant, preferences=tuple(prefs)))
 
         if form_errors:
             return _render_preferences_form(
@@ -711,26 +725,26 @@ async def submit_preferences(request: Request, email: str = Depends(require_logi
                 template_id=template_id, template_name=tpl.name,
                 mechanism=mechanism, seed=seed,
                 roster_bytes=roster_bytes, roster_filename=roster_filename,
-                roles=ro.roles, targets=ro.targets, targets_bytes=targets_bytes,
+                participants=ro.participants, targets=ro.targets, targets_bytes=targets_bytes,
                 max_choices=max_choices,
                 form_errors=form_errors,
                 previous_form_values=previous_form_values,
             )
 
         if not any_pref:
-            form_errors.append("請至少為一位角色填寫 1 個志願；若確實沒有志願，請點「跳過此步驟」。")
+            form_errors.append("請至少為一位參與者填寫 1 個志願；若確實沒有志願，請點「跳過此步驟」。")
             return _render_preferences_form(
                 request,
                 template_id=template_id, template_name=tpl.name,
                 mechanism=mechanism, seed=seed,
                 roster_bytes=roster_bytes, roster_filename=roster_filename,
-                roles=ro.roles, targets=ro.targets, targets_bytes=targets_bytes,
+                participants=ro.participants, targets=ro.targets, targets_bytes=targets_bytes,
                 max_choices=max_choices,
                 form_errors=form_errors,
                 previous_form_values=previous_form_values,
             )
 
-        ro = dataclasses.replace(ro, roles=tuple(new_roles))
+        ro = dataclasses.replace(ro, participants=tuple(new_participants))
     # action == "skip" → ro 不動（preferences 全空），交由 pipeline reject
 
     # 跑 pipeline 並寫 record
@@ -758,303 +772,3 @@ async def submit_preferences(request: Request, email: str = Depends(require_logi
     store.save(record)
     return RedirectResponse(url=f"/match/{record.id}", status_code=303)
 
-
-@router.get("/match/{record_id}")
-async def match_detail(request: Request, record_id: str, email: str = Depends(require_login)):
-    store = MatchStore()
-    record = store.get(record_id)
-    _owner_or_403(request, record)
-
-    roles_for_links: list = []
-    mechanism = "M0"
-    processing_order_display = None
-    rank_display_by_role: dict = {}
-    if record.status == "success" and record.audit:
-        roles_for_links = [
-            {"id": r["id"], "name": r.get("attributes", {}).get("name", r["id"]),
-             "token": sign_role_token(record.id, r["id"])}
-            for r in record.audit.get("roster_snapshot", {}).get("roles", [])
-        ]
-        mechanism = record.audit.get("mechanism", "M0")
-        # 處理順序段（M1/M2 才注入；M0 audit.processing_order 為 null）
-        po = record.audit.get("processing_order")
-        if po:
-            name_by_id = {r["id"]: r.get("attributes", {}).get("name", r["id"])
-                          for r in record.audit.get("roster_snapshot", {}).get("roles", [])}
-            processing_order_display = [(rid, name_by_id.get(rid, rid)) for rid in po]
-        # 志願排名欄（M1/M2）
-        for entry in record.audit.get("allocation_trace", []):
-            display = preference_rank_display(
-                mechanism,
-                entry.get("preference_rank"),
-                entry.get("fallback_random_index"),
-            )
-            if display is not None:
-                rank_display_by_role[entry["role_id"]] = display
-    return _templates(request).TemplateResponse(
-        request, "match_result.html",
-        {
-            "record": record,
-            "roles_for_links": roles_for_links,
-            "mechanism": mechanism,
-            "mechanism_label": mechanism_label(mechanism),
-            "processing_order_display": processing_order_display,
-            "rank_display_by_role": rank_display_by_role,
-        },
-    )
-
-
-def _individual_error(request: Request, message: str) -> Response:
-    return _templates(request).TemplateResponse(
-        request, "individual_error.html",
-        {"message": message},
-        status_code=404,
-    )
-
-
-def _render_individual(request: Request, record, role_id: str):
-    """渲染個別查詢頁（被舊 admin 路徑與 /r/{token} 共用）。"""
-    if record.status == "failed" or record.audit is None:
-        return _individual_error(request, "該次配對執行失敗，無個別查詢資料")
-
-    role = next(
-        (r for r in record.audit.get("roster_snapshot", {}).get("roles", []) if r["id"] == role_id),
-        None,
-    )
-    if role is None:
-        return _individual_error(request, "您不在這次配對的清單中")
-
-    # 載入模板（用於 humanize 規則描述）
-    from matcher.web.routes.pages import _reg as _shared_reg  # feature 011：共用 singleton
-    reg = _shared_reg()
-    try:
-        template = reg.get(record.template_id)
-    except TemplateNotFound:
-        template = None
-
-    subset = build_individual_audit_subset(record.audit, role_id)
-
-    # US2：志願滿足度
-    mechanism = record.audit.get("mechanism", "M0")
-    preference_rank = None
-    fallback_random_index = None
-    for entry in record.audit.get("allocation_trace", []):
-        if entry.get("role_id") == role_id:
-            preference_rank = entry.get("preference_rank")
-            fallback_random_index = entry.get("fallback_random_index")
-            break
-    preferred_count = len(role.get("preferences", []) or [])
-
-    rules_lookup = {
-        r["id"]: r["description"]
-        for r in record.audit.get("rules_snapshot", {}).get("rules", [])
-    }
-    target_lookup = {
-        t["id"]: t.get("attributes", {})
-        for t in record.audit.get("roster_snapshot", {}).get("targets", [])
-    }
-
-    return _templates(request).TemplateResponse(
-        request, "individual_view.html",
-        {
-            "record": record,
-            "role": role,
-            "subset": subset,
-            "template": template,
-            "rules_lookup": rules_lookup,
-            "target_lookup": target_lookup,
-            "mechanism": mechanism,
-            "preference_rank": preference_rank,
-            "fallback_random_index": fallback_random_index,
-            "preferred_count": preferred_count,
-        },
-    )
-
-
-@router.get("/match/{record_id}/role/{role_id}")
-async def individual_view(request: Request, record_id: str, role_id: str,
-                          email: str = Depends(require_login)):
-    """舊個別路徑：Feature 014 改為僅擁有者（登入）可看（行政預覽用）。
-    匿名當事人請改用 /r/{token}。"""
-    store = MatchStore()
-    try:
-        record = store.get(record_id)
-    except MatchRecordNotFound:
-        return _individual_error(request, "找不到該次配對的紀錄")
-    _owner_or_403(request, record)
-    return _render_individual(request, record, role_id)
-
-
-@router.get("/r/{token}")
-async def individual_view_by_token(request: Request, token: str):
-    """Feature 014：當事人用不可猜 token 看自己結果，免登入。"""
-    verified = verify_role_token(token)
-    if verified is None:
-        return _individual_error(request, "連結無效或已失效")
-    record_id, role_id = verified
-    store = MatchStore()
-    try:
-        record = store.get(record_id)
-    except MatchRecordNotFound:
-        return _individual_error(request, "找不到該次配對的紀錄")
-    return _render_individual(request, record, role_id)
-
-
-def _individual_audit_payload(record, role_id: str) -> str:
-    subset = build_individual_audit_subset(record.audit, role_id)
-    return json.dumps(subset, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
-
-
-@router.get("/match/{record_id}/role/{role_id}/audit.json")
-async def individual_audit_download(request: Request, record_id: str, role_id: str,
-                                    email: str = Depends(require_login)):
-    store = MatchStore()
-    try:
-        record = store.get(record_id)
-    except MatchRecordNotFound:
-        raise HTTPException(status_code=404, detail="找不到該次配對的紀錄")
-    _owner_or_403(request, record)
-    if record.status != "success" or record.audit is None:
-        raise HTTPException(status_code=404, detail="該次配對執行失敗，無個別查詢資料")
-    role_exists = any(
-        r["id"] == role_id for r in record.audit.get("roster_snapshot", {}).get("roles", [])
-    )
-    if not role_exists:
-        raise HTTPException(status_code=404, detail="您不在這次配對的清單中")
-    return Response(
-        content=_individual_audit_payload(record, role_id),
-        media_type="application/json; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{record_id}-{role_id}.individual.json"'},
-    )
-
-
-@router.get("/r/{token}/audit.json")
-async def individual_audit_by_token(request: Request, token: str):
-    verified = verify_role_token(token)
-    if verified is None:
-        raise HTTPException(status_code=404, detail="連結無效")
-    record_id, role_id = verified
-    store = MatchStore()
-    try:
-        record = store.get(record_id)
-    except MatchRecordNotFound:
-        raise HTTPException(status_code=404, detail="找不到該次配對的紀錄")
-    if record.status != "success" or record.audit is None:
-        raise HTTPException(status_code=404, detail="無個別查詢資料")
-    role_exists = any(
-        r["id"] == role_id for r in record.audit.get("roster_snapshot", {}).get("roles", [])
-    )
-    if not role_exists:
-        raise HTTPException(status_code=404, detail="找不到對應角色")
-    return Response(
-        content=_individual_audit_payload(record, role_id),
-        media_type="application/json; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{record_id}-{role_id}.individual.json"'},
-    )
-
-
-@router.get("/match/{record_id}/audit")
-async def download_audit(request: Request, record_id: str, email: str = Depends(require_login)):
-    store = MatchStore()
-    record = store.get(record_id)
-    _owner_or_403(request, record)
-    if record.status != "success" or record.audit is None:
-        raise HTTPException(status_code=404, detail="該配對執行失敗，無稽核紀錄可下載")
-    body = json.dumps(record.audit, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
-    return Response(
-        content=body,
-        media_type="application/json; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{record_id}.audit.json"'},
-    )
-
-
-# ── Feature 010：PDF 報告匯出 ───────────────────────────────────
-
-def _record_meta_for_pdf(record) -> dict:
-    return {
-        "id": record.id,
-        "created_at": record.created_at,
-        "input_file": record.input_file,
-        "status": record.status,
-        "error": record.error,
-    }
-
-
-@router.get("/match/{record_id}/report.pdf")
-async def download_report_pdf(request: Request, record_id: str, email: str = Depends(require_login)):
-    store = MatchStore()
-    try:
-        record = store.get(record_id)
-    except MatchRecordNotFound:
-        raise HTTPException(status_code=404, detail="找不到該次配對的紀錄")
-    _owner_or_403(request, record)
-
-    # 失敗 record 也能出失敗版 PDF；audit 為 None 時樣板會走 failed 分支
-    audit_for_pdf = record.audit if record.audit is not None else {
-        "assignment": {}, "roster_snapshot": {"roles": [], "targets": []}, "mechanism": "M0",
-    }
-    try:
-        pdf_bytes = render_match_report_pdf(audit_for_pdf, record_meta=_record_meta_for_pdf(record))
-    except PdfRenderUnavailable as e:
-        return Response(
-            content=f"PDF 渲染功能不可用——{str(e)}（請見 README 安裝指引）",
-            status_code=503, media_type="text/plain; charset=utf-8",
-        )
-    return Response(
-        content=pdf_bytes, media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{record_id}.report.pdf"'},
-    )
-
-
-def _individual_pdf_response(record, role_id: str):
-    if record.status != "success" or record.audit is None:
-        raise HTTPException(status_code=404, detail="該次配對執行失敗，無個別查詢資料")
-    role_exists = any(
-        r["id"] == role_id for r in record.audit.get("roster_snapshot", {}).get("roles", [])
-    )
-    if not role_exists:
-        raise HTTPException(status_code=404, detail="您不在這次配對的清單中")
-    try:
-        tpl = TemplateRegistry().get(record.template_id)
-    except TemplateNotFound:
-        tpl = None
-    try:
-        pdf_bytes = render_match_report_pdf(
-            record.audit, record_meta=_record_meta_for_pdf(record),
-            role_id=role_id, template=tpl,
-        )
-    except PdfRenderUnavailable as e:
-        return Response(
-            content=f"PDF 渲染功能不可用——{str(e)}（請見 README 安裝指引）",
-            status_code=503, media_type="text/plain; charset=utf-8",
-        )
-    return Response(
-        content=pdf_bytes, media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{record.id}-{role_id}.report.pdf"'},
-    )
-
-
-@router.get("/match/{record_id}/role/{role_id}/report.pdf")
-async def download_individual_report_pdf(request: Request, record_id: str, role_id: str,
-                                         email: str = Depends(require_login)):
-    store = MatchStore()
-    try:
-        record = store.get(record_id)
-    except MatchRecordNotFound:
-        raise HTTPException(status_code=404, detail="找不到該次配對的紀錄")
-    _owner_or_403(request, record)
-    return _individual_pdf_response(record, role_id)
-
-
-@router.get("/r/{token}/report.pdf")
-async def individual_report_pdf_by_token(request: Request, token: str):
-    verified = verify_role_token(token)
-    if verified is None:
-        raise HTTPException(status_code=404, detail="連結無效")
-    record_id, role_id = verified
-    store = MatchStore()
-    try:
-        record = store.get(record_id)
-    except MatchRecordNotFound:
-        raise HTTPException(status_code=404, detail="找不到該次配對的紀錄")
-    return _individual_pdf_response(record, role_id)

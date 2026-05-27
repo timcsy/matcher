@@ -38,21 +38,21 @@
 <form method="post" action="/match/run-from-form"
       x-cloak
       x-data='{
-        roles: {{ prefill_roles | tojson_attr }},
+        participants: {{ prefill_participants | tojson_attr }},
         targets: {{ prefill_targets | tojson_attr }}
       }'>
   <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
   <input type="hidden" name="template_id" value="{{ template.id }}">
 
   <div class="card">
-    <h3>1. 角色清單<small style="font-weight:normal; color:#666">（要被配對的人或單位，例如老師、學生）</small></h3>
+    <h3>1. 參與者清單<small style="font-weight:normal; color:#666">（要被配對的人或單位，例如老師、學生）</small></h3>
     <p><small>每位一列。空白列會自動忽略，不用刪。</small></p>
     <div class="roster-fill-scroll">
     <table class="roster-fill-table">
       <thead><tr>
         <th style="text-align:left">#</th>
         <th style="text-align:left"><small>編號</small></th>
-        {% for a in role_attrs %}
+        {% for a in participant_attrs %}
         <th style="text-align:left" title="{{ a.key }}">
           {{ a.label }}{% if a.required %} *{% endif %}{% if a.type == 'list_str' %}<br><small>（多個用分號、頓號或逗號隔開）</small>{% endif %}
         </th>
@@ -63,26 +63,26 @@
         <th></th>
       </tr></thead>
       <tbody>
-        <template x-for="(row, i) in roles" :key="i">
+        <template x-for="(row, i) in participants" :key="i">
           <tr>
             <td x-text="i + 1"></td>
             <td>
-              <input type="text" :name="`role_${i}_id`" x-model="row.id" placeholder="自動產生" style="width:7em">
+              <input type="text" :name="`participant_${i}_id`" x-model="row.id" placeholder="自動產生" style="width:7em">
             </td>
-            {% for a in role_attrs %}
+            {% for a in participant_attrs %}
             <td>
               <input type="{{ 'number' if a.type == 'int' else 'text' }}"
-                :name="`role_${i}_{{ a.key }}`" x-model="row['{{ a.key }}']" style="width:11em">
+                :name="`participant_${i}_{{ a.key }}`" x-model="row['{{ a.key }}']" style="width:11em">
             </td>
             {% endfor %}
             {% if has_prefs_schema %}
             <td>
-              <input type="text" :name="`role_${i}_preferences`" x-model="row.preferences"
+              <input type="text" :name="`participant_${i}_preferences`" x-model="row.preferences"
                 placeholder="G1;G2;G3" style="width:11em">
             </td>
             {% endif %}
             <td>
-              <button type="button" @click="roles.splice(i, 1)"
+              <button type="button" @click="participants.splice(i, 1)"
                 style="color:#c00; background:none; border:none; cursor:pointer">✕</button>
             </td>
           </tr>
@@ -91,7 +91,7 @@
     </table>
     </div>
     <p style="margin-top:0.5rem">
-      <button type="button" @click="roles.push({})"
+      <button type="button" @click="participants.push({})"
         style="background:#fff; border:1px dashed #2c5282; color:#2c5282; padding:0.4em 1em; border-radius:6px; cursor:pointer">
         ＋ 新增一位
       </button>

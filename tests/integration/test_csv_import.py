@@ -28,7 +28,7 @@ def test_csv_runs_successfully(tmp_path: Path):
     audit = tmp_path / "audit.json"
     _run_csv(ROOT / "examples" / "teacher-class" / "roster.csv", audit)
     data = json.loads(audit.read_text(encoding="utf-8"))
-    assert data["schema_version"] == "1.4"
+    assert data["schema_version"] == "1.5"
     assert data["import_metadata"]["source_type"] == "csv"
     assert data["import_metadata"]["encoding"] in {"utf-8", "utf-8-sig"}
     assert data["import_metadata"]["row_count"] == 10

@@ -55,16 +55,16 @@ def test_shows_preference_rank_when_assigned_to_preferred(tmp_path: Path):
     """T030：M1 + 第 N 志願文案。"""
     c = _client(tmp_path)
     rid, audit = _make_m_record(c, "M1")
-    # 找一位 preference_rank 非 null 的角色
-    role_id = None
+    # 找一位 preference_rank 非 null 的參與者
+    participant_id = None
     for entry in audit["allocation_trace"]:
         if entry.get("preference_rank") is not None:
-            role_id = entry["role_id"]
+            participant_id = entry["participant_id"]
             break
-    assert role_id is not None, "M1 跑出來竟然完全沒有按志願分到的角色"
-    r = c.get(f"/match/{rid}/role/{role_id}")
+    assert participant_id is not None, "M1 跑出來竟然完全沒有按志願分到的參與者"
+    r = c.get(f"/match/{rid}/participant/{participant_id}")
     assert r.status_code == 200
-    rank = next(e["preference_rank"] for e in audit["allocation_trace"] if e["role_id"] == role_id)
+    rank = next(e["preference_rank"] for e in audit["allocation_trace"] if e["participant_id"] == participant_id)
     assert f"您被分到第 {rank} 志願" in r.text
 
 
@@ -73,42 +73,42 @@ def test_shows_fallback_with_preferences_text_or_skip(tmp_path: Path):
     import pytest
     c = _client(tmp_path)
     rid, audit = _make_m_record(c, "M1")
-    role_id = None
+    participant_id = None
     for entry in audit["allocation_trace"]:
         if entry.get("preference_rank") is None and entry.get("fallback_random_index") is not None:
             rid_in_roster = next(
-                (r for r in audit["roster_snapshot"]["roles"] if r["id"] == entry["role_id"]),
+                (r for r in audit["roster_snapshot"]["participants"] if r["id"] == entry["participant_id"]),
                 None,
             )
             if rid_in_roster and len(rid_in_roster.get("preferences", [])) > 0:
-                role_id = entry["role_id"]
+                participant_id = entry["participant_id"]
                 break
-    if role_id is None:
-        pytest.skip("roster-m1.csv 中無 fallback 且有志願 的角色（資料相依）")
-    r = c.get(f"/match/{rid}/role/{role_id}")
+    if participant_id is None:
+        pytest.skip("roster-m1.csv 中無 fallback 且有志願 的參與者（資料相依）")
+    r = c.get(f"/match/{rid}/participant/{participant_id}")
     assert r.status_code == 200
     assert "您原本的志願已被分配給其他人" in r.text
     assert "由公平抽籤分到" in r.text
 
 
 def test_shows_fallback_without_preferences_text_or_skip(tmp_path: Path):
-    """T032：fallback + 無志願 文案（若 roster-m1 所有角色皆有志願，跳過）。"""
+    """T032：fallback + 無志願 文案（若 roster-m1 所有參與者皆有志願，跳過）。"""
     import pytest
     c = _client(tmp_path)
     rid, audit = _make_m_record(c, "M1")
-    role_id = None
+    participant_id = None
     for entry in audit["allocation_trace"]:
         if entry.get("preference_rank") is None and entry.get("fallback_random_index") is not None:
             rid_in_roster = next(
-                (r for r in audit["roster_snapshot"]["roles"] if r["id"] == entry["role_id"]),
+                (r for r in audit["roster_snapshot"]["participants"] if r["id"] == entry["participant_id"]),
                 None,
             )
             if rid_in_roster and len(rid_in_roster.get("preferences", [])) == 0:
-                role_id = entry["role_id"]
+                participant_id = entry["participant_id"]
                 break
-    if role_id is None:
-        pytest.skip("roster-m1.csv 中無 fallback 且無志願 的角色（資料相依）")
-    r = c.get(f"/match/{rid}/role/{role_id}")
+    if participant_id is None:
+        pytest.skip("roster-m1.csv 中無 fallback 且無志願 的參與者（資料相依）")
+    r = c.get(f"/match/{rid}/participant/{participant_id}")
     assert r.status_code == 200
     assert "您未在志願清單中" in r.text
 
@@ -117,7 +117,7 @@ def test_m0_individual_page_omits_preference_section(tmp_path: Path):
     """T033：M0 路徑不顯示三分支文案。"""
     c = _client(tmp_path)
     rid = _make_m0_record(c)
-    r = c.get(f"/match/{rid}/role/T01")
+    r = c.get(f"/match/{rid}/participant/T01")
     assert r.status_code == 200
     assert "您被分到第" not in r.text
     assert "由公平抽籤分到" not in r.text
@@ -130,7 +130,7 @@ def test_no_technical_tokens_in_individual_html(tmp_path: Path):
     c = _client(tmp_path)
     rid, audit = _make_m_record(c, "M2")
     # 多看幾位
-    for role in audit["roster_snapshot"]["roles"][:3]:
-        r = c.get(f"/match/{rid}/role/{role['id']}")
+    for participant in audit["roster_snapshot"]["participants"][:3]:
+        r = c.get(f"/match/{rid}/participant/{participant['id']}")
         for token in FORBIDDEN_TECHNICAL_TOKENS:
-            assert token not in r.text, f"token {token} 出現於 role {role['id']}"
+            assert token not in r.text, f"token {token} 出現於 participant {participant['id']}"

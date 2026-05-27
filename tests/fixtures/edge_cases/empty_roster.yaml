@@ -1,4 +1,4 @@
-roles: []
+participants: []
 targets:
   - id: C01
     capacity: 1

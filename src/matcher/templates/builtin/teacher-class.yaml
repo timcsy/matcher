@@ -4,7 +4,7 @@ name: "教師-班級配對"
 description: "依專業與班級需要科目配對任課教師"
 
 attributes:
-  roles:
+  participants:
     - key: name
       type: str
       required: true
@@ -41,14 +41,14 @@ rules:
   - id: R001
     description: "老師的專業必須出現在班級的需要科目清單中"
     expr:
-      role_in_target_field:
-        role_field: speciality
+      participant_in_target_field:
+        participant_field: speciality
         target_field: required_subjects
   - id: R002
     description: "老師年資至少 3 年（含）以上"
     expr:
       ge:
-        field: role.seniority
+        field: participant.seniority
         value: 3
   - id: R003
     description: "班級特色屬於核心三類之一（雙語、stem、藝術）"
@@ -76,8 +76,8 @@ ui_fields:
 report_fields:
   - key: teacher_name
     label: "教師姓名"
-    source: roster_snapshot.roles[].attributes.name
+    source: roster_snapshot.participants[].attributes.name
   - key: assigned_class
     label: "分配到的班級"
-    source: assignment.{role_id}
+    source: assignment.{participant_id}
 

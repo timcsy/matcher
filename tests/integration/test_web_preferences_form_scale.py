@@ -60,4 +60,4 @@ def test_50_students_3_choices_renders_and_submits(tmp_path: Path):
         rid = m.group(1)
         audit = json.loads(c.get(f"/match/{rid}/audit").content)
         assert audit["mechanism"] == "M1"
-        assert len(audit["roster_snapshot"]["roles"]) == 50
+        assert len(audit["roster_snapshot"]["participants"]) == 50

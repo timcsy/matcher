@@ -8,6 +8,7 @@
       ],
       "chosen": "G1",
       "fallback_random_index": null,
+      "participant_id": "S08",
       "preference_rank": 1,
       "preferred_order": [
         "G1"
@@ -18,7 +19,6 @@
         "G2": 3,
         "G3": 3
       },
-      "role_id": "S08",
       "step": 1,
       "tie_break_random_index": null
     },
@@ -30,6 +30,7 @@
       ],
       "chosen": "G1",
       "fallback_random_index": null,
+      "participant_id": "S04",
       "preference_rank": 1,
       "preferred_order": [
         "G1",
@@ -41,7 +42,6 @@
         "G2": 3,
         "G3": 3
       },
-      "role_id": "S04",
       "step": 2,
       "tie_break_random_index": null
     },
@@ -53,6 +53,7 @@
       ],
       "chosen": "G3",
       "fallback_random_index": null,
+      "participant_id": "S03",
       "preference_rank": 1,
       "preferred_order": [
         "G3",
@@ -64,7 +65,6 @@
         "G2": 3,
         "G3": 2
       },
-      "role_id": "S03",
       "step": 3,
       "tie_break_random_index": null
     },
@@ -76,6 +76,7 @@
       ],
       "chosen": "G3",
       "fallback_random_index": null,
+      "participant_id": "S09",
       "preference_rank": 1,
       "preferred_order": [
         "G3"
@@ -86,7 +87,6 @@
         "G2": 3,
         "G3": 1
       },
-      "role_id": "S09",
       "step": 4,
       "tie_break_random_index": null
     },
@@ -98,6 +98,7 @@
       ],
       "chosen": "G2",
       "fallback_random_index": null,
+      "participant_id": "S01",
       "preference_rank": 1,
       "preferred_order": [
         "G2",
@@ -110,7 +111,6 @@
         "G2": 2,
         "G3": 1
       },
-      "role_id": "S01",
       "step": 5,
       "tie_break_random_index": null
     },
@@ -122,6 +122,7 @@
       ],
       "chosen": "G2",
       "fallback_random_index": null,
+      "participant_id": "S07",
       "preference_rank": 1,
       "preferred_order": [
         "G2",
@@ -134,7 +135,6 @@
         "G2": 1,
         "G3": 1
       },
-      "role_id": "S07",
       "step": 6,
       "tie_break_random_index": null
     },
@@ -146,6 +146,7 @@
       ],
       "chosen": "G2",
       "fallback_random_index": null,
+      "participant_id": "S05",
       "preference_rank": 1,
       "preferred_order": [
         "G2"
@@ -156,7 +157,6 @@
         "G2": 0,
         "G3": 1
       },
-      "role_id": "S05",
       "step": 7,
       "tie_break_random_index": null
     },
@@ -167,6 +167,7 @@
       ],
       "chosen": "G3",
       "fallback_random_index": null,
+      "participant_id": "S06",
       "preference_rank": 1,
       "preferred_order": [
         "G3",
@@ -178,7 +179,6 @@
         "G2": 0,
         "G3": 0
       },
-      "role_id": "S06",
       "step": 8,
       "tie_break_random_index": null
     },
@@ -188,6 +188,7 @@
       ],
       "chosen": "G1",
       "fallback_random_index": null,
+      "participant_id": "S02",
       "preference_rank": 1,
       "preferred_order": [
         "G1",
@@ -199,7 +200,6 @@
         "G2": 0,
         "G3": 0
       },
-      "role_id": "S02",
       "step": 9,
       "tie_break_random_index": null
     }
@@ -221,8 +221,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S01",
       "qualified": true,
-      "role_id": "S01",
       "target_id": "G1"
     },
     {
@@ -230,8 +230,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S01",
       "qualified": true,
-      "role_id": "S01",
       "target_id": "G2"
     },
     {
@@ -239,8 +239,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S01",
       "qualified": true,
-      "role_id": "S01",
       "target_id": "G3"
     },
     {
@@ -248,8 +248,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S02",
       "qualified": true,
-      "role_id": "S02",
       "target_id": "G1"
     },
     {
@@ -257,8 +257,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S02",
       "qualified": true,
-      "role_id": "S02",
       "target_id": "G2"
     },
     {
@@ -266,8 +266,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S02",
       "qualified": true,
-      "role_id": "S02",
       "target_id": "G3"
     },
     {
@@ -275,8 +275,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S03",
       "qualified": true,
-      "role_id": "S03",
       "target_id": "G1"
     },
     {
@@ -284,8 +284,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S03",
       "qualified": true,
-      "role_id": "S03",
       "target_id": "G2"
     },
     {
@@ -293,8 +293,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S03",
       "qualified": true,
-      "role_id": "S03",
       "target_id": "G3"
     },
     {
@@ -302,8 +302,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S04",
       "qualified": true,
-      "role_id": "S04",
       "target_id": "G1"
     },
     {
@@ -311,8 +311,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S04",
       "qualified": true,
-      "role_id": "S04",
       "target_id": "G2"
     },
     {
@@ -320,8 +320,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S04",
       "qualified": true,
-      "role_id": "S04",
       "target_id": "G3"
     },
     {
@@ -329,8 +329,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S05",
       "qualified": true,
-      "role_id": "S05",
       "target_id": "G1"
     },
     {
@@ -338,8 +338,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S05",
       "qualified": true,
-      "role_id": "S05",
       "target_id": "G2"
     },
     {
@@ -347,8 +347,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S05",
       "qualified": true,
-      "role_id": "S05",
       "target_id": "G3"
     },
     {
@@ -356,8 +356,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S06",
       "qualified": true,
-      "role_id": "S06",
       "target_id": "G1"
     },
     {
@@ -365,8 +365,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S06",
       "qualified": true,
-      "role_id": "S06",
       "target_id": "G2"
     },
     {
@@ -374,8 +374,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S06",
       "qualified": true,
-      "role_id": "S06",
       "target_id": "G3"
     },
     {
@@ -383,8 +383,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S07",
       "qualified": true,
-      "role_id": "S07",
       "target_id": "G1"
     },
     {
@@ -392,8 +392,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S07",
       "qualified": true,
-      "role_id": "S07",
       "target_id": "G2"
     },
     {
@@ -401,8 +401,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S07",
       "qualified": true,
-      "role_id": "S07",
       "target_id": "G3"
     },
     {
@@ -410,8 +410,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S08",
       "qualified": true,
-      "role_id": "S08",
       "target_id": "G1"
     },
     {
@@ -419,8 +419,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S08",
       "qualified": true,
-      "role_id": "S08",
       "target_id": "G2"
     },
     {
@@ -428,8 +428,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S08",
       "qualified": true,
-      "role_id": "S08",
       "target_id": "G3"
     },
     {
@@ -437,8 +437,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S09",
       "qualified": true,
-      "role_id": "S09",
       "target_id": "G1"
     },
     {
@@ -446,8 +446,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S09",
       "qualified": true,
-      "role_id": "S09",
       "target_id": "G2"
     },
     {
@@ -455,8 +455,8 @@
         "R001",
         "R002"
       ],
+      "participant_id": "S09",
       "qualified": true,
-      "role_id": "S09",
       "target_id": "G3"
     }
   ],
@@ -528,7 +528,7 @@
     ]
   },
   "roster_snapshot": {
-    "roles": [
+    "participants": [
       {
         "attributes": {
           "grade": 5,
@@ -664,7 +664,7 @@
         "description": "學生年級必須 ≥ 分組的最低年級限制",
         "expr": {
           "ge": {
-            "field": "role.grade",
+            "field": "participant.grade",
             "value": 1
           }
         },
@@ -687,11 +687,11 @@
     ],
     "version": "1.0"
   },
-  "schema_version": "1.4",
+  "schema_version": "1.5",
   "seed": 2026,
   "template_snapshot": {
     "attributes": {
-      "roles": [
+      "participants": [
         {
           "description": "學生姓名",
           "key": "name",
@@ -738,12 +738,12 @@
       {
         "key": "student_name",
         "label": "學生姓名",
-        "source": "roster_snapshot.roles[].attributes.name"
+        "source": "roster_snapshot.participants[].attributes.name"
       },
       {
         "key": "assigned_group",
         "label": "分配到的組別",
-        "source": "assignment.{role_id}"
+        "source": "assignment.{participant_id}"
       }
     ],
     "rules": [
@@ -751,7 +751,7 @@
         "description": "學生年級必須 ≥ 分組的最低年級限制",
         "expr": {
           "ge": {
-            "field": "role.grade",
+            "field": "participant.grade",
             "value": 1
           }
         },

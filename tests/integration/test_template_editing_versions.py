@@ -27,12 +27,12 @@ def _minimal_form(tpl_id: str = "my-tpl", name: str = "我的範本"):
         "template_id": tpl_id,
         "template_name": name,
         "template_description": "測試用",
-        "role_attr_0_key": "name", "role_attr_0_type": "str",
-        "role_attr_0_required": "on", "role_attr_0_description": "姓名",
+        "participant_attr_0_key": "name", "participant_attr_0_type": "str",
+        "participant_attr_0_required": "on", "participant_attr_0_description": "姓名",
         "target_attr_0_key": "name", "target_attr_0_type": "str",
         "target_attr_0_required": "on", "target_attr_0_description": "對象名",
         "rule_0_id": "R001", "rule_0_type": "ge",
-        "rule_0_field": "role.name", "rule_0_value": "1",
+        "rule_0_field": "participant.name", "rule_0_value": "1",
     }
 
 

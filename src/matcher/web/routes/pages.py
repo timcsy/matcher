@@ -10,13 +10,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
-from matcher.errors import TemplateNotFound
+from matcher.errors import MatcherError, TemplateNotFound
 from matcher.template_loader import (
     TemplateRegistry,
     dump_template_yaml,
     parse_template,
 )
 from matcher.web.auth import current_email, require_login
+from matcher.web.ratelimit import rate_limit
 from matcher.web.security import validate_csrf
 from matcher.web.template_form import SCENARIO_TEMPLATES, assemble_template_yaml
 from matcher.web.template_meta import can_view, is_owner, read_meta, write_meta
@@ -108,7 +109,7 @@ async def template_new(
             "prefill": prefill,
             "edit_id": edit_id,
             "fork_from": fork,
-            "role_attr_count": max(1, _max_idx("role_attr") + 1),
+            "participant_attr_count": max(1, _max_idx("participant_attr") + 1),
             "target_attr_count": max(1, _max_idx("target_attr") + 1),
             "rule_count": max(1, _max_idx("rule") + 1),
             "target_count": max(1, _max_idx("target") + 1),
@@ -123,12 +124,12 @@ def _template_to_form_dict(tpl) -> dict:
         "template_name": tpl.name,
         "template_description": tpl.description,
     }
-    for i, attr in enumerate(tpl.attributes.roles):
-        out[f"role_attr_{i}_key"] = attr.key
-        out[f"role_attr_{i}_type"] = attr.type
-        out[f"role_attr_{i}_required"] = "on" if attr.required else ""
-        out[f"role_attr_{i}_description"] = attr.description or ""
-        out[f"role_attr_{i}_aliases"] = ", ".join(attr.aliases or [])
+    for i, attr in enumerate(tpl.attributes.participants):
+        out[f"participant_attr_{i}_key"] = attr.key
+        out[f"participant_attr_{i}_type"] = attr.type
+        out[f"participant_attr_{i}_required"] = "on" if attr.required else ""
+        out[f"participant_attr_{i}_description"] = attr.description or ""
+        out[f"participant_attr_{i}_aliases"] = ", ".join(attr.aliases or [])
     for i, attr in enumerate(tpl.attributes.targets):
         out[f"target_attr_{i}_key"] = attr.key
         out[f"target_attr_{i}_type"] = attr.type
@@ -162,7 +163,8 @@ def _build_tpl_dict_from_form(form: dict) -> dict:
 
 
 @router.post("/templates/validate")
-async def template_validate(request: Request):
+async def template_validate(request: Request, email: str = Depends(require_login),
+                            _rl=Depends(rate_limit("tpl_validate", 60, 60))):
     form = dict(await request.form())
     try:
         tpl_dict = _build_tpl_dict_from_form(form)
@@ -170,14 +172,14 @@ async def template_validate(request: Request):
         tpl = parse_template(tpl_dict)
     except yaml.YAMLError as e:
         return JSONResponse({"ok": False, "errors": [f"YAML 語法錯誤：{e}"]})
-    except (ValueError, Exception) as e:
+    except Exception as e:
         return JSONResponse({"ok": False, "errors": [str(e)]})
 
     summary = {
         "id": tpl.id,
         "name": tpl.name,
         "attribute_count": {
-            "roles": len(tpl.attributes.roles),
+            "participants": len(tpl.attributes.participants),
             "targets": len(tpl.attributes.targets),
         },
         "rule_count": len(tpl.ruleset.rules),
@@ -207,7 +209,9 @@ async def template_save(request: Request, email: str = Depends(require_login)):
 
     try:
         tpl_id, version = reg.save_custom(tpl_dict)
-    except ValueError as e:
+    except (ValueError, MatcherError) as e:
+        # MatcherError 含 TemplateMissingField 等：欄位沒填完整時給友善訊息，
+        # 而非讓例外冒泡成 500（前端 fetch 會收到 HTML、JSON.parse 失敗）
         msg = str(e)
         if "內建模板" in msg:
             return JSONResponse({"ok": False, "errors": [msg]}, status_code=409)
@@ -237,20 +241,20 @@ async def template_authoring_guide():
 @router.get("/templates/{template_id}/example/{kind}.{fmt}")
 async def template_example(request: Request, template_id: str, kind: str, fmt: str,
                            email: str = Depends(require_login)):
-    """依範本動態產生角色/對象範例試算表（feature 016）。kind: roles|targets；fmt: csv|xlsx。"""
-    from matcher.web.example_gen import role_example_bytes, target_example_bytes
+    """依範本動態產生參與者/對象範例試算表（feature 016）。kind: participants|targets；fmt: csv|xlsx。"""
+    from matcher.web.example_gen import participant_example_bytes, target_example_bytes
     reg = _reg()
     if not reg.has(template_id):
         raise HTTPException(404, "找不到範本")
     if not can_view(reg, template_id, email):
         raise HTTPException(403, "這個範本不屬於你，無法下載範例。")
-    if kind not in ("roles", "targets") or fmt not in ("csv", "xlsx"):
+    if kind not in ("participants", "targets") or fmt not in ("csv", "xlsx"):
         raise HTTPException(404, "不支援的範例類型")
     tpl = reg.get(template_id)
-    data = (role_example_bytes if kind == "roles" else target_example_bytes)(tpl, fmt)
+    data = (participant_example_bytes if kind == "participants" else target_example_bytes)(tpl, fmt)
     media = ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
              if fmt == "xlsx" else "text/csv; charset=utf-8")
-    # 檔名用 ASCII（HTTP header 限 latin-1）；kind = roles|targets
+    # 檔名用 ASCII（HTTP header 限 latin-1）；kind = participants|targets
     return Response(
         content=data, media_type=media,
         headers={"Content-Disposition": f'attachment; filename="{template_id}-example-{kind}.{fmt}"'},

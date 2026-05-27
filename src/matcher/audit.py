@@ -18,7 +18,7 @@ from matcher.rules import (
     Le,
     Not,
     Or,
-    RoleInTargetField,
+    ParticipantInTargetField,
     Rule,
     Ruleset,
 )
@@ -33,11 +33,15 @@ def _expr_to_dict(expr) -> dict:
         return {"ge": {"field": expr.field, "value": expr.value}}
     if isinstance(expr, Le):
         return {"le": {"field": expr.field, "value": expr.value}}
-    if isinstance(expr, RoleInTargetField):
-        return {"role_in_target_field": {
-            "role_field": expr.role_field,
+    if isinstance(expr, ParticipantInTargetField):
+        body = {
+            "participant_field": expr.participant_field,
             "target_field": expr.target_field,
-        }}
+        }
+        # mode 預設 auto 時略過，保持既有 audit / golden 逐位元組不變
+        if expr.mode != "auto":
+            body["mode"] = expr.mode
+        return {"participant_in_target_field": body}
     if isinstance(expr, And):
         return {"and": [_expr_to_dict(c) for c in expr.children]}
     if isinstance(expr, Or):
@@ -59,9 +63,9 @@ def _ruleset_to_dict(rs: Ruleset) -> dict:
 
 def _roster_to_dict(roster: Roster) -> dict:
     return {
-        "roles": [
+        "participants": [
             {"id": r.id, "attributes": r.attributes, "preferences": list(r.preferences)}
-            for r in roster.roles
+            for r in roster.participants
         ],
         "targets": [
             {"id": t.id, "capacity": t.capacity, "attributes": t.attributes}
@@ -78,9 +82,9 @@ def _template_to_dict(tpl) -> dict:
         "name": tpl.name,
         "description": tpl.description,
         "attributes": {
-            "roles": [
+            "participants": [
                 {"key": a.key, "type": a.type, "required": a.required, "description": a.description}
-                for a in tpl.attributes.roles
+                for a in tpl.attributes.participants
             ],
             "targets": [
                 {"key": a.key, "type": a.type, "required": a.required, "description": a.description}
@@ -127,7 +131,7 @@ def build_audit_record(
     processing_order: list | None = None,
 ) -> dict:
     return {
-        "schema_version": "1.4",
+        "schema_version": "1.5",
         "mechanism": mechanism,
         "seed": seed,
         "rules_snapshot": _ruleset_to_dict(ruleset),

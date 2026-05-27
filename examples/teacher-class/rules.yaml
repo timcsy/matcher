@@ -4,15 +4,15 @@ rules:
   - id: R001
     description: "老師的專業必須出現在班級的需要科目清單中"
     expr:
-      role_in_target_field:
-        role_field: speciality
+      participant_in_target_field:
+        participant_field: speciality
         target_field: required_subjects
 
   - id: R002
     description: "老師年資至少 3 年（含）以上"
     expr:
       ge:
-        field: role.seniority
+        field: participant.seniority
         value: 3
 
   - id: R003

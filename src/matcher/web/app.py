@@ -42,8 +42,71 @@ def load_dotenv() -> None:
         return
 
 
+# 內容安全政策（CSP）：
+#   - 外部 script 來源限於本專案實際使用的三個 CDN；'unsafe-eval' 因 Alpine.js /
+#     Tailwind Play CDN 需要 Function 求值；'unsafe-inline' 因多個樣板仍用原生
+#     onclick/onsubmit 行內處理器（反射型 XSS 已在來源端修掉，見 new_match.html）。
+#     CSP 在此的主要價值＝限制 script 來源主機 + frame-ancestors 防點擊劫持。
+#   - style 允許 'unsafe-inline'（樣板大量 inline style= 與 Tailwind 動態注入）。
+#   - frame-ancestors 'none' + X-Frame-Options DENY：防點擊劫持。
+_CSP = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdn.tailwindcss.com; "
+    "style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com; "
+    "font-src 'self' https://fonts.gstatic.com data:; "
+    "img-src 'self' data:; "
+    "connect-src 'self' https://cdn.tailwindcss.com; "
+    "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+)
+
+
+def _install_security_headers(app: FastAPI) -> None:
+    """為所有回應加上安全標頭（公開網路 + 學生個資的基本加固）。"""
+    import os
+
+    # 僅在 https 部署（非本機 insecure 模式）才送 HSTS，避免本機 http 被瀏覽器鎖成 https
+    hsts_on = os.environ.get("MATCHER_INSECURE_COOKIE") != "1"
+
+    @app.middleware("http")
+    async def _security_headers(request: Request, call_next):
+        response = await call_next(request)
+        h = response.headers
+        h.setdefault("Content-Security-Policy", _CSP)
+        h.setdefault("X-Content-Type-Options", "nosniff")
+        h.setdefault("X-Frame-Options", "DENY")
+        h.setdefault("Referrer-Policy", "same-origin")
+        if hsts_on:
+            h.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        return response
+
+
+def _check_secret() -> None:
+    """SESSION_SECRET 為開發預設值時：production 拒絕啟動、其餘大聲警告。
+
+    SESSION_SECRET 同時簽 session cookie 與個別連結 token——用預設值＝兩者皆可偽造。
+    以 MATCHER_ENV=production 作為「正式部署」訊號，避免誤用預設金鑰上線。
+    """
+    import logging
+    import os
+
+    from matcher.web.security import DEV_SECRET
+
+    if os.environ.get("SESSION_SECRET", DEV_SECRET) == DEV_SECRET:
+        if os.environ.get("MATCHER_ENV") == "production":
+            raise RuntimeError(
+                "SESSION_SECRET 未設定或仍為開發預設值，production 不得啟動。"
+                "請設定一個長亂碼："
+                'python -c "import secrets; print(secrets.token_urlsafe(32))"'
+            )
+        logging.getLogger("matcher").warning(
+            "SESSION_SECRET 使用開發預設值——session 與個別連結 token 皆可被偽造，"
+            "請勿用於正式部署。"
+        )
+
+
 def create_app() -> FastAPI:
     load_dotenv()
+    _check_secret()
     app = FastAPI(title="matcher", openapi_url=None)
 
     static_dir = _resources_dir("static")
@@ -84,12 +147,18 @@ def create_app() -> FastAPI:
     from matcher.web.auth import add_session_middleware
     add_session_middleware(app)
 
+    _install_security_headers(app)
+
     # Routes — 延遲匯入以避免循環
-    from matcher.web.routes import auth, match, pages, records
+    from matcher.web.routes import auth, match, match_exports, match_view, pages, records
 
     app.include_router(auth.router)
     app.include_router(pages.router)
+    # match（含 /match/new 等字面路徑）須在 match_view（/match/{record_id}）之前註冊，
+    # 否則 {record_id} 會把 "new" 等吃掉。
     app.include_router(match.router)
+    app.include_router(match_exports.router)
+    app.include_router(match_view.router)
     app.include_router(records.router)
 
     @app.exception_handler(MatchRecordNotFound)

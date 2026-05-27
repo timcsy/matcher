@@ -8,12 +8,12 @@
   <h3>您的基本資訊</h3>
   <table>
     <tbody>
-      {% for key, value in role.attributes.items() %}
+      {% for key, value in participant.attributes.items() %}
       <tr>
         <th>
           {% set ns = namespace(display_name=key) %}
           {% if template %}
-            {% for decl in template.attributes.roles %}
+            {% for decl in template.attributes.participants %}
               {% if decl.key == key and decl.description %}
                 {% set ns.display_name = decl.description %}
               {% endif %}
@@ -99,8 +99,8 @@
 </div>
 
 <p style="margin-top:2rem">
-  <a class="btn btn-success" href="/match/{{ record.id }}/role/{{ role.id }}/report.pdf">下載 PDF 報告（可印出簽收）</a>
-  <a class="btn btn-secondary" href="/match/{{ record.id }}/role/{{ role.id }}/audit.json">下載完整紀錄（JSON）</a>
+  <a class="btn btn-success" href="/match/{{ record.id }}/participant/{{ participant.id }}/report.pdf">下載 PDF 報告（可印出簽收）</a>
+  <a class="btn btn-secondary" href="/match/{{ record.id }}/participant/{{ participant.id }}/audit.json">下載完整紀錄（JSON）</a>
   <a class="btn btn-secondary" href="/">回首頁</a>
 </p>
 

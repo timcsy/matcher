@@ -15,10 +15,10 @@ VALID_YAML_DICT_WITH_LEGACY_FIELD = {
     "name": "舊範本",
     "description": "舊版本的範本，含已廢棄欄位",
     "attributes": {
-        "roles": [{"key": "name", "type": "str", "required": True, "description": "姓名"}],
+        "participants": [{"key": "name", "type": "str", "required": True, "description": "姓名"}],
         "targets": [{"key": "name", "type": "str", "required": True, "description": "組名"}],
     },
-    "rules": [{"id": "R001", "description": "規則 1", "expr": {"eq": {"field": "role.name", "value": "x"}}}],
+    "rules": [{"id": "R001", "description": "規則 1", "expr": {"eq": {"field": "participant.name", "value": "x"}}}],
     "default_targets": [  # ← 舊欄位
         {"id": "T1", "capacity": 1, "attributes": {"name": "test"}},
     ],
