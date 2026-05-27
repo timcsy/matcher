@@ -39,14 +39,14 @@
 **獨立驗收**：真人登入成功 + 配對結果 + 稽核 PDF（SC-002）。依賴 T002（httpx）已在映像中。
 
 - [X] T018 [US2] 確認映像含 httpx（T006 已驗）且 `.env` 的 `GOOGLE_CLIENT_ID/SECRET` 為現用值、Secret 已灌（T015）
-- [ ] T019 [US2] 真人驗收 SC-002：瀏覽器開 `http://localhost:8765` → Google 登入成功導回 → 跑一次配對 → 下載稽核 PDF（驗證容器內 WeasyPrint/CJK 正常）。**登入由使用者本人操作**（學校帳號分頁）
+- [X] T019 [US2] 真人驗收 SC-002：瀏覽器開 `http://localhost:8765` → Google 登入成功導回 → 跑一次配對 → 下載稽核 PDF（驗證容器內 WeasyPrint/CJK 正常）。**登入由使用者本人操作**（學校帳號分頁）
 
 ## Phase 5：US3 — 重啟資料不遺失（P2）
 
 **目標**：pod 重建後配對紀錄與自訂範本仍在。
 **獨立驗收**：刪 pod → 重建 → 資料 100% 保留（SC-003）。PVC 已於 T007/T009 接上。
 
-- [ ] T020 [US3] 驗收 SC-003：先跑一筆配對 + 建一個自訂範本 → `kubectl delete pod -l app=matcher` → `kubectl rollout status` → 重新 port-forward，確認「過去紀錄」與該自訂範本仍在
+- [X] T020 [US3] 驗收 SC-003：先跑一筆配對 + 建一個自訂範本 → `kubectl delete pod -l app=matcher` → `kubectl rollout status` → 重新 port-forward，確認「過去紀錄」與該自訂範本仍在
 
 ## Phase 6：US4 — 機密不外洩（P2）
 
@@ -59,8 +59,8 @@
 ## Phase 7：Polish & 收尾
 
 - [X] T023 [P] 驗收 SC-005：`git diff main -- src/matcher` 為空（本 feature 0 改動核心）
-- [ ] T024 [P] 更新 `knowledge/vision.md`：階段 5 勾選完成、補現狀條目（映像 ghcr、PVC、port-forward 存取、網域自理）
-- [ ] T025 [P] 更新 `README.md`：加「部署到 K8s」一節，指向 `deploy/README.md` / quickstart
+- [X] T024 [P] 更新 `knowledge/vision.md`：階段 5 勾選完成、補現狀條目（映像 ghcr、PVC、port-forward 存取、網域自理）
+- [X] T025 [P] 更新 `README.md`：加「部署到 K8s」一節，指向 `deploy/README.md` / quickstart
 
 ## Dependencies（完成順序）
 

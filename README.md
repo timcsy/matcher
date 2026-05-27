@@ -194,6 +194,13 @@ uv run pytest
 - **分配機制**：支援 M0 純抽籤、M1 RSD（隨機輪流挑）、M2 Boston（層級填滿）；CLI 與 Web 三入口皆可選。
 - **稽核紀錄**：包含規則快照、名單快照、資格集合、seed、每步隨機決策、最終配對。
 
+## 部署到 K8s
+
+容器化部署（單一映像、PVC 持久化、無 DB）見 [`deploy/README.md`](deploy/README.md)。
+摘要：`docker buildx --platform linux/amd64 --push` 推映像到 ghcr → 由本機 `.env` 灌 Secret →
+`kubectl apply -f deploy/k8s/` → `kubectl port-forward -n matcher svc/matcher 8765:8765`。
+網域 / TLS / Ingress 自理（附 `deploy/k8s/ingress.example.yaml`）。
+
 ## 文件
 
 - 規格：`specs/001-core-allocator/spec.md`

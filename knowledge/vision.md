@@ -37,7 +37,7 @@
 
 ## 現狀
 
-**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）、階段 7（配對失敗可解釋）、階段 8（對象試算表匯入 + 動態範例 + 過去紀錄重用）、階段 9（用詞統一「參與者」+ role→participant 全面更名、audit schema v1.5）已完成**。
+**階段 1、階段 2a、階段 2b、階段 3a、階段 3b、階段 3c、階段 4a、階段 4b、階段 4c、階段 4d、階段 4e、階段 4f（UI 直接填名單）、階段 4g（移除 default_targets）、階段 6（登入與資源歸屬）、階段 7（配對失敗可解釋）、階段 8（對象試算表匯入 + 動態範例 + 過去紀錄重用）、階段 9（用詞統一「參與者」+ role→participant 全面更名、audit schema v1.5）、階段 5（K8s 部署）已完成**。
 
 階段 1（commit `d1331dc`）：
 
@@ -240,7 +240,16 @@
   token 效期、可選網域白名單；`match.py` 拆分為 match/match_view/match_exports
 - 重生全部 7 個 golden（v1.5）；全套件 457 passed
 
-尚未開始：K8s 部署（階段 5）、實際學校場景試行（UI 白話化已就緒，等真人來試）。
+階段 5 K8s 部署（feature 020）：
+
+- 單一容器映像 `ghcr.io/timcsy/matcher`（python3.11-slim + WeasyPrint/poppler/CJK 系統依賴 + uv），公開於 ghcr
+- `deploy/k8s`：namespace `matcher`、PVC（local-path/RWO/1Gi 掛 `/app/data`）、Deployment（Recreate、envFrom Secret、proxy-headers）、Service（ClusterIP）、ingress.example（網域/TLS 使用者自理）
+- 機密由本機 `.env` 灌入 Secret（`--from-env-file`，不入庫）；port-forward 8765 沿用現有 OAuth 回呼
+- 實機校正：節點 amd64 → 須 `docker buildx --platform linux/amd64`；部署於 namespace `matcher`
+- 核心 0 改動（唯一例外 httpx：dev→執行期，Authlib OAuth callback 需要）
+- 已實機驗證：登入、配對、PDF、刪 pod 後資料持久化
+
+尚未開始：實際學校場景試行（UI 白話化已就緒，等真人來試）；網域/TLS 上線（使用者自理）。
 
 > 註：登入是公開網路部署的前置（階段 5）；目前憑 Google OAuth + 個人私有，尚未做組織/網域層級的共享。
 
@@ -510,18 +519,22 @@
 
 ### 階段 5：K8s 部署
 
-- [ ] 完成
+- [x] 完成（feature 020；部署於遠端 k3s `matcher` namespace、映像 ghcr.io/timcsy/matcher）
 
 <!--
-  交付：可部署到 K8s 的容器化版本，使用 PVC 存放檔案系統資料。
-  前置條件：階段 4
+  交付：單一容器映像（含 WeasyPrint/CJK 系統依賴）、deploy/k8s manifests（namespace/pvc/
+  service/deployment + ingress.example）、機密由 .env 灌 Secret（不入庫）、port-forward 8765
+  沿用現有 OAuth 回呼。實機校正：節點 amd64 → buildx --platform linux/amd64。
+  核心 0 改動（唯一例外：httpx 由 dev 移到執行期，OAuth callback 需要）。詳見 specs/020-k8s-deploy。
+  前置條件：階段 4、階段 6（登入）。
 -->
 
 **成功標準：**
 
-- [ ] 單一 Dockerfile，無外部資料庫依賴
-- [ ] 提供範例 K8s manifest（Deployment + Service + PVC）
-- [ ] 在 K8s 上重啟後資料與稽核紀錄不遺失
+- [x] 單一 Dockerfile，無外部資料庫依賴（純檔案系統 + PVC）
+- [x] 提供 K8s manifest（Namespace + Deployment + Service + PVC；ingress 範例）
+- [x] 在 K8s 上重啟後資料與稽核紀錄不遺失（刪 pod 重建後紀錄/範本仍在）
+- [x] 真人 Google 登入成功、配對引擎於容器內正常運作（含 WeasyPrint PDF）
 
 ### 階段 6：登入與資源歸屬
 
