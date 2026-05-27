@@ -41,6 +41,8 @@ class MatchRecord:
     audit: Optional[dict]
     error: Optional[dict]
     owner: Optional[str] = None  # Feature 014：建立者 email；舊資料 / 未登入為 None
+    # Feature 021：失敗紀錄也存清單快照，讓「用這份清單再配對」可重用、不必重打
+    roster_snapshot: Optional[dict] = None
 
     def to_dict(self) -> dict:
         return {
@@ -55,6 +57,7 @@ class MatchRecord:
             "audit": self.audit,
             "error": self.error,
             "owner": self.owner,
+            "roster_snapshot": self.roster_snapshot,
         }
 
     @classmethod
@@ -71,6 +74,7 @@ class MatchRecord:
             audit=d.get("audit"),
             error=d.get("error"),
             owner=d.get("owner"),
+            roster_snapshot=d.get("roster_snapshot"),
         )
 
     @classmethod

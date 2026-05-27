@@ -62,6 +62,14 @@ def _empty_set_message(e: QualifiedSetEmpty) -> str:
     return base
 
 
+def _roster_snapshot_or_none(ro) -> Optional[dict]:
+    """把已解析的 roster 轉成 snapshot（給失敗紀錄存，供「用這份清單再配對」重用）。"""
+    if ro is None:
+        return None
+    from matcher.audit import _roster_to_dict
+    return _roster_to_dict(ro)
+
+
 def _error_dict(e: MatcherError) -> dict:
     """建失敗 record 的 error；資格集合為空時附診斷（feature 015）。"""
     d = {"type": type(e).__name__, "exit_code": e.exit_code, "message": str(e)}
@@ -231,8 +239,11 @@ def _flatten_snapshot_value(v) -> str:
 
 
 def _snapshot_to_prefill(record) -> tuple[list, list]:
-    """把一筆配對紀錄的 roster 快照 → 填清單頁的 prefill（參與者、對象）。"""
-    snap = (record.audit or {}).get("roster_snapshot", {})
+    """把一筆配對紀錄的 roster 快照 → 填清單頁的 prefill（參與者、對象）。
+
+    成功紀錄取自 audit.roster_snapshot；失敗紀錄取自 record.roster_snapshot（feature 021）。
+    """
+    snap = (record.audit or {}).get("roster_snapshot") or (record.roster_snapshot or {})
     participants = []
     for r in snap.get("participants", []):
         row = {"id": r.get("id", "")}
@@ -274,10 +285,13 @@ async def new_match_fill(request: Request, template_id: str,
         except MatchRecordNotFound:
             return _error_page(request, "RecordNotFound", "找不到要沿用的過去紀錄。", status_code=404)
         _owner_or_403(request, rec)
-        if rec.audit is None:
-            return _error_page(request, "NoSnapshot", "該紀錄沒有可沿用的清單（執行失敗的紀錄）。", status_code=400)
+        has_snapshot = (rec.audit and rec.audit.get("roster_snapshot")) or rec.roster_snapshot
+        if not has_snapshot:
+            return _error_page(request, "NoSnapshot", "該紀錄沒有可沿用的清單。", status_code=400)
         prefill_participants, prefill_targets = _snapshot_to_prefill(rec)
-        note = f"已沿用過去紀錄的清單（{from_record}），可直接修改後再配對。"
+        note = (f"已沿用過去紀錄的清單（{from_record}），可直接修改後再配對。"
+                if rec.status == "success"
+                else f"已帶回上次失敗那批清單（{from_record}），修正後再試一次。")
 
     return _render_fill_form(
         request, tpl,
@@ -402,6 +416,7 @@ async def run_from_form(request: Request, email: str = Depends(require_login),
             record = MatchRecord(
                 **common, status="failed", audit=None,
                 error=_error_dict(e),
+                roster_snapshot=_roster_snapshot_or_none(locals().get("ro")),
             )
     finally:
         csv_path.unlink(missing_ok=True)
@@ -560,6 +575,7 @@ async def run(
             record = MatchRecord(
                 **common, status="failed", audit=None,
                 error=_error_dict(e),
+                roster_snapshot=_roster_snapshot_or_none(locals().get("ro")),
             )
     finally:
         tmp_path.unlink(missing_ok=True)
@@ -768,6 +784,7 @@ async def submit_preferences(request: Request, email: str = Depends(require_logi
         record = MatchRecord(
             **common, status="failed", audit=None,
             error={"type": type(e).__name__, "exit_code": e.exit_code, "message": str(e)},
+            roster_snapshot=_roster_snapshot_or_none(locals().get("ro")),
         )
     store.save(record)
     return RedirectResponse(url=f"/match/{record.id}", status_code=303)
