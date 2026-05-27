@@ -26,6 +26,8 @@
         <a href="/match/{{ r.id }}">查看</a>
         {% if r.status == "success" %}
           · <a href="/match/{{ r.id }}/report.pdf">下載 PDF</a>
+        {% endif %}
+        {% if r.status == "success" or r.roster_snapshot %}
           · <a href="/match/new/fill?template_id={{ r.template_id }}&from_record={{ r.id }}">用這份清單再配對</a>
         {% endif %}
       </td>

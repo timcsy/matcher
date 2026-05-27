@@ -59,8 +59,10 @@ def _collect_referenced_fields(expr) -> list[tuple[str, str]]:
         side, _, name = expr.field.partition(".")
         refs.append((side, name))
     elif isinstance(expr, ParticipantInTargetField):
-        refs.append(("participant", expr.participant_field))
-        refs.append(("target", expr.target_field))
+        # 空＝不設限（empty_ok）的規則容許屬性缺席，故不納入靜態必備檢查
+        if not getattr(expr, "empty_ok", False):
+            refs.append(("participant", expr.participant_field))
+            refs.append(("target", expr.target_field))
     elif isinstance(expr, (And, Or)):
         for c in expr.children:
             refs.extend(_collect_referenced_fields(c))

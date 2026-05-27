@@ -196,6 +196,18 @@ expr:
     mode: target_in_participant   # 老師可帶多類組、班級單一類組時用這個
 ```
 
+**空＝不設限（可選 `empty_ok: true`）**：加上後，**任一邊的值沒填 / 為空（含整個屬性缺席）→ 這條規則自動通過**。
+適合「沒特別要求就照收」的情境（如：某班級沒填需要科目＝不挑科目、收任何人）。省略＝`false`（嚴格：空清單不符、缺屬性報錯）。
+
+```yaml
+expr:
+  participant_in_target_field:
+    participant_field: subjects
+    target_field: required_subjects
+    mode: intersect
+    empty_ok: true                # 班級沒填 required_subjects = 不設限 = 任何老師都符合
+```
+
 ### 3.2 邏輯節點
 
 #### `and`：所有子規則皆通過

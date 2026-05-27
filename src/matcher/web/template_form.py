@@ -38,6 +38,8 @@ def _build_expr(rule_type: str, fields: dict) -> dict:
         mode = (fields.get("mode") or "auto").strip() or "auto"
         if mode != "auto":
             body["mode"] = mode
+        if fields.get("empty_ok") in ("true", "on", True, "1"):
+            body["empty_ok"] = True
         return {"participant_in_target_field": body}
     raise ValueError(f"未知規則類型：{rule_type}")
 
@@ -73,9 +75,10 @@ def _auto_description(rule_type: str, fields: dict, attributes: dict) -> str:
             return f"{pd} 必須都在對象的{td}裡"
         if mode == "target_in_participant":
             return f"對象的{td} 必須都在{pd}裡"
+        suffix = "（沒填值的一方視為不設限）" if fields.get("empty_ok") in ("true", "on", True, "1") else ""
         if mode == "intersect":
-            return f"{pd} 與對象的{td} 必須有交集"
-        return f"{pd} 必須對應到對象的{td}（任一邊可多筆，做包含比對）"  # auto
+            return f"{pd} 與對象的{td} 必須有交集{suffix}"
+        return f"{pd} 必須對應到對象的{td}（任一邊可多筆，做包含比對）{suffix}"  # auto
     raise ValueError(f"未知規則類型：{rule_type}")
 
 
@@ -135,7 +138,7 @@ def assemble_template_yaml(form: dict) -> dict:
     rule_rows = _collect_indexed_rows(
         form,
         "rule",
-        ["id", "type", "field", "value", "set", "participant_field", "target_field", "mode", "custom_description"],
+        ["id", "type", "field", "value", "set", "participant_field", "target_field", "mode", "empty_ok", "custom_description"],
     )
     rules = []
     for r in rule_rows:

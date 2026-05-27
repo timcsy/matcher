@@ -38,9 +38,11 @@ def _expr_to_dict(expr) -> dict:
             "participant_field": expr.participant_field,
             "target_field": expr.target_field,
         }
-        # mode 預設 auto 時略過，保持既有 audit / golden 逐位元組不變
+        # mode 預設 auto / empty_ok 預設 False 時略過，保持既有 audit / golden 逐位元組不變
         if expr.mode != "auto":
             body["mode"] = expr.mode
+        if getattr(expr, "empty_ok", False):
+            body["empty_ok"] = True
         return {"participant_in_target_field": body}
     if isinstance(expr, And):
         return {"and": [_expr_to_dict(c) for c in expr.children]}
