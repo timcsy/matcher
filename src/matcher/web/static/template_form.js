@@ -30,14 +30,8 @@ function _parsePrefillRows(prefill, prefix, fields) {
   });
 }
 
-function _readPrefill() {
-  const el = document.getElementById('template-prefill');
-  if (!el || !el.dataset.prefill) return {};
-  try { return JSON.parse(el.dataset.prefill); } catch (e) { return {}; }
-}
-
 window.templateAuthor = function () {
-  const pf = _readPrefill();
+  const pf = window._initialPrefill || {};
   const attrFields = ['key', 'type', 'required', 'description', 'aliases'];
   const ruleFields = ['id', 'type', 'field', 'value', 'set', 'role_field', 'target_field', 'custom_description'];
   const targetFields = ['id', 'capacity', 'name', 'topic', 'min_grade'];

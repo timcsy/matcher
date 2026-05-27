@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
-from matcher.errors import TemplateNotFound
+from matcher.errors import MatcherError, TemplateNotFound
 from matcher.template_loader import (
     TemplateRegistry,
     dump_template_yaml,
@@ -209,7 +209,9 @@ async def template_save(request: Request, email: str = Depends(require_login)):
 
     try:
         tpl_id, version = reg.save_custom(tpl_dict)
-    except ValueError as e:
+    except (ValueError, MatcherError) as e:
+        # MatcherError 含 TemplateMissingField 等：欄位沒填完整時給友善訊息，
+        # 而非讓例外冒泡成 500（前端 fetch 會收到 HTML、JSON.parse 失敗）
         msg = str(e)
         if "內建模板" in msg:
             return JSONResponse({"ok": False, "errors": [msg]}, status_code=409)
