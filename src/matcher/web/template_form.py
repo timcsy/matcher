@@ -14,7 +14,7 @@ RULE_TYPES = (
     ("le", "參與者屬性 ≤ 數值（int 比較）"),
     ("eq", "參與者屬性等於某值"),
     ("in", "參與者屬性屬於集合"),
-    ("participant_in_target_field", "參與者屬性出現在對象的列表屬性中"),
+    ("participant_in_target_field", "參與者與對象欄位互相包含（任一邊可為多筆）"),
 )
 
 
@@ -64,7 +64,7 @@ def _auto_description(rule_type: str, fields: dict, attributes: dict) -> str:
     if rule_type == "participant_in_target_field":
         participant_desc = _attr_desc(attributes, f"participant.{fields['participant_field']}")
         target_desc = _attr_desc(attributes, f"target.{fields['target_field']}")
-        return f"{participant_desc} 必須出現在對象的{target_desc}列表中"
+        return f"{participant_desc} 必須對應到對象的{target_desc}（任一邊可多筆，做包含比對）"
     raise ValueError(f"未知規則類型：{rule_type}")
 
 

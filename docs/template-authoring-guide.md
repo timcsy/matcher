@@ -156,7 +156,7 @@ expr:
     value: 6
 ```
 
-#### `participant_in_target_field`：參與者屬性出現在對象的列表屬性中
+#### `participant_in_target_field`：參與者與對象欄位互相包含（任一邊可為清單）
 
 最常用的「能不能教這個班」「能不能去這個組」判斷。
 

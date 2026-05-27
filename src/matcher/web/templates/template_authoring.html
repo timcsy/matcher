@@ -189,7 +189,7 @@
                 <option value="le">數字小於等於某值</option>
                 <option value="eq">欄位等於某值</option>
                 <option value="in">欄位是清單之一</option>
-                <option value="participant_in_target_field">參與者欄位在對象的清單中</option>
+                <option value="participant_in_target_field">參與者欄位與對象欄位互相包含（任一邊可多筆）</option>
               </select>
               <button type="button" @click="rules.splice(i,1)" class="text-red-500 hover:bg-red-50 rounded p-1">×</button>
             </div>
@@ -226,7 +226,7 @@
               </template>
               <template x-if="rule.type === 'participant_in_target_field'">
                 <div>
-                  <label class="block text-xs text-gray-500 mb-1">對象清單欄位（不含 target.）</label>
+                  <label class="block text-xs text-gray-500 mb-1">對象欄位代號（不含 target.）</label>
                   <input type="text" :name="`rule_${i}_target_field`" x-model="rule.target_field" placeholder="required_subjects"
                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>

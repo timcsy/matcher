@@ -62,7 +62,7 @@ def test_auto_description_for_each_rule_type():
         ("eq", {"field": "participant.speciality", "value": "數學"}, "專業科目 必須等於 數學"),
         ("in", {"field": "participant.speciality", "set": "國文;數學"}, "專業科目 必須屬於：國文、數學"),
         ("participant_in_target_field", {"participant_field": "speciality", "target_field": "required_subjects"},
-         "專業科目 必須出現在對象的需要科目列表中"),
+         "專業科目 必須對應到對象的需要科目（任一邊可多筆，做包含比對）"),
     ]
     for rule_type, fields, expected_desc in cases:
         desc = _auto_description(rule_type, fields, attrs)
