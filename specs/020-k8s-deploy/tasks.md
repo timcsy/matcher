@@ -6,28 +6,28 @@
 
 ## Phase 1：Setup（前置）
 
-- [ ] T001 確認本機工具就緒：`docker`、`kubectl`（context=`k3s-tew`）、`gh`（已登入、含 write:packages），並確認本機 `.env` 含現用 `GOOGLE_CLIENT_ID/SECRET`、`MATCHER_INSECURE_COOKIE=1`（不修改檔案，只檢查）
-- [ ] T002 把 `httpx` 從 `pyproject.toml` 的 `[project.optional-dependencies].dev` 移到 `[project].dependencies`（Authlib OAuth callback 執行期需要；research R-3），`uv lock` 更新 `uv.lock`
-- [ ] T003 跑 `uv run --extra dev pytest -q` 確認移動 httpx 後全套件仍綠（無回歸）
+- [X] T001 確認本機工具就緒：`docker`、`kubectl`（context=`k3s-tew`）、`gh`（已登入、含 write:packages），並確認本機 `.env` 含現用 `GOOGLE_CLIENT_ID/SECRET`、`MATCHER_INSECURE_COOKIE=1`（不修改檔案，只檢查）
+- [X] T002 把 `httpx` 從 `pyproject.toml` 的 `[project.optional-dependencies].dev` 移到 `[project].dependencies`（Authlib OAuth callback 執行期需要；research R-3），`uv lock` 更新 `uv.lock`
+- [X] T003 跑 `uv run --extra dev pytest -q` 確認移動 httpx 後全套件仍綠（無回歸）
 
 ## Phase 2：Foundational（所有故事的共同前置——映像與資源定義）
 
-- [ ] T004 [P] 新增 `.dockerignore`（排除 `data/`、`.env`、`.git`、`tests/`、`specs/`、`__pycache__`、`.venv`）
-- [ ] T005 新增 `Dockerfile`（根目錄）：基底 `python:3.11-slim-bookworm`、WORKDIR `/app`、apt 裝 `libpango-1.0-0 libpangocairo-1.0-0 libcairo2 poppler-utils fonts-noto-cjk`、安裝 uv、複製 `pyproject.toml`+`uv.lock`+`src/`、`uv sync --frozen --no-dev`、CMD `uv run uvicorn matcher.web.app:create_app --factory --host 0.0.0.0 --port 8765 --proxy-headers --forwarded-allow-ips="*"`
-- [ ] T006 本機 build 驗證：`docker build -t matcher:test .` 成功，且 `docker run` 後容器內 `python -c "import weasyprint, httpx"` 不報錯（確認系統依賴與 httpx 到位）
-- [ ] T007 [P] 新增 `deploy/k8s/pvc.yaml`：`PersistentVolumeClaim/matcher-data`，`storageClassName: local-path`、`ReadWriteOnce`、1Gi
-- [ ] T008 [P] 新增 `deploy/k8s/service.yaml`：`Service/matcher`，`ClusterIP`，port 8765 → targetPort 8765，selector `app=matcher`
-- [ ] T009 新增 `deploy/k8s/deployment.yaml`：`Deployment/matcher`，`replicas:1`、`strategy:Recreate`、label `app=matcher`、image `ghcr.io/timcsy/matcher:<sha>`（佔位，build 後帶入）、`imagePullPolicy:IfNotPresent`、`envFrom:[secretRef:matcher-secrets]`、volume 掛 `matcher-data` 於 `/app/data`、`readinessProbe`/`livenessProbe` httpGet `/login`:8765
-- [ ] T010 [P] 新增 `deploy/k8s/configmap.yaml`（可選覆寫處，初版可留最小註解說明）與 `deploy/k8s/ingress.example.yaml`（Traefik 範例、host 預設 `match.tew.tw`、TLS 留空待填、預設不套用）
-- [ ] T011 [P] 新增 `deploy/README.md`：指向 `specs/020-k8s-deploy/quickstart.md`，摘要 build→push→secret→apply→port-forward 流程
+- [X] T004 [P] 新增 `.dockerignore`（排除 `data/`、`.env`、`.git`、`tests/`、`specs/`、`__pycache__`、`.venv`）
+- [X] T005 新增 `Dockerfile`（根目錄）：基底 `python:3.11-slim-bookworm`、WORKDIR `/app`、apt 裝 `libpango-1.0-0 libpangocairo-1.0-0 libcairo2 poppler-utils fonts-noto-cjk`、安裝 uv、複製 `pyproject.toml`+`uv.lock`+`src/`、`uv sync --frozen --no-dev`、CMD `uv run uvicorn matcher.web.app:create_app --factory --host 0.0.0.0 --port 8765 --proxy-headers --forwarded-allow-ips="*"`
+- [X] T006 本機 build 驗證：`docker build -t matcher:test .` 成功，且 `docker run` 後容器內 `python -c "import weasyprint, httpx"` 不報錯（確認系統依賴與 httpx 到位）
+- [X] T007 [P] 新增 `deploy/k8s/pvc.yaml`：`PersistentVolumeClaim/matcher-data`，`storageClassName: local-path`、`ReadWriteOnce`、1Gi
+- [X] T008 [P] 新增 `deploy/k8s/service.yaml`：`Service/matcher`，`ClusterIP`，port 8765 → targetPort 8765，selector `app=matcher`
+- [X] T009 新增 `deploy/k8s/deployment.yaml`：`Deployment/matcher`，`replicas:1`、`strategy:Recreate`、label `app=matcher`、image `ghcr.io/timcsy/matcher:<sha>`（佔位，build 後帶入）、`imagePullPolicy:IfNotPresent`、`envFrom:[secretRef:matcher-secrets]`、volume 掛 `matcher-data` 於 `/app/data`、`readinessProbe`/`livenessProbe` httpGet `/login`:8765
+- [X] T010 [P] 新增 `deploy/k8s/configmap.yaml`（可選覆寫處，初版可留最小註解說明）與 `deploy/k8s/ingress.example.yaml`（Traefik 範例、host 預設 `match.tew.tw`、TLS 留空待填、預設不套用）
+- [X] T011 [P] 新增 `deploy/README.md`：指向 `specs/020-k8s-deploy/quickstart.md`，摘要 build→push→secret→apply→port-forward 流程
 
 ## Phase 3：US1 — 部署可達（P1）🎯 MVP
 
 **目標**：套用資源後工作負載就緒、本機可開首頁。
 **獨立驗收**：`kubectl rollout status` 5 分內 Ready 且 `curl -sf http://localhost:8765/login` 回 200（SC-001）。
 
-- [ ] T012 [US1] build + tag：`docker build -t ghcr.io/timcsy/matcher:$(git rev-parse --short HEAD) -t ghcr.io/timcsy/matcher:latest .`
-- [ ] T013 [US1] 登入並推送 ghcr：`gh auth token | docker login ghcr.io -u timcsy --password-stdin` → `docker push` 兩個 tag；於 GitHub 確認/設定該 package 為 public
+- [X] T012 [US1] build + tag：`docker build -t ghcr.io/timcsy/matcher:$(git rev-parse --short HEAD) -t ghcr.io/timcsy/matcher:latest .`
+- [X] T013 [US1] 登入並推送 ghcr：`gh auth token | docker login ghcr.io -u timcsy --password-stdin` → `docker push` 兩個 tag；於 GitHub 確認/設定該 package 為 public
 - [ ] T014 [US1] 把 `deploy/k8s/deployment.yaml` 的 image tag 設為步驟 T012 的 `<sha>`
 - [ ] T015 [US1] 灌機密：`kubectl create secret generic matcher-secrets --from-env-file=.env --dry-run=client -o yaml | kubectl apply -f -`（值來自本機 `.env`，不入庫）
 - [ ] T016 [US1] 套用資源：`kubectl apply -f deploy/k8s/pvc.yaml -f deploy/k8s/service.yaml -f deploy/k8s/deployment.yaml` 並 `kubectl rollout status deploy/matcher --timeout=300s`
