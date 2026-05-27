@@ -167,7 +167,16 @@ expr:
     target_field: required_subjects    # 必填，對象的 list_str 欄位的 key 名
 ```
 
-語義：`participant.speciality 在 target.required_subjects 列表中`。如果 target_field 不是 list（例如是 str），會退化為 `participant.speciality == target.required_subjects`。
+語義（對稱包含）：不論哪一邊是清單（list_str）都會做合理判斷，方向可以反過來：
+
+| 參與者欄位 | 對象欄位 | 判斷 |
+|---|---|---|
+| 單值（str/int） | 單值 | 兩值相等 |
+| 單值 | 清單（list_str） | 參與者值 ∈ 對象清單（如：老師專業 ∈ 班級需要科目） |
+| 清單（list_str） | 單值 | 對象值 ∈ 參與者清單（如：班級類組 ∈ 老師可帶類組） |
+| 清單 | 清單 | 兩清單有交集 |
+
+所以你只要把「多筆」放在任一邊都可以，系統會自動判斷包含關係。
 
 ### 3.2 邏輯節點
 

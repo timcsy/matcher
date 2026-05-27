@@ -166,9 +166,17 @@ def evaluate(expr: RuleExpr, participant_attrs: dict, target_attrs: dict) -> boo
         if expr.target_field not in target_attrs:
             raise UnknownAttribute(f"規則引用未定義的對象屬性：`target.{expr.target_field}`")
         tv = target_attrs[expr.target_field]
-        if not isinstance(tv, list):
-            return rv == tv
-        return rv in tv
+        # 對稱化（feature 019）：不論哪邊是清單都做合理的包含判斷。
+        #   兩邊單值 → 相等；參與者單值＋對象清單 → 參與者值 ∈ 對象清單；
+        #   參與者清單＋對象單值 → 對象值 ∈ 參與者清單；兩邊清單 → 交集非空。
+        p_list, t_list = isinstance(rv, list), isinstance(tv, list)
+        if p_list and t_list:
+            return any(x in tv for x in rv)
+        if p_list:
+            return tv in rv
+        if t_list:
+            return rv in tv
+        return rv == tv
     if isinstance(expr, And):
         return all(evaluate(c, participant_attrs, target_attrs) for c in expr.children)
     if isinstance(expr, Or):
